@@ -1,0 +1,129 @@
+@import 'tailwindcss';
+
+/* Modo oscuro basado en la clase .dark en <html> */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ------------------------------------------------------------------ */
+/* Design tokens (semánticos). Cambian entre claro y oscuro.           */
+/* ------------------------------------------------------------------ */
+:root {
+  --background: #f6f7f9;
+  --foreground: #0f172a;
+
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+
+  --muted: #eef1f5;
+  --muted-foreground: #64748b;
+
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #0f766e;
+
+  --primary: #0f766e;
+  --primary-hover: #0d655e;
+  --primary-foreground: #ffffff;
+
+  --accent: #ecfeff;
+  --accent-foreground: #0f766e;
+
+  --income: #059669;
+  --income-soft: #ecfdf5;
+  --expense: #e11d48;
+  --expense-soft: #fff1f2;
+
+  --warning: #d97706;
+  --danger: #dc2626;
+
+  --radius: 0.75rem;
+}
+
+.dark {
+  --background: #0b1120;
+  --foreground: #e2e8f0;
+
+  --card: #111a2e;
+  --card-foreground: #e2e8f0;
+
+  --muted: #1a2338;
+  --muted-foreground: #94a3b8;
+
+  --border: #24304a;
+  --input: #2a3550;
+  --ring: #2dd4bf;
+
+  --primary: #14b8a6;
+  --primary-hover: #0d9488;
+  --primary-foreground: #04211d;
+
+  --accent: #0f2a2a;
+  --accent-foreground: #5eead4;
+
+  --income: #34d399;
+  --income-soft: #0c2a22;
+  --expense: #fb7185;
+  --expense-soft: #2a1119;
+
+  --warning: #fbbf24;
+  --danger: #f87171;
+}
+
+/* Exponer los tokens como colores de Tailwind (inline: siguen a las vars) */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-income: var(--income);
+  --color-income-soft: var(--income-soft);
+  --color-expense: var(--expense);
+  --color-expense-soft: var(--expense-soft);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+
+  --radius-app: var(--radius);
+}
+
+/* ------------------------------------------------------------------ */
+/* Base                                                                */
+/* ------------------------------------------------------------------ */
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family:
+      ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial,
+      sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+}
+
+/* Números tabulares para montos monetarios alineados */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
