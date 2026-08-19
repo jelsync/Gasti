@@ -27,6 +27,7 @@ export interface Database {
           email?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       categories: {
         Row: {
@@ -55,6 +56,7 @@ export interface Database {
           icon?: string;
           color?: string;
         };
+        Relationships: [];
       };
       transactions: {
         Row: {
@@ -84,6 +86,15 @@ export interface Database {
           description?: string;
           transaction_date?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: 'transactions_category_id_fkey';
+            columns: ['category_id'];
+            isOneToOne: false;
+            referencedRelation: 'categories';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       budgets: {
         Row: {
@@ -110,6 +121,15 @@ export interface Database {
           month?: number;
           year?: number;
         };
+        Relationships: [
+          {
+            foreignKeyName: 'budgets_category_id_fkey';
+            columns: ['category_id'];
+            isOneToOne: false;
+            referencedRelation: 'categories';
+            referencedColumns: ['id'];
+          },
+        ];
       };
     };
     Views: Record<never, never>;
