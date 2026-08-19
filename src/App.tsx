@@ -1,7 +1,9 @@
+import { lazy, Suspense } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import { ProtectedRoute } from '@/components/routing/ProtectedRoute';
 import { PublicRoute } from '@/components/routing/PublicRoute';
 import { AppLayout } from '@/layouts/AppLayout';
+import { Spinner } from '@/components/ui/Spinner';
 import { ROUTES } from '@/constants/routes';
 
 import LoginPage from '@/pages/auth/LoginPage';
@@ -13,10 +15,12 @@ import DashboardPage from '@/pages/DashboardPage';
 import TransactionsPage from '@/pages/TransactionsPage';
 import BudgetsPage from '@/pages/BudgetsPage';
 import HistoryPage from '@/pages/HistoryPage';
-import ReportsPage from '@/pages/ReportsPage';
 import CategoriesPage from '@/pages/CategoriesPage';
 import SettingsPage from '@/pages/SettingsPage';
 import NotFoundPage from '@/pages/NotFoundPage';
+
+// Cargada de forma diferida: contiene la librería de gráficos (Recharts).
+const ReportsPage = lazy(() => import('@/pages/ReportsPage'));
 
 export default function App() {
   return (
@@ -38,7 +42,20 @@ export default function App() {
           <Route path={ROUTES.transactions} element={<TransactionsPage />} />
           <Route path={ROUTES.budgets} element={<BudgetsPage />} />
           <Route path={ROUTES.history} element={<HistoryPage />} />
-          <Route path={ROUTES.reports} element={<ReportsPage />} />
+          <Route
+            path={ROUTES.reports}
+            element={
+              <Suspense
+                fallback={
+                  <div className="flex justify-center py-16">
+                    <Spinner />
+                  </div>
+                }
+              >
+                <ReportsPage />
+              </Suspense>
+            }
+          />
           <Route path={ROUTES.categories} element={<CategoriesPage />} />
           <Route path={ROUTES.settings} element={<SettingsPage />} />
         </Route>
