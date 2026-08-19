@@ -68,7 +68,11 @@ export function BudgetForm({
   };
 
   return (
-    <Modal open={open} onClose={onClose} title={initial ? 'Editar presupuesto' : 'Nuevo presupuesto'}>
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={initial ? 'Editar presupuesto' : 'Nuevo presupuesto'}
+    >
       <form onSubmit={handleSubmit(submit)} className="space-y-4" noValidate>
         <Field label="Categoría" htmlFor="category_id" error={errors.category_id?.message}>
           <Select

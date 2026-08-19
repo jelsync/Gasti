@@ -11,8 +11,7 @@ const AUTH_MESSAGES: Record<string, string> = {
   'email not confirmed': 'Debes confirmar tu correo antes de iniciar sesión.',
   'user already registered': 'Ya existe una cuenta con este correo.',
   'user already exists': 'Ya existe una cuenta con este correo.',
-  'password should be at least 6 characters':
-    'La contraseña es demasiado corta.',
+  'password should be at least 6 characters': 'La contraseña es demasiado corta.',
   'unable to validate email address: invalid format': 'El formato del correo es inválido.',
   'email rate limit exceeded': 'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.',
   'for security purposes, you can only request this after':
@@ -38,7 +37,10 @@ export function mapAuthError(error: unknown): string {
 }
 
 /** Mensaje amigable para errores de base de datos / operaciones. */
-export function mapDbError(error: unknown, fallback = 'Ocurrió un error. Inténtalo de nuevo.'): string {
+export function mapDbError(
+  error: unknown,
+  fallback = 'Ocurrió un error. Inténtalo de nuevo.',
+): string {
   const err = error as MaybeError | null;
   const raw = err?.message?.toLowerCase() ?? '';
 

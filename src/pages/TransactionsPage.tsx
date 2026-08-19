@@ -182,10 +182,7 @@ export default function TransactionsPage() {
           <CardContent className="grid gap-3 sm:grid-cols-4">
             <div className="sm:col-span-2">
               <label className="mb-1 block text-xs text-muted-foreground">Categoría</label>
-              <Select
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-              >
+              <Select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
                 <option value="ALL">Todas</option>
                 <option value="NONE">Sin categoría</option>
                 {categoryOptions.map((c) => (

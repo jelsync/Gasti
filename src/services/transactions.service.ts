@@ -68,10 +68,7 @@ export async function createTransaction(
   return data;
 }
 
-export async function updateTransaction(
-  id: string,
-  input: TransactionInput,
-): Promise<Transaction> {
+export async function updateTransaction(id: string, input: TransactionInput): Promise<Transaction> {
   const { data, error } = await supabase
     .from('transactions')
     .update({

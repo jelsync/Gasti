@@ -169,9 +169,7 @@ export default function BudgetsPage() {
                     <div className="text-xs text-muted-foreground">
                       <p>
                         Gastado{' '}
-                        <span className="font-medium text-foreground">
-                          {formatCurrency(spent)}
-                        </span>
+                        <span className="font-medium text-foreground">{formatCurrency(spent)}</span>
                       </p>
                       <p className={cn(over ? 'text-expense' : 'text-income')}>
                         {over ? 'Excedido ' : 'Disponible '}

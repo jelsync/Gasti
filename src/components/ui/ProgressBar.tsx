@@ -14,7 +14,10 @@ export function ProgressBar({ value, color, className }: ProgressBarProps) {
     <div className={cn('h-2 w-full overflow-hidden rounded-full bg-muted', className)}>
       <div
         className="h-full rounded-full transition-all"
-        style={{ width: `${width}%`, backgroundColor: over ? 'var(--danger)' : (color ?? 'var(--primary)') }}
+        style={{
+          width: `${width}%`,
+          backgroundColor: over ? 'var(--danger)' : (color ?? 'var(--primary)'),
+        }}
       />
     </div>
   );

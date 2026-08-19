@@ -58,10 +58,7 @@ export function CategoryPieChart({ data }: { data: PieDatum[] }) {
           ))}
         </Pie>
         <Tooltip contentStyle={tooltipStyle} formatter={(value) => formatCurrency(Number(value))} />
-        <Legend
-          iconType="circle"
-          wrapperStyle={{ fontSize: '0.8rem', color: AXIS_COLOR }}
-        />
+        <Legend iconType="circle" wrapperStyle={{ fontSize: '0.8rem', color: AXIS_COLOR }} />
       </PieChart>
     </ResponsiveContainer>
   );
@@ -79,7 +76,12 @@ export function IncomeExpenseBarChart({ data }: { data: MonthDatum[] }) {
     <ResponsiveContainer width="100%" height={280}>
       <BarChart data={data} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
         <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} vertical={false} />
-        <XAxis dataKey="label" tick={{ fill: AXIS_COLOR, fontSize: 12 }} tickLine={false} axisLine={false} />
+        <XAxis
+          dataKey="label"
+          tick={{ fill: AXIS_COLOR, fontSize: 12 }}
+          tickLine={false}
+          axisLine={false}
+        />
         <YAxis
           tick={{ fill: AXIS_COLOR, fontSize: 12 }}
           tickFormatter={currencyTick}
@@ -111,7 +113,12 @@ export function BalanceLineChart({ data }: { data: MonthDatum[] }) {
     <ResponsiveContainer width="100%" height={280}>
       <LineChart data={data} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
         <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} vertical={false} />
-        <XAxis dataKey="label" tick={{ fill: AXIS_COLOR, fontSize: 12 }} tickLine={false} axisLine={false} />
+        <XAxis
+          dataKey="label"
+          tick={{ fill: AXIS_COLOR, fontSize: 12 }}
+          tickLine={false}
+          axisLine={false}
+        />
         <YAxis
           tick={{ fill: AXIS_COLOR, fontSize: 12 }}
           tickFormatter={currencyTick}

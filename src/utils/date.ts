@@ -109,7 +109,10 @@ export function compareMonthYear(a: MonthYear, b: MonthYear): number {
  * Lista de los últimos `count` meses (incluyendo el actual), del más reciente
  * al más antiguo.
  */
-export function getRecentMonths(count: number, from: MonthYear = getCurrentMonthYear()): MonthYear[] {
+export function getRecentMonths(
+  count: number,
+  from: MonthYear = getCurrentMonthYear(),
+): MonthYear[] {
   const result: MonthYear[] = [];
   let cursor = from;
   for (let i = 0; i < count; i += 1) {

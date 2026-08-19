@@ -29,7 +29,10 @@ export default function HistoryPage() {
   const range = useMemo(() => {
     const oldest = months[months.length - 1];
     const newest = months[0];
-    return { start: monthRange(oldest.year, oldest.month).start, end: monthRange(newest.year, newest.month).end };
+    return {
+      start: monthRange(oldest.year, oldest.month).start,
+      end: monthRange(newest.year, newest.month).end,
+    };
   }, [months]);
 
   const filters = useMemo(() => ({ dateStart: range.start, dateEnd: range.end }), [range]);
@@ -93,9 +96,7 @@ export default function HistoryPage() {
                           onClick={() => setSelected(my)}
                           className={cn(
                             'flex w-full items-center justify-between rounded-[var(--radius)] px-3 py-2 text-left text-sm transition-colors',
-                            isSelected
-                              ? 'bg-accent text-accent-foreground'
-                              : 'hover:bg-muted',
+                            isSelected ? 'bg-accent text-accent-foreground' : 'hover:bg-muted',
                           )}
                         >
                           <span className="font-medium capitalize">
@@ -125,9 +126,24 @@ export default function HistoryPage() {
             </h2>
 
             <div className="grid gap-4 sm:grid-cols-3">
-              <MiniStat label="Ingresos" value={selectedSummary.income} icon={TrendingUp} tone="income" />
-              <MiniStat label="Gastos" value={selectedSummary.expense} icon={TrendingDown} tone="expense" />
-              <MiniStat label="Balance" value={selectedSummary.balance} icon={Wallet} tone="primary" />
+              <MiniStat
+                label="Ingresos"
+                value={selectedSummary.income}
+                icon={TrendingUp}
+                tone="income"
+              />
+              <MiniStat
+                label="Gastos"
+                value={selectedSummary.expense}
+                icon={TrendingDown}
+                tone="expense"
+              />
+              <MiniStat
+                label="Balance"
+                value={selectedSummary.balance}
+                icon={Wallet}
+                tone="primary"
+              />
             </div>
 
             <div className="grid gap-6 xl:grid-cols-2">

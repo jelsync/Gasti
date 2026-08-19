@@ -1,0 +1,87 @@
+import { describe, expect, it } from 'vitest';
+import { budgetSchema, loginSchema, registerSchema, transactionSchema } from '@/lib/validations';
+
+describe('registerSchema', () => {
+  const base = {
+    name: 'Juan',
+    email: 'juan@correo.com',
+    password: 'secret123',
+    confirmPassword: 'secret123',
+  };
+
+  it('acepta datos válidos', () => {
+    expect(registerSchema.safeParse(base).success).toBe(true);
+  });
+
+  it('rechaza contraseñas que no coinciden', () => {
+    const result = registerSchema.safeParse({ ...base, confirmPassword: 'otra12345' });
+    expect(result.success).toBe(false);
+  });
+
+  it('rechaza contraseña corta', () => {
+    const result = registerSchema.safeParse({ ...base, password: '123', confirmPassword: '123' });
+    expect(result.success).toBe(false);
+  });
+
+  it('rechaza correo inválido', () => {
+    expect(registerSchema.safeParse({ ...base, email: 'no-es-correo' }).success).toBe(false);
+  });
+});
+
+describe('loginSchema', () => {
+  it('requiere correo y contraseña', () => {
+    expect(loginSchema.safeParse({ email: '', password: '' }).success).toBe(false);
+    expect(loginSchema.safeParse({ email: 'a@b.com', password: 'x' }).success).toBe(true);
+  });
+});
+
+describe('transactionSchema', () => {
+  const base = {
+    type: 'EXPENSE' as const,
+    amount: 100,
+    category_id: null,
+    transaction_date: '2026-08-19',
+  };
+
+  it('acepta una transacción válida', () => {
+    expect(transactionSchema.safeParse(base).success).toBe(true);
+  });
+
+  it('coacciona el monto desde string', () => {
+    const result = transactionSchema.safeParse({ ...base, amount: '250.50' });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.amount).toBe(250.5);
+  });
+
+  it('rechaza monto cero o negativo', () => {
+    expect(transactionSchema.safeParse({ ...base, amount: 0 }).success).toBe(false);
+    expect(transactionSchema.safeParse({ ...base, amount: -5 }).success).toBe(false);
+  });
+
+  it('rechaza fecha inválida', () => {
+    expect(transactionSchema.safeParse({ ...base, transaction_date: '19/08/2026' }).success).toBe(
+      false,
+    );
+  });
+
+  it('rechaza category_id que no sea uuid ni null', () => {
+    expect(transactionSchema.safeParse({ ...base, category_id: 'abc' }).success).toBe(false);
+  });
+});
+
+describe('budgetSchema', () => {
+  const base = {
+    category_id: '11111111-1111-1111-1111-111111111111',
+    amount: 5000,
+    month: 8,
+    year: 2026,
+  };
+
+  it('acepta un presupuesto válido', () => {
+    expect(budgetSchema.safeParse(base).success).toBe(true);
+  });
+
+  it('rechaza mes fuera de rango', () => {
+    expect(budgetSchema.safeParse({ ...base, month: 13 }).success).toBe(false);
+  });
+});
