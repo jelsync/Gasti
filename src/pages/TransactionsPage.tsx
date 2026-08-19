@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
-import { Plus, Receipt, Search } from 'lucide-react';
+import { Plus, Receipt, Search, SlidersHorizontal, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/PageHeader';
 import { MonthSelector } from '@/components/MonthSelector';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Spinner } from '@/components/ui/Spinner';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -26,6 +27,10 @@ export default function TransactionsPage() {
   const [month, setMonth] = useState(getCurrentMonthYear);
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('ALL');
   const [search, setSearch] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<string>('ALL');
+  const [minAmount, setMinAmount] = useState('');
+  const [maxAmount, setMaxAmount] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<TransactionWithCategory | null>(null);
   const [deleting, setDeleting] = useState<TransactionWithCategory | null>(null);
@@ -40,15 +45,40 @@ export default function TransactionsPage() {
 
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
+    const min = minAmount ? Number(minAmount) : null;
+    const max = maxAmount ? Number(maxAmount) : null;
     return transactions.filter((t) => {
       if (typeFilter !== 'ALL' && t.type !== typeFilter) return false;
+      if (categoryFilter !== 'ALL') {
+        if (categoryFilter === 'NONE' ? t.category_id !== null : t.category_id !== categoryFilter)
+          return false;
+      }
+      if (min !== null && t.amount < min) return false;
+      if (max !== null && t.amount > max) return false;
       if (q) {
         const haystack = `${t.description} ${t.category?.name ?? ''}`.toLowerCase();
         if (!haystack.includes(q)) return false;
       }
       return true;
     });
-  }, [transactions, typeFilter, search]);
+  }, [transactions, typeFilter, categoryFilter, minAmount, maxAmount, search]);
+
+  const hasActiveFilters =
+    categoryFilter !== 'ALL' || minAmount !== '' || maxAmount !== '' || typeFilter !== 'ALL';
+
+  const clearFilters = () => {
+    setTypeFilter('ALL');
+    setCategoryFilter('ALL');
+    setMinAmount('');
+    setMaxAmount('');
+    setSearch('');
+  };
+
+  const categoryOptions = useMemo(() => {
+    if (typeFilter === 'INCOME') return categories.filter((c) => c.type === 'INCOME');
+    if (typeFilter === 'EXPENSE') return categories.filter((c) => c.type === 'EXPENSE');
+    return categories;
+  }, [categories, typeFilter]);
 
   const openCreate = () => {
     setEditing(null);
@@ -126,16 +156,77 @@ export default function TransactionsPage() {
             </button>
           ))}
         </div>
-        <div className="relative sm:w-64">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            className="pl-9"
-            placeholder="Buscar…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+        <div className="flex gap-2">
+          <div className="relative flex-1 sm:w-64 sm:flex-none">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              className="pl-9"
+              placeholder="Buscar…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <Button
+            variant={showFilters || hasActiveFilters ? 'secondary' : 'outline'}
+            size="icon"
+            onClick={() => setShowFilters((v) => !v)}
+            aria-label="Filtros avanzados"
+          >
+            <SlidersHorizontal className="h-4 w-4" />
+          </Button>
         </div>
       </div>
+
+      {showFilters && (
+        <Card className="mb-4">
+          <CardContent className="grid gap-3 sm:grid-cols-4">
+            <div className="sm:col-span-2">
+              <label className="mb-1 block text-xs text-muted-foreground">Categoría</label>
+              <Select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+              >
+                <option value="ALL">Todas</option>
+                <option value="NONE">Sin categoría</option>
+                {categoryOptions.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-muted-foreground">Monto mín.</label>
+              <Input
+                type="number"
+                min="0"
+                inputMode="decimal"
+                placeholder="0"
+                value={minAmount}
+                onChange={(e) => setMinAmount(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-muted-foreground">Monto máx.</label>
+              <Input
+                type="number"
+                min="0"
+                inputMode="decimal"
+                placeholder="—"
+                value={maxAmount}
+                onChange={(e) => setMaxAmount(e.target.value)}
+              />
+            </div>
+            {hasActiveFilters && (
+              <div className="sm:col-span-4">
+                <Button variant="ghost" size="sm" onClick={clearFilters}>
+                  <X className="h-4 w-4" /> Limpiar filtros
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardContent>
