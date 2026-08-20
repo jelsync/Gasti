@@ -4,8 +4,10 @@ import {
   createLoan,
   deleteLoan,
   getLoans,
+  registerExtraPrincipal,
   registerPayment,
   updateLoan,
+  type ExtraPaymentResult,
   type PaymentResult,
 } from '@/services/loans.service';
 import { mapDbError } from '@/lib/errors';
@@ -69,5 +71,15 @@ export function useLoans() {
     [user, refresh],
   );
 
-  return { loans, loading, error, refresh, create, update, remove, pay };
+  const payExtra = useCallback(
+    async (loan: Loan, amount: number): Promise<ExtraPaymentResult> => {
+      if (!user) throw new Error('Sesión no válida');
+      const result = await registerExtraPrincipal(user.id, loan, amount);
+      await refresh();
+      return result;
+    },
+    [user, refresh],
+  );
+
+  return { loans, loading, error, refresh, create, update, remove, pay, payExtra };
 }

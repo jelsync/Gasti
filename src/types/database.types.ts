@@ -143,6 +143,7 @@ export interface Database {
           term_months: number;
           installment: number;
           current_balance: number;
+          extra_payment: number | null;
           start_date: string;
           end_date: string | null;
           created_at: string;
@@ -159,6 +160,7 @@ export interface Database {
           term_months: number;
           installment: number;
           current_balance: number;
+          extra_payment?: number | null;
           start_date?: string;
           end_date?: string | null;
         };
@@ -171,6 +173,7 @@ export interface Database {
           term_months?: number;
           installment?: number;
           current_balance?: number;
+          extra_payment?: number | null;
           start_date?: string;
           end_date?: string | null;
         };

@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { monthlyRate, nextPaymentBreakdown, percentPaid, projectLoan } from '@/utils/loan';
+import {
+  applyExtraPrincipal,
+  monthlyRate,
+  nextPaymentBreakdown,
+  percentPaid,
+  projectLoan,
+} from '@/utils/loan';
 
 describe('monthlyRate', () => {
   it('convierte tasa anual a mensual', () => {
@@ -32,6 +38,18 @@ describe('nextPaymentBreakdown', () => {
     const r = nextPaymentBreakdown(100, 0, 500);
     expect(r.principal).toBe(100);
     expect(r.newBalance).toBe(0);
+  });
+});
+
+describe('applyExtraPrincipal', () => {
+  it('reduce el saldo por el monto completo (100% capital)', () => {
+    expect(applyExtraPrincipal(100000, 5000)).toBe(95000);
+  });
+  it('no deja el saldo por debajo de cero', () => {
+    expect(applyExtraPrincipal(3000, 5000)).toBe(0);
+  });
+  it('ignora montos negativos', () => {
+    expect(applyExtraPrincipal(100000, -50)).toBe(100000);
   });
 });
 

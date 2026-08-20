@@ -120,6 +120,14 @@ export const loanSchema = z.object({
     .number({ invalid_type_error: 'Ingresa un saldo válido' })
     .min(0, 'El saldo no puede ser negativo')
     .max(999_999_999, 'El saldo es demasiado grande'),
+  extra_payment: z.preprocess(
+    (v) => (v === '' || v === null || v === undefined ? undefined : v),
+    z.coerce
+      .number({ invalid_type_error: 'Monto inválido' })
+      .positive('Debe ser mayor que cero')
+      .max(999_999_999, 'Monto demasiado grande')
+      .optional(),
+  ),
   start_date: dateStringSchema,
   end_date: optionalDateSchema,
   category_id: z.string().uuid('Selecciona una categoría').nullable(),

@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { createTransaction } from '@/services/transactions.service';
-import { nextPaymentBreakdown } from '@/utils/loan';
+import { applyExtraPrincipal, nextPaymentBreakdown } from '@/utils/loan';
 import { todayISO } from '@/utils/date';
 import type { Loan, LoanWithCategory } from '@/types/models';
 import type { LoanInput } from '@/lib/validations';
@@ -16,6 +16,7 @@ function normalize(input: LoanInput) {
     term_months: input.term_months,
     installment: input.installment,
     current_balance: input.current_balance,
+    extra_payment: input.extra_payment ?? null,
     start_date: input.start_date,
     end_date: input.end_date ? input.end_date : null,
     category_id: input.category_id,
@@ -99,4 +100,40 @@ export async function registerPayment(
   if (error) throw error;
 
   return { interest, principal, newBalance };
+}
+
+export interface ExtraPaymentResult {
+  amount: number;
+  newBalance: number;
+}
+
+/**
+ * Registra un abono a capital (pago extra / "cuota bomba"):
+ * 1) crea una transacción de gasto por el monto,
+ * 2) reduce el saldo del préstamo por el monto completo (100% a capital).
+ */
+export async function registerExtraPrincipal(
+  userId: string,
+  loan: Loan,
+  amount: number,
+  dateISO: string = todayISO(),
+): Promise<ExtraPaymentResult> {
+  const newBalance = applyExtraPrincipal(loan.current_balance, amount);
+
+  await createTransaction(userId, {
+    type: 'EXPENSE',
+    amount,
+    category_id: loan.category_id,
+    description: `Abono a capital: ${loan.name}`,
+    transaction_date: dateISO,
+  });
+
+  const { error } = await supabase
+    .from('loans')
+    .update({ current_balance: newBalance })
+    .eq('id', loan.id);
+
+  if (error) throw error;
+
+  return { amount, newBalance };
 }

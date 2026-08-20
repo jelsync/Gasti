@@ -38,6 +38,14 @@ export function nextPaymentBreakdown(
   };
 }
 
+/**
+ * Aplica un abono a capital (pago extra): reduce el saldo por el monto completo
+ * (va 100% a capital, sin interés). Nunca deja el saldo por debajo de cero.
+ */
+export function applyExtraPrincipal(balance: number, amount: number): number {
+  return round2(Math.max(0, balance - Math.max(0, amount)));
+}
+
 export interface LoanProjection {
   /** Cuotas restantes estimadas (Infinity si la cuota no cubre el interés). */
   monthsRemaining: number;

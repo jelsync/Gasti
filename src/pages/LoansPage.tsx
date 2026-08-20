@@ -3,6 +3,7 @@ import {
   AlertTriangle,
   Banknote,
   CheckCircle2,
+  CirclePlus,
   Landmark,
   Pencil,
   Plus,
@@ -17,6 +18,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { LoanForm } from '@/components/loans/LoanForm';
+import { ExtraPaymentModal } from '@/components/loans/ExtraPaymentModal';
 import { useLoans } from '@/hooks/useLoans';
 import { useCategories } from '@/hooks/useCategories';
 import { nextPaymentBreakdown, percentPaid, projectLoan } from '@/utils/loan';
@@ -27,13 +29,14 @@ import type { LoanWithCategory } from '@/types/models';
 import type { LoanInput } from '@/lib/validations';
 
 export default function LoansPage() {
-  const { loans, loading, create, update, remove, pay } = useLoans();
+  const { loans, loading, create, update, remove, pay, payExtra } = useLoans();
   const { categories } = useCategories();
 
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<LoanWithCategory | null>(null);
   const [deleting, setDeleting] = useState<LoanWithCategory | null>(null);
   const [paying, setPaying] = useState<LoanWithCategory | null>(null);
+  const [extraFor, setExtraFor] = useState<LoanWithCategory | null>(null);
 
   const expenseCategories = useMemo(
     () => categories.filter((c) => c.type === 'EXPENSE'),
@@ -78,6 +81,12 @@ export default function LoansPage() {
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'No se pudo registrar el pago');
     }
+  };
+
+  const handleExtra = async (amount: number) => {
+    if (!extraFor) return;
+    const result = await payExtra(extraFor, amount);
+    toast.success(`Abono registrado. Nuevo saldo: ${formatCurrency(result.newBalance)}`);
   };
 
   const payPreview = paying
@@ -237,9 +246,14 @@ export default function LoansPage() {
                         <CheckCircle2 className="h-4 w-4" /> Préstamo liquidado
                       </p>
                     ) : (
-                      <Button variant="outline" className="w-full" onClick={() => setPaying(loan)}>
-                        <Banknote className="h-4 w-4" /> Registrar pago
-                      </Button>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button variant="outline" onClick={() => setPaying(loan)}>
+                          <Banknote className="h-4 w-4" /> Pago
+                        </Button>
+                        <Button variant="outline" onClick={() => setExtraFor(loan)}>
+                          <CirclePlus className="h-4 w-4" /> Abono
+                        </Button>
+                      </div>
                     )}
                   </CardContent>
                 </Card>
@@ -282,6 +296,13 @@ export default function LoansPage() {
         confirmLabel="Registrar pago"
         onConfirm={handlePay}
         onClose={() => setPaying(null)}
+      />
+
+      <ExtraPaymentModal
+        open={!!extraFor}
+        loan={extraFor}
+        onClose={() => setExtraFor(null)}
+        onSubmit={handleExtra}
       />
     </>
   );

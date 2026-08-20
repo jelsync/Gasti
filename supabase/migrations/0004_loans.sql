@@ -15,6 +15,7 @@ create table if not exists public.loans (
   term_months      integer not null,
   installment      numeric(14, 2) not null,
   current_balance  numeric(14, 2) not null,
+  extra_payment    numeric(14, 2),
   start_date       date not null default current_date,
   end_date         date,
   created_at       timestamptz not null default now(),
@@ -24,8 +25,12 @@ create table if not exists public.loans (
   constraint loans_rate_valid check (interest_rate >= 0 and interest_rate <= 100),
   constraint loans_term_valid check (term_months between 1 and 1200),
   constraint loans_installment_positive check (installment > 0),
-  constraint loans_balance_nonnegative check (current_balance >= 0)
+  constraint loans_balance_nonnegative check (current_balance >= 0),
+  constraint loans_extra_positive check (extra_payment is null or extra_payment > 0)
 );
+
+-- Columna de abono a capital habitual (opcional). Idempotente por si la tabla ya existía.
+alter table public.loans add column if not exists extra_payment numeric(14, 2);
 
 create index if not exists loans_user_id_idx on public.loans (user_id);
 

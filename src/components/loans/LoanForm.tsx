@@ -41,6 +41,7 @@ export function LoanForm({ open, onClose, onSubmit, expenseCategories, initial }
       term_months: initial?.term_months,
       installment: initial?.installment,
       current_balance: initial?.current_balance,
+      extra_payment: initial?.extra_payment ?? undefined,
       start_date: initial?.start_date ?? todayISO(),
       end_date: initial?.end_date ?? '',
       category_id: initial?.category_id ?? null,
@@ -156,6 +157,15 @@ export function LoanForm({ open, onClose, onSubmit, expenseCategories, initial }
             />
           </Field>
         </div>
+
+        <Field
+          label="Abono a capital habitual (opcional)"
+          htmlFor="extra_payment"
+          error={errors.extra_payment?.message}
+          hint="Monto de tu «cuota bomba». Prellena el abono cuando lo registres."
+        >
+          {money('extra_payment', 'Ej. 5000')}
+        </Field>
 
         <Field
           label="Categoría de pago"
