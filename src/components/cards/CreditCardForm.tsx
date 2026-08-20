@@ -8,9 +8,8 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { creditCardSchema, type CreditCardInput } from '@/lib/validations';
 import { COLOR_OPTIONS } from '@/lib/icons';
-import { CURRENCY_SYMBOLS } from '@/utils/format';
 import { cn } from '@/lib/utils';
-import type { CreditCard, Currency } from '@/types/models';
+import type { CreditCard } from '@/types/models';
 
 interface CreditCardFormProps {
   open: boolean;
@@ -29,21 +28,20 @@ export function CreditCardForm({ open, onClose, onSubmit, initial }: CreditCardF
     formState: { errors, isSubmitting },
   } = useForm<CreditCardInput>({
     resolver: zodResolver(creditCardSchema),
-    defaultValues: { color: COLOR_OPTIONS[9], currency: 'HNL' },
+    defaultValues: { color: COLOR_OPTIONS[9], opening_balance: 0, opening_balance_usd: 0 },
   });
 
   const color = watch('color');
-  const currency = (watch('currency') ?? 'HNL') as Currency;
-  const symbol = CURRENCY_SYMBOLS[currency];
 
   useEffect(() => {
     if (!open) return;
     reset({
       name: initial?.name ?? '',
       bank: initial?.bank ?? '',
-      currency: initial?.currency ?? 'HNL',
       opening_balance: initial?.opening_balance ?? 0,
+      opening_balance_usd: initial?.opening_balance_usd ?? 0,
       credit_limit: initial?.credit_limit ?? undefined,
+      credit_limit_usd: initial?.credit_limit_usd ?? undefined,
       color: initial?.color ?? COLOR_OPTIONS[9],
     });
   }, [open, initial, reset]);
@@ -56,6 +54,24 @@ export function CreditCardForm({ open, onClose, onSubmit, initial }: CreditCardF
       toast.error(error instanceof Error ? error.message : 'No se pudo guardar');
     }
   };
+
+  const money = (id: keyof CreditCardInput, symbol: string, placeholder = '0.00') => (
+    <div className="relative">
+      <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+        {symbol}
+      </span>
+      <Input
+        id={id}
+        type="number"
+        step="0.01"
+        min="0"
+        inputMode="decimal"
+        placeholder={placeholder}
+        className="pl-7"
+        {...register(id)}
+      />
+    </div>
+  );
 
   return (
     <Modal open={open} onClose={onClose} title={initial ? 'Editar tarjeta' : 'Nueva tarjeta'}>
@@ -73,70 +89,41 @@ export function CreditCardForm({ open, onClose, onSubmit, initial }: CreditCardF
           <Input id="bank" placeholder="Ej. Atlántida" {...register('bank')} />
         </Field>
 
-        <Field label="Moneda">
-          <div className="grid grid-cols-2 gap-2">
-            {(['HNL', 'USD'] as const).map((cur) => (
-              <button
-                key={cur}
-                type="button"
-                onClick={() => setValue('currency', cur)}
-                className={cn(
-                  'rounded-[var(--radius)] border p-2.5 text-sm font-medium transition-colors',
-                  currency === cur
-                    ? 'border-primary bg-accent text-accent-foreground'
-                    : 'border-border text-muted-foreground hover:bg-muted',
-                )}
-              >
-                {cur === 'HNL' ? 'Lempiras (L)' : 'Dólares ($)'}
-              </button>
-            ))}
-          </div>
-        </Field>
+        <p className="text-xs text-muted-foreground">
+          Deja en 0 la moneda que no uses. Las tarjetas pueden manejar Lempiras y Dólares a la vez.
+        </p>
 
         <div className="grid grid-cols-2 gap-3">
           <Field
-            label="Deuda actual"
+            label="Deuda en Lempiras"
             htmlFor="opening_balance"
             error={errors.opening_balance?.message}
-            hint="Lo que debes hoy"
           >
-            <div className="relative">
-              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                {symbol}
-              </span>
-              <Input
-                id="opening_balance"
-                type="number"
-                step="0.01"
-                min="0"
-                inputMode="decimal"
-                placeholder="0.00"
-                className="pl-7"
-                aria-invalid={!!errors.opening_balance}
-                {...register('opening_balance')}
-              />
-            </div>
+            {money('opening_balance', 'L')}
           </Field>
           <Field
-            label="Límite (opcional)"
+            label="Deuda en Dólares"
+            htmlFor="opening_balance_usd"
+            error={errors.opening_balance_usd?.message}
+          >
+            {money('opening_balance_usd', '$')}
+          </Field>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <Field
+            label="Límite L (opcional)"
             htmlFor="credit_limit"
             error={errors.credit_limit?.message}
           >
-            <div className="relative">
-              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                {symbol}
-              </span>
-              <Input
-                id="credit_limit"
-                type="number"
-                step="0.01"
-                min="0"
-                inputMode="decimal"
-                placeholder="0.00"
-                className="pl-7"
-                {...register('credit_limit')}
-              />
-            </div>
+            {money('credit_limit', 'L')}
+          </Field>
+          <Field
+            label="Límite $ (opcional)"
+            htmlFor="credit_limit_usd"
+            error={errors.credit_limit_usd?.message}
+          >
+            {money('credit_limit_usd', '$')}
           </Field>
         </div>
 

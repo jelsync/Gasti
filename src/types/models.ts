@@ -15,9 +15,10 @@ export interface LoanWithCategory extends Loan {
   category: Pick<Category, 'id' | 'name' | 'icon' | 'color'> | null;
 }
 
-/** Tarjeta de crédito con su deuda calculada. */
+/** Tarjeta de crédito con sus deudas calculadas (Lempiras y Dólares). */
 export interface CreditCardWithBalance extends CreditCard {
-  balance: number;
+  balanceHnl: number;
+  balanceUsd: number;
 }
 
 /** Cuenta de ahorro con su saldo calculado. */

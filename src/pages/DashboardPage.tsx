@@ -1,6 +1,14 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CreditCard, PiggyBank, Receipt, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
+import {
+  CreditCard,
+  Landmark,
+  PiggyBank,
+  Receipt,
+  TrendingDown,
+  TrendingUp,
+  Wallet,
+} from 'lucide-react';
 import { PageHeader } from '@/components/PageHeader';
 import { MonthSelector } from '@/components/MonthSelector';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -14,6 +22,7 @@ import { useTransactions } from '@/hooks/useTransactions';
 import { useBudgets } from '@/hooks/useBudgets';
 import { useCreditCards } from '@/hooks/useCreditCards';
 import { useSavingsAccounts } from '@/hooks/useSavingsAccounts';
+import { useLoans } from '@/hooks/useLoans';
 import { groupByCategory, monthlySummary, totalBudgetUsage } from '@/utils/finance';
 import { formatCurrency, formatMoney, formatPercent } from '@/utils/format';
 import { getCurrentMonthYear, monthRange } from '@/utils/date';
@@ -28,13 +37,18 @@ export default function DashboardPage() {
   const { budgets } = useBudgets(month);
   const { cards } = useCreditCards();
   const { accounts } = useSavingsAccounts();
+  const { loans } = useLoans();
 
   const cardDebt = useMemo(() => {
     const acc = { HNL: 0, USD: 0 };
-    for (const c of cards) acc[c.currency] += c.balance;
+    for (const c of cards) {
+      acc.HNL += c.balanceHnl;
+      acc.USD += c.balanceUsd;
+    }
     return acc;
   }, [cards]);
   const totalSavings = useMemo(() => accounts.reduce((acc, a) => acc + a.balance, 0), [accounts]);
+  const totalLoans = useMemo(() => loans.reduce((acc, l) => acc + l.current_balance, 0), [loans]);
 
   const summary = useMemo(() => monthlySummary(transactions), [transactions]);
   const expenseByCategory = useMemo(() => groupByCategory(transactions, 'EXPENSE'), [transactions]);
@@ -70,8 +84,21 @@ export default function DashboardPage() {
             <StatCard label="Disponible" value={summary.balance} icon={Wallet} tone="neutral" />
           </div>
 
-          {(cards.length > 0 || accounts.length > 0) && (
-            <div className="grid gap-4 sm:grid-cols-2">
+          {(cards.length > 0 || accounts.length > 0 || loans.length > 0) && (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {loans.length > 0 && (
+                <Link to={ROUTES.loans}>
+                  <Card className="flex items-center justify-between p-5 transition-colors hover:bg-muted">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Deuda en préstamos</p>
+                      <p className="mt-1 text-xl font-bold tabular-nums text-expense">
+                        {formatMoney(totalLoans, 'HNL')}
+                      </p>
+                    </div>
+                    <Landmark className="h-6 w-6 text-muted-foreground" />
+                  </Card>
+                </Link>
+              )}
               {cards.length > 0 && (
                 <Link to={ROUTES.cards}>
                   <Card className="flex items-center justify-between p-5 transition-colors hover:bg-muted">

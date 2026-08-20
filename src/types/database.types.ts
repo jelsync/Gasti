@@ -216,7 +216,9 @@ export interface Database {
           bank: string;
           currency: Currency;
           opening_balance: number;
+          opening_balance_usd: number;
           credit_limit: number | null;
+          credit_limit_usd: number | null;
           color: string;
           created_at: string;
           updated_at: string;
@@ -228,15 +230,18 @@ export interface Database {
           bank?: string;
           currency?: Currency;
           opening_balance?: number;
+          opening_balance_usd?: number;
           credit_limit?: number | null;
+          credit_limit_usd?: number | null;
           color?: string;
         };
         Update: {
           name?: string;
           bank?: string;
-          currency?: Currency;
           opening_balance?: number;
+          opening_balance_usd?: number;
           credit_limit?: number | null;
+          credit_limit_usd?: number | null;
           color?: string;
         };
         Relationships: [];
@@ -248,6 +253,7 @@ export interface Database {
           card_id: string;
           amount: number;
           amount_hnl: number | null;
+          currency: Currency;
           payment_date: string;
           created_at: string;
         };
@@ -257,11 +263,13 @@ export interface Database {
           card_id: string;
           amount: number;
           amount_hnl?: number | null;
+          currency?: Currency;
           payment_date?: string;
         };
         Update: {
           amount?: number;
           amount_hnl?: number | null;
+          currency?: Currency;
           payment_date?: string;
         };
         Relationships: [
@@ -280,6 +288,7 @@ export interface Database {
           user_id: string;
           card_id: string;
           amount: number;
+          currency: Currency;
           description: string;
           charge_date: string;
           created_at: string;
@@ -289,11 +298,13 @@ export interface Database {
           user_id: string;
           card_id: string;
           amount: number;
+          currency?: Currency;
           description?: string;
           charge_date?: string;
         };
         Update: {
           amount?: number;
+          currency?: Currency;
           description?: string;
           charge_date?: string;
         };

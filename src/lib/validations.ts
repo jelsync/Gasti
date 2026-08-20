@@ -147,15 +147,18 @@ const optionalPositive = z.preprocess(
     .optional(),
 );
 
+const nonNegativeAmount = z.coerce
+  .number({ invalid_type_error: 'Ingresa un monto válido' })
+  .min(0, 'No puede ser negativo')
+  .max(999_999_999, 'Demasiado grande');
+
 export const creditCardSchema = z.object({
   name: z.string().trim().min(1, 'El nombre es obligatorio').max(40, 'Máximo 40 caracteres'),
   bank: z.string().trim().max(40, 'Máximo 40 caracteres').optional(),
-  currency: z.enum(['HNL', 'USD']),
-  opening_balance: z.coerce
-    .number({ invalid_type_error: 'Ingresa un saldo válido' })
-    .min(0, 'No puede ser negativo')
-    .max(999_999_999, 'Demasiado grande'),
-  credit_limit: optionalPositive,
+  opening_balance: nonNegativeAmount, // deuda en Lempiras
+  opening_balance_usd: nonNegativeAmount, // deuda en Dólares
+  credit_limit: optionalPositive, // límite en Lempiras
+  credit_limit_usd: optionalPositive, // límite en Dólares
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Color inválido'),
 });
 

@@ -1,39 +1,51 @@
-import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Modal } from '@/components/ui/Modal';
 import { Field } from '@/components/ui/Field';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
-import { transactionSchema, type TransactionInput } from '@/lib/validations';
-import { CURRENCY_SYMBOL } from '@/utils/format';
+import {
+  cardChargeSchema,
+  transactionSchema,
+  type CardChargeInput,
+  type TransactionInput,
+} from '@/lib/validations';
+import type { CardPaymentArgs } from '@/services/cards.service';
 import { todayISO } from '@/utils/date';
-import { cn } from '@/lib/utils';
 import type {
   Category,
-  CreditCard,
+  CreditCardWithBalance,
+  Currency,
   SavingsAccount,
   TransactionType,
   TransactionWithCategory,
 } from '@/types/models';
 
+type Kind = TransactionType | 'CARD_CHARGE_USD' | 'CARD_PAYMENT';
+
+export type TransactionSubmit =
+  | { kind: 'transaction'; input: TransactionInput }
+  | { kind: 'cardChargeUsd'; cardId: string; input: CardChargeInput }
+  | { kind: 'cardPayment'; cardId: string; cardName: string; args: CardPaymentArgs };
+
 interface TransactionFormProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (input: TransactionInput) => Promise<void>;
+  onSubmit: (submit: TransactionSubmit) => Promise<void>;
   categories: Category[];
-  creditCards: Pick<CreditCard, 'id' | 'name'>[];
+  creditCards: CreditCardWithBalance[];
   savingsAccounts: Pick<SavingsAccount, 'id' | 'name'>[];
   initial?: TransactionWithCategory | null;
   defaultType?: TransactionType;
 }
 
-const TYPE_OPTIONS: { value: TransactionType; label: string }[] = [
+const KIND_OPTIONS: { value: Kind; label: string }[] = [
   { value: 'EXPENSE', label: 'Gasto' },
   { value: 'INCOME', label: 'Ingreso' },
   { value: 'SAVING', label: 'Ahorro' },
+  { value: 'CARD_CHARGE_USD', label: 'Compra con tarjeta (dólares)' },
+  { value: 'CARD_PAYMENT', label: 'Pago de tarjeta' },
 ];
 
 export function TransactionForm({
@@ -46,204 +58,298 @@ export function TransactionForm({
   initial,
   defaultType = 'EXPENSE',
 }: TransactionFormProps) {
-  const {
-    register,
-    handleSubmit,
-    watch,
-    setValue,
-    reset,
-    formState: { errors, isSubmitting },
-  } = useForm<TransactionInput>({
-    resolver: zodResolver(transactionSchema),
-    defaultValues: {
-      type: defaultType,
-      category_id: null,
-      credit_card_id: null,
-      savings_account_id: null,
-      description: '',
-      transaction_date: todayISO(),
-    },
-  });
+  const [kind, setKind] = useState<Kind>(defaultType);
+  const [amount, setAmount] = useState('');
+  const [amountHnl, setAmountHnl] = useState('');
+  const [categoryId, setCategoryId] = useState('');
+  const [cardId, setCardId] = useState('');
+  const [savingsId, setSavingsId] = useState('');
+  const [payCurrency, setPayCurrency] = useState<Currency>('HNL');
+  const [description, setDescription] = useState('');
+  const [date, setDate] = useState(todayISO());
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const type = watch('type');
+  const isEditing = !!initial;
 
   useEffect(() => {
     if (!open) return;
-    reset({
-      type: initial?.type ?? defaultType,
-      amount: initial?.amount,
-      category_id: initial?.category_id ?? null,
-      credit_card_id: initial?.credit_card_id ?? null,
-      savings_account_id: initial?.savings_account_id ?? null,
-      description: initial?.description ?? '',
-      transaction_date: initial?.transaction_date ?? todayISO(),
-    });
-  }, [open, initial, defaultType, reset]);
+    setError(null);
+    setKind(initial?.type ?? defaultType);
+    setAmount(initial?.amount != null ? String(initial.amount) : '');
+    setAmountHnl('');
+    setCategoryId(initial?.category_id ?? '');
+    setCardId(initial?.credit_card_id ?? '');
+    setSavingsId(initial?.savings_account_id ?? '');
+    setPayCurrency('HNL');
+    setDescription(initial?.description ?? '');
+    setDate(initial?.transaction_date ?? todayISO());
+  }, [open, initial, defaultType]);
 
-  const categoryOptions = categories.filter((c) => c.type === type);
+  const kindOptions = isEditing
+    ? KIND_OPTIONS.filter((k) => ['EXPENSE', 'INCOME', 'SAVING'].includes(k.value))
+    : KIND_OPTIONS;
+  const categoryOptions = categories.filter((c) => c.type === kind);
+  const symbol =
+    kind === 'CARD_CHARGE_USD' || (kind === 'CARD_PAYMENT' && payCurrency === 'USD') ? '$' : 'L';
+  const needsCard = kind === 'CARD_CHARGE_USD' || kind === 'CARD_PAYMENT';
+  const noCards = needsCard && creditCards.length === 0;
 
-  const setType = (next: TransactionType) => {
-    setValue('type', next);
-    if (next !== 'EXPENSE') setValue('credit_card_id', null);
-    if (next !== 'SAVING') setValue('savings_account_id', null);
-    if (next === 'SAVING') setValue('category_id', null);
-    const currentCat = watch('category_id');
-    if (
-      next !== 'SAVING' &&
-      currentCat &&
-      !categories.some((c) => c.id === currentCat && c.type === next)
-    ) {
-      setValue('category_id', null);
-    }
+  const fail = (msg: string) => {
+    setError(msg);
+    return false;
   };
 
-  const submit = async (values: TransactionInput) => {
-    const clean: TransactionInput = {
-      ...values,
-      category_id: values.type === 'SAVING' ? null : values.category_id,
-      credit_card_id: values.type === 'EXPENSE' ? (values.credit_card_id ?? null) : null,
-      savings_account_id: values.type === 'SAVING' ? (values.savings_account_id ?? null) : null,
+  const buildSubmit = (): TransactionSubmit | null => {
+    setError(null);
+    const amt = Number(amount);
+
+    if (kind === 'CARD_CHARGE_USD') {
+      if (!cardId) return (fail('Selecciona una tarjeta'), null);
+      const parsed = cardChargeSchema.safeParse({ amount, description, charge_date: date });
+      if (!parsed.success)
+        return (fail(parsed.error.issues[0]?.message ?? 'Datos inválidos'), null);
+      return { kind: 'cardChargeUsd', cardId, input: parsed.data };
+    }
+
+    if (kind === 'CARD_PAYMENT') {
+      if (!cardId) return (fail('Selecciona una tarjeta'), null);
+      if (!(amt > 0)) return (fail('Ingresa un monto válido'), null);
+      if (payCurrency === 'USD' && !(Number(amountHnl) > 0)) {
+        return (fail('Ingresa el pago en lempiras'), null);
+      }
+      const card = creditCards.find((c) => c.id === cardId);
+      return {
+        kind: 'cardPayment',
+        cardId,
+        cardName: card?.name ?? 'tarjeta',
+        args: {
+          currency: payCurrency,
+          amount: amt,
+          amountHnl: payCurrency === 'USD' ? Number(amountHnl) : null,
+        },
+      };
+    }
+
+    // Gasto / Ingreso / Ahorro
+    const input = {
+      type: kind,
+      amount,
+      category_id: kind === 'SAVING' ? null : categoryId || null,
+      credit_card_id: kind === 'EXPENSE' ? cardId || null : null,
+      savings_account_id: kind === 'SAVING' ? savingsId || null : null,
+      description,
+      transaction_date: date,
     };
-    try {
-      await onSubmit(clean);
-      onClose();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'No se pudo guardar');
-    }
+    const parsed = transactionSchema.safeParse(input);
+    if (!parsed.success) return (fail(parsed.error.issues[0]?.message ?? 'Datos inválidos'), null);
+    return { kind: 'transaction', input: parsed.data };
   };
 
-  const activeClass =
-    type === 'EXPENSE'
-      ? 'border-expense bg-expense-soft text-expense'
-      : type === 'INCOME'
-        ? 'border-income bg-income-soft text-income'
-        : 'border-primary bg-accent text-accent-foreground';
+  const submit = async () => {
+    const payload = buildSubmit();
+    if (!payload) return;
+    try {
+      setLoading(true);
+      await onSubmit(payload);
+      onClose();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'No se pudo guardar');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <Modal
       open={open}
       onClose={onClose}
-      title={initial ? 'Editar transacción' : 'Nueva transacción'}
+      title={isEditing ? 'Editar transacción' : 'Nueva transacción'}
     >
-      <form onSubmit={handleSubmit(submit)} className="space-y-4" noValidate>
-        <div className="grid grid-cols-3 gap-2">
-          {TYPE_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              type="button"
-              onClick={() => setType(opt.value)}
-              className={cn(
-                'rounded-[var(--radius)] border p-2.5 text-sm font-medium transition-colors',
-                type === opt.value
-                  ? activeClass
-                  : 'border-border text-muted-foreground hover:bg-muted',
-              )}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
-
-        <Field label="Monto" htmlFor="amount" error={errors.amount?.message}>
-          <div className="relative">
-            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-              {CURRENCY_SYMBOL}
-            </span>
-            <Input
-              id="amount"
-              type="number"
-              step="0.01"
-              min="0"
-              inputMode="decimal"
-              placeholder="0.00"
-              className="pl-7"
-              aria-invalid={!!errors.amount}
-              {...register('amount')}
-            />
-          </div>
-        </Field>
-
-        {type !== 'SAVING' && (
-          <Field label="Categoría" htmlFor="category_id" error={errors.category_id?.message}>
-            <Select
-              id="category_id"
-              aria-invalid={!!errors.category_id}
-              {...register('category_id', { setValueAs: (v) => (v === '' ? null : v) })}
-            >
-              <option value="">Sin categoría</option>
-              {categoryOptions.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </Select>
-          </Field>
-        )}
-
-        {type === 'EXPENSE' && (
-          <Field label="Medio de pago" htmlFor="credit_card_id">
-            <Select
-              id="credit_card_id"
-              {...register('credit_card_id', { setValueAs: (v) => (v === '' ? null : v) })}
-            >
-              <option value="">Efectivo / débito</option>
-              {creditCards.map((card) => (
-                <option key={card.id} value={card.id}>
-                  Tarjeta: {card.name}
-                </option>
-              ))}
-            </Select>
-          </Field>
-        )}
-
-        {type === 'SAVING' && (
-          <Field
-            label="Cuenta de ahorro"
-            htmlFor="savings_account_id"
-            hint={
-              savingsAccounts.length === 0
-                ? 'Crea una cuenta de ahorro para asignar tus aportes.'
-                : undefined
-            }
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          void submit();
+        }}
+        className="space-y-4"
+        noValidate
+      >
+        <Field label="Tipo de movimiento" htmlFor="kind">
+          <Select
+            id="kind"
+            value={kind}
+            onChange={(e) => setKind(e.target.value as Kind)}
+            disabled={isEditing}
           >
-            <Select
-              id="savings_account_id"
-              {...register('savings_account_id', { setValueAs: (v) => (v === '' ? null : v) })}
-            >
-              <option value="">Sin asignar</option>
-              {savingsAccounts.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.name}
-                </option>
-              ))}
-            </Select>
-          </Field>
+            {kindOptions.map((k) => (
+              <option key={k.value} value={k.value}>
+                {k.label}
+              </option>
+            ))}
+          </Select>
+        </Field>
+
+        {noCards ? (
+          <p className="rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground">
+            Primero crea una tarjeta en la sección Tarjetas.
+          </p>
+        ) : (
+          <>
+            {needsCard && (
+              <Field label="Tarjeta" htmlFor="card">
+                <Select id="card" value={cardId} onChange={(e) => setCardId(e.target.value)}>
+                  <option value="">Selecciona…</option>
+                  {creditCards.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+            )}
+
+            {kind === 'CARD_PAYMENT' && (
+              <Field label="Moneda del pago" htmlFor="pay-currency">
+                <div className="grid grid-cols-2 gap-2">
+                  {(['HNL', 'USD'] as const).map((cur) => (
+                    <button
+                      key={cur}
+                      type="button"
+                      onClick={() => setPayCurrency(cur)}
+                      className={
+                        'rounded-[var(--radius)] border p-2.5 text-sm font-medium transition-colors ' +
+                        (payCurrency === cur
+                          ? 'border-primary bg-accent text-accent-foreground'
+                          : 'border-border text-muted-foreground hover:bg-muted')
+                      }
+                    >
+                      {cur === 'HNL' ? 'Lempiras (L)' : 'Dólares ($)'}
+                    </button>
+                  ))}
+                </div>
+              </Field>
+            )}
+
+            <Field label={kind === 'CARD_PAYMENT' ? 'Abono' : 'Monto'} htmlFor="amount">
+              <div className="relative">
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                  {symbol}
+                </span>
+                <Input
+                  id="amount"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  inputMode="decimal"
+                  placeholder="0.00"
+                  className="pl-7"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                />
+              </div>
+            </Field>
+
+            {kind === 'CARD_PAYMENT' && payCurrency === 'USD' && (
+              <Field
+                label="Pago en lempiras (L)"
+                htmlFor="amount-hnl"
+                hint="Lo que realmente pagaste en lempiras. Se registra como gasto."
+              >
+                <div className="relative">
+                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                    L
+                  </span>
+                  <Input
+                    id="amount-hnl"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    inputMode="decimal"
+                    placeholder="0.00"
+                    className="pl-7"
+                    value={amountHnl}
+                    onChange={(e) => setAmountHnl(e.target.value)}
+                  />
+                </div>
+              </Field>
+            )}
+
+            {(kind === 'EXPENSE' || kind === 'INCOME') && (
+              <Field label="Categoría" htmlFor="category">
+                <Select
+                  id="category"
+                  value={categoryId}
+                  onChange={(e) => setCategoryId(e.target.value)}
+                >
+                  <option value="">Sin categoría</option>
+                  {categoryOptions.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+            )}
+
+            {kind === 'EXPENSE' && (
+              <Field label="Medio de pago" htmlFor="pay-method">
+                <Select id="pay-method" value={cardId} onChange={(e) => setCardId(e.target.value)}>
+                  <option value="">Efectivo / débito</option>
+                  {creditCards.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      Tarjeta: {c.name}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+            )}
+
+            {kind === 'SAVING' && (
+              <Field
+                label="Cuenta de ahorro"
+                htmlFor="savings"
+                hint={
+                  savingsAccounts.length === 0 ? 'Crea una cuenta de ahorro primero.' : undefined
+                }
+              >
+                <Select
+                  id="savings"
+                  value={savingsId}
+                  onChange={(e) => setSavingsId(e.target.value)}
+                >
+                  <option value="">Sin asignar</option>
+                  {savingsAccounts.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.name}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+            )}
+
+            <Field label="Descripción" htmlFor="description">
+              <Input
+                id="description"
+                placeholder="Opcional"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
+            </Field>
+
+            <Field label="Fecha" htmlFor="date">
+              <Input id="date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            </Field>
+          </>
         )}
 
-        <Field label="Descripción" htmlFor="description" error={errors.description?.message}>
-          <Input
-            id="description"
-            placeholder="Opcional"
-            aria-invalid={!!errors.description}
-            {...register('description')}
-          />
-        </Field>
-
-        <Field label="Fecha" htmlFor="transaction_date" error={errors.transaction_date?.message}>
-          <Input
-            id="transaction_date"
-            type="date"
-            aria-invalid={!!errors.transaction_date}
-            {...register('transaction_date')}
-          />
-        </Field>
+        {error && <p className="text-sm text-danger">{error}</p>}
 
         <div className="flex justify-end gap-3 pt-2">
           <Button type="button" variant="outline" onClick={onClose}>
             Cancelar
           </Button>
-          <Button type="submit" loading={isSubmitting}>
-            {initial ? 'Guardar cambios' : 'Agregar'}
+          <Button type="submit" loading={loading} disabled={noCards}>
+            {isEditing ? 'Guardar cambios' : 'Agregar'}
           </Button>
         </div>
       </form>

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { Banknote, CreditCard as CardIcon, Pencil, Plus, ShoppingCart, Trash2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { CreditCard as CardIcon, Pencil, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/PageHeader';
 import { Card, CardContent } from '@/components/ui/Card';
@@ -9,24 +10,24 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { CreditCardForm } from '@/components/cards/CreditCardForm';
-import { CardPaymentModal, type CardPaymentArgs } from '@/components/cards/CardPaymentModal';
-import { CardChargeModal } from '@/components/cards/CardChargeModal';
 import { useCreditCards } from '@/hooks/useCreditCards';
 import { formatMoney, formatPercent } from '@/utils/format';
+import { ROUTES } from '@/constants/routes';
 import type { CreditCardWithBalance } from '@/types/models';
-import type { CardChargeInput, CreditCardInput } from '@/lib/validations';
+import type { CreditCardInput } from '@/lib/validations';
 
 export default function CardsPage() {
-  const { cards, loading, create, update, remove, payCard, addCharge } = useCreditCards();
+  const { cards, loading, create, update, remove } = useCreditCards();
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<CreditCardWithBalance | null>(null);
   const [deleting, setDeleting] = useState<CreditCardWithBalance | null>(null);
-  const [paying, setPaying] = useState<CreditCardWithBalance | null>(null);
-  const [charging, setCharging] = useState<CreditCardWithBalance | null>(null);
 
   const totals = useMemo(() => {
-    const acc = { HNL: 0, USD: 0 };
-    for (const c of cards) acc[c.currency] += c.balance;
+    const acc = { hnl: 0, usd: 0 };
+    for (const c of cards) {
+      acc.hnl += c.balanceHnl;
+      acc.usd += c.balanceUsd;
+    }
     return acc;
   }, [cards]);
 
@@ -50,23 +51,11 @@ export default function CardsPage() {
     }
   };
 
-  const handlePay = async (args: CardPaymentArgs) => {
-    if (!paying) return;
-    await payCard(paying, args);
-    toast.success('Pago registrado');
-  };
-
-  const handleCharge = async (input: CardChargeInput) => {
-    if (!charging) return;
-    await addCharge(charging.id, input);
-    toast.success('Compra registrada');
-  };
-
   return (
     <>
       <PageHeader
         title="Tarjetas de crédito"
-        description="Cuánto debes en cada tarjeta"
+        description="Cuánto debes en cada tarjeta (informativo)"
         actions={
           <Button
             onClick={() => {
@@ -100,22 +89,36 @@ export default function CardsPage() {
             <p className="text-sm text-muted-foreground">Total que debes en tarjetas</p>
             <div className="mt-1 flex flex-wrap items-baseline gap-x-6 gap-y-1">
               <p className="text-2xl font-bold tabular-nums text-expense">
-                {formatMoney(totals.HNL, 'HNL')}
+                {formatMoney(totals.hnl, 'HNL')}
               </p>
-              {totals.USD > 0 && (
+              {totals.usd > 0 && (
                 <p className="text-2xl font-bold tabular-nums text-expense">
-                  {formatMoney(totals.USD, 'USD')}
+                  {formatMoney(totals.usd, 'USD')}
                 </p>
               )}
             </div>
           </Card>
 
+          <p className="text-sm text-muted-foreground">
+            Los movimientos (compras, abonos y pagos) se registran desde{' '}
+            <Link to={ROUTES.transactions} className="font-medium text-primary hover:underline">
+              Transacciones
+            </Link>
+            .
+          </p>
+
           <div className="grid gap-4 sm:grid-cols-2">
             {cards.map((card) => {
-              const usage =
+              const usageHnl =
                 card.credit_limit && card.credit_limit > 0
-                  ? (card.balance / card.credit_limit) * 100
+                  ? (card.balanceHnl / card.credit_limit) * 100
                   : null;
+              const usageUsd =
+                card.credit_limit_usd && card.credit_limit_usd > 0
+                  ? (card.balanceUsd / card.credit_limit_usd) * 100
+                  : null;
+              const showUsd =
+                card.balanceUsd > 0 || card.opening_balance_usd > 0 || usageUsd !== null;
               return (
                 <Card key={card.id}>
                   <CardContent className="space-y-4">
@@ -128,14 +131,7 @@ export default function CardsPage() {
                           <CardIcon className="h-5 w-5" />
                         </span>
                         <div className="min-w-0">
-                          <p className="flex items-center gap-2 truncate font-semibold">
-                            {card.name}
-                            {card.currency === 'USD' && (
-                              <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">
-                                USD
-                              </span>
-                            )}
-                          </p>
+                          <p className="truncate font-semibold">{card.name}</p>
                           {card.bank && (
                             <p className="truncate text-xs text-muted-foreground">{card.bank}</p>
                           )}
@@ -164,37 +160,40 @@ export default function CardsPage() {
                       </div>
                     </div>
 
-                    <div>
-                      <p className="text-xs text-muted-foreground">Deuda actual</p>
-                      <p className="text-2xl font-bold tabular-nums">
-                        {formatMoney(card.balance, card.currency)}
-                      </p>
-                    </div>
-
-                    {usage !== null && (
+                    <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <div className="mb-1 flex justify-between text-xs text-muted-foreground">
-                          <span>Uso del límite {formatPercent(usage)}</span>
-                          <span>de {formatMoney(card.credit_limit ?? 0, card.currency)}</span>
+                        <p className="text-xs text-muted-foreground">Deuda en Lempiras</p>
+                        <p className="text-xl font-bold tabular-nums">
+                          {formatMoney(card.balanceHnl, 'HNL')}
+                        </p>
+                        {usageHnl !== null && (
+                          <div className="mt-1.5">
+                            <ProgressBar value={usageHnl} color={card.color} />
+                            <p className="mt-1 text-[11px] text-muted-foreground">
+                              {formatPercent(usageHnl)} de{' '}
+                              {formatMoney(card.credit_limit ?? 0, 'HNL')}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                      {showUsd && (
+                        <div>
+                          <p className="text-xs text-muted-foreground">Deuda en Dólares</p>
+                          <p className="text-xl font-bold tabular-nums">
+                            {formatMoney(card.balanceUsd, 'USD')}
+                          </p>
+                          {usageUsd !== null && (
+                            <div className="mt-1.5">
+                              <ProgressBar value={usageUsd} color={card.color} />
+                              <p className="mt-1 text-[11px] text-muted-foreground">
+                                {formatPercent(usageUsd)} de{' '}
+                                {formatMoney(card.credit_limit_usd ?? 0, 'USD')}
+                              </p>
+                            </div>
+                          )}
                         </div>
-                        <ProgressBar value={usage} color={card.color} />
-                      </div>
-                    )}
-
-                    {card.currency === 'USD' ? (
-                      <div className="grid grid-cols-2 gap-2">
-                        <Button variant="outline" onClick={() => setPaying(card)}>
-                          <Banknote className="h-4 w-4" /> Pago
-                        </Button>
-                        <Button variant="outline" onClick={() => setCharging(card)}>
-                          <ShoppingCart className="h-4 w-4" /> Compra
-                        </Button>
-                      </div>
-                    ) : (
-                      <Button variant="outline" className="w-full" onClick={() => setPaying(card)}>
-                        <Banknote className="h-4 w-4" /> Registrar pago
-                      </Button>
-                    )}
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               );
@@ -210,24 +209,10 @@ export default function CardsPage() {
         initial={editing}
       />
 
-      <CardPaymentModal
-        open={!!paying}
-        card={paying}
-        onClose={() => setPaying(null)}
-        onSubmit={handlePay}
-      />
-
-      <CardChargeModal
-        open={!!charging}
-        card={charging}
-        onClose={() => setCharging(null)}
-        onSubmit={handleCharge}
-      />
-
       <ConfirmDialog
         open={!!deleting}
         title="Eliminar tarjeta"
-        description="Se eliminará la tarjeta y sus pagos. Las transacciones quedarán sin tarjeta asignada. Esta acción no se puede deshacer."
+        description="Se eliminará la tarjeta y sus movimientos. Las transacciones quedarán sin tarjeta asignada. Esta acción no se puede deshacer."
         confirmLabel="Eliminar"
         onConfirm={handleDelete}
         onClose={() => setDeleting(null)}

@@ -10,7 +10,7 @@ import { Card, CardContent } from '@/components/ui/Card';
 import { Spinner } from '@/components/ui/Spinner';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { TransactionForm } from '@/components/transactions/TransactionForm';
+import { TransactionForm, type TransactionSubmit } from '@/components/transactions/TransactionForm';
 import { TransactionList } from '@/components/transactions/TransactionList';
 import { useCategories } from '@/hooks/useCategories';
 import { useTransactions } from '@/hooks/useTransactions';
@@ -21,7 +21,6 @@ import { formatCurrency } from '@/utils/format';
 import { getCurrentMonthYear, monthRange } from '@/utils/date';
 import { cn } from '@/lib/utils';
 import type { TransactionType, TransactionWithCategory } from '@/types/models';
-import type { TransactionInput } from '@/lib/validations';
 
 type TypeFilter = 'ALL' | TransactionType;
 
@@ -38,7 +37,7 @@ export default function TransactionsPage() {
   const [deleting, setDeleting] = useState<TransactionWithCategory | null>(null);
 
   const { categories } = useCategories();
-  const { cards } = useCreditCards();
+  const { cards, addCharge, payCard } = useCreditCards();
   const { accounts } = useSavingsAccounts();
 
   const range = useMemo(() => monthRange(month.year, month.month), [month]);
@@ -94,12 +93,22 @@ export default function TransactionsPage() {
     setFormOpen(true);
   };
 
-  const handleSubmit = async (input: TransactionInput) => {
+  const handleSubmit = async (payload: TransactionSubmit) => {
+    if (payload.kind === 'cardChargeUsd') {
+      await addCharge(payload.cardId, payload.input);
+      toast.success('Compra registrada');
+      return;
+    }
+    if (payload.kind === 'cardPayment') {
+      await payCard(payload.cardId, payload.cardName, payload.args);
+      toast.success('Pago de tarjeta registrado');
+      return;
+    }
     if (editing) {
-      await update(editing.id, input);
+      await update(editing.id, payload.input);
       toast.success('Transacción actualizada');
     } else {
-      await create(input);
+      await create(payload.input);
       toast.success('Transacción agregada');
     }
   };
@@ -259,7 +268,7 @@ export default function TransactionsPage() {
         onClose={() => setFormOpen(false)}
         onSubmit={handleSubmit}
         categories={categories}
-        creditCards={cards.filter((c) => c.currency === 'HNL')}
+        creditCards={cards}
         savingsAccounts={accounts}
         initial={editing}
         defaultType={typeFilter === 'INCOME' || typeFilter === 'SAVING' ? typeFilter : 'EXPENSE'}
