@@ -274,6 +274,39 @@ export interface Database {
           },
         ];
       };
+      card_charges: {
+        Row: {
+          id: string;
+          user_id: string;
+          card_id: string;
+          amount: number;
+          description: string;
+          charge_date: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          card_id: string;
+          amount: number;
+          description?: string;
+          charge_date?: string;
+        };
+        Update: {
+          amount?: number;
+          description?: string;
+          charge_date?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'card_charges_card_id_fkey';
+            columns: ['card_id'];
+            isOneToOne: false;
+            referencedRelation: 'credit_cards';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       savings_accounts: {
         Row: {
           id: string;

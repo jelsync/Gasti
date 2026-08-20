@@ -13,7 +13,8 @@ supabase/
 │   ├── 0004_loans.sql         # Préstamos (tabla + RLS + trigger)
 │   ├── 0005_add_saving_type.sql # Agrega el tipo de movimiento SAVING (ejecutar solo)
 │   ├── 0006_cards_savings.sql # Tarjetas de crédito y cuentas de ahorro
-│   └── 0007_card_currency.sql # Moneda (HNL/USD) de las tarjetas
+│   ├── 0007_card_currency.sql # Moneda (HNL/USD) de las tarjetas
+│   └── 0008_card_charges.sql  # Compras/cargos de tarjetas (deuda en su moneda)
 ├── seed.sql                   # Seed opcional para usuarios preexistentes
 └── README.md
 ```
@@ -29,6 +30,7 @@ supabase/
    5. `migrations/0005_add_saving_type.sql`  (ejecútala sola: agrega un valor al enum)
    6. `migrations/0006_cards_savings.sql`
    7. `migrations/0007_card_currency.sql`
+   8. `migrations/0008_card_charges.sql`
 3. (Opcional) Si ya tenías usuarios creados antes de aplicar el paso 3,
    ejecuta `seed.sql` para sembrarles las categorías predeterminadas.
 

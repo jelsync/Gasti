@@ -159,6 +159,15 @@ export const creditCardSchema = z.object({
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Color inválido'),
 });
 
+export const cardChargeSchema = z.object({
+  amount: z.coerce
+    .number({ invalid_type_error: 'Ingresa un monto válido' })
+    .positive('El monto debe ser mayor que cero')
+    .max(999_999_999, 'Demasiado grande'),
+  description: z.string().trim().max(200, 'Máximo 200 caracteres').optional(),
+  charge_date: dateStringSchema,
+});
+
 export const cardPaymentSchema = z.object({
   amount: z.coerce
     .number({ invalid_type_error: 'Ingresa un monto válido' })
@@ -187,4 +196,5 @@ export type BudgetInput = z.infer<typeof budgetSchema>;
 export type LoanInput = z.infer<typeof loanSchema>;
 export type CreditCardInput = z.infer<typeof creditCardSchema>;
 export type CardPaymentInput = z.infer<typeof cardPaymentSchema>;
+export type CardChargeInput = z.infer<typeof cardChargeSchema>;
 export type SavingsAccountInput = z.infer<typeof savingsAccountSchema>;

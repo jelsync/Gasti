@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Banknote, CreditCard as CardIcon, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Banknote, CreditCard as CardIcon, Pencil, Plus, ShoppingCart, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/PageHeader';
 import { Card, CardContent } from '@/components/ui/Card';
@@ -10,17 +10,19 @@ import { ProgressBar } from '@/components/ui/ProgressBar';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { CreditCardForm } from '@/components/cards/CreditCardForm';
 import { CardPaymentModal, type CardPaymentArgs } from '@/components/cards/CardPaymentModal';
+import { CardChargeModal } from '@/components/cards/CardChargeModal';
 import { useCreditCards } from '@/hooks/useCreditCards';
 import { formatMoney, formatPercent } from '@/utils/format';
 import type { CreditCardWithBalance } from '@/types/models';
-import type { CreditCardInput } from '@/lib/validations';
+import type { CardChargeInput, CreditCardInput } from '@/lib/validations';
 
 export default function CardsPage() {
-  const { cards, loading, create, update, remove, payCard } = useCreditCards();
+  const { cards, loading, create, update, remove, payCard, addCharge } = useCreditCards();
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<CreditCardWithBalance | null>(null);
   const [deleting, setDeleting] = useState<CreditCardWithBalance | null>(null);
   const [paying, setPaying] = useState<CreditCardWithBalance | null>(null);
+  const [charging, setCharging] = useState<CreditCardWithBalance | null>(null);
 
   const totals = useMemo(() => {
     const acc = { HNL: 0, USD: 0 };
@@ -52,6 +54,12 @@ export default function CardsPage() {
     if (!paying) return;
     await payCard(paying, args);
     toast.success('Pago registrado');
+  };
+
+  const handleCharge = async (input: CardChargeInput) => {
+    if (!charging) return;
+    await addCharge(charging.id, input);
+    toast.success('Compra registrada');
   };
 
   return (
@@ -173,9 +181,20 @@ export default function CardsPage() {
                       </div>
                     )}
 
-                    <Button variant="outline" className="w-full" onClick={() => setPaying(card)}>
-                      <Banknote className="h-4 w-4" /> Registrar pago
-                    </Button>
+                    {card.currency === 'USD' ? (
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button variant="outline" onClick={() => setPaying(card)}>
+                          <Banknote className="h-4 w-4" /> Pago
+                        </Button>
+                        <Button variant="outline" onClick={() => setCharging(card)}>
+                          <ShoppingCart className="h-4 w-4" /> Compra
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button variant="outline" className="w-full" onClick={() => setPaying(card)}>
+                        <Banknote className="h-4 w-4" /> Registrar pago
+                      </Button>
+                    )}
                   </CardContent>
                 </Card>
               );
@@ -196,6 +215,13 @@ export default function CardsPage() {
         card={paying}
         onClose={() => setPaying(null)}
         onSubmit={handlePay}
+      />
+
+      <CardChargeModal
+        open={!!charging}
+        card={charging}
+        onClose={() => setCharging(null)}
+        onSubmit={handleCharge}
       />
 
       <ConfirmDialog

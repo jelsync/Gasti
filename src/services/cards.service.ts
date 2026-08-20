@@ -3,7 +3,7 @@ import { createTransaction } from '@/services/transactions.service';
 import { round2 } from '@/utils/finance';
 import { todayISO } from '@/utils/date';
 import type { CreditCard, CreditCardWithBalance } from '@/types/models';
-import type { CreditCardInput } from '@/lib/validations';
+import type { CardChargeInput, CreditCardInput } from '@/lib/validations';
 
 function sumByKey<T extends { amount: number }>(rows: T[], key: keyof T): Map<string, number> {
   const map = new Map<string, number>();
@@ -19,27 +19,33 @@ function sumByKey<T extends { amount: number }>(rows: T[], key: keyof T): Map<st
  * Tarjetas con su deuda calculada: apertura + compras (gastos con tarjeta) − pagos.
  */
 export async function getCreditCards(): Promise<CreditCardWithBalance[]> {
-  const [cardsRes, purchasesRes, paymentsRes] = await Promise.all([
+  const [cardsRes, purchasesRes, chargesRes, paymentsRes] = await Promise.all([
     supabase.from('credit_cards').select('*').order('created_at', { ascending: true }),
     supabase
       .from('transactions')
       .select('credit_card_id, amount')
       .eq('type', 'EXPENSE')
       .not('credit_card_id', 'is', null),
+    supabase.from('card_charges').select('card_id, amount'),
     supabase.from('card_payments').select('card_id, amount'),
   ]);
 
   if (cardsRes.error) throw cardsRes.error;
   if (purchasesRes.error) throw purchasesRes.error;
+  if (chargesRes.error) throw chargesRes.error;
   if (paymentsRes.error) throw paymentsRes.error;
 
   const purchases = sumByKey(purchasesRes.data ?? [], 'credit_card_id');
+  const charges = sumByKey(chargesRes.data ?? [], 'card_id');
   const payments = sumByKey(paymentsRes.data ?? [], 'card_id');
 
   return (cardsRes.data ?? []).map((card) => ({
     ...card,
     balance: round2(
-      card.opening_balance + (purchases.get(card.id) ?? 0) - (payments.get(card.id) ?? 0),
+      card.opening_balance +
+        (purchases.get(card.id) ?? 0) +
+        (charges.get(card.id) ?? 0) -
+        (payments.get(card.id) ?? 0),
     ),
   }));
 }
@@ -131,4 +137,23 @@ export async function registerCardPayment(
       transaction_date: dateISO,
     });
   }
+}
+
+/**
+ * Registra una compra/cargo en la tarjeta (aumenta la deuda en su moneda).
+ * No genera gasto en lempiras (en tarjetas USD el gasto se reconoce al pagar).
+ */
+export async function registerCardCharge(
+  userId: string,
+  cardId: string,
+  input: CardChargeInput,
+): Promise<void> {
+  const { error } = await supabase.from('card_charges').insert({
+    user_id: userId,
+    card_id: cardId,
+    amount: input.amount,
+    description: input.description ?? '',
+    charge_date: input.charge_date,
+  });
+  if (error) throw error;
 }

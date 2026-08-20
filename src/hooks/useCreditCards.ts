@@ -4,12 +4,13 @@ import {
   createCreditCard,
   deleteCreditCard,
   getCreditCards,
+  registerCardCharge,
   registerCardPayment,
   updateCreditCard,
 } from '@/services/cards.service';
 import { mapDbError } from '@/lib/errors';
 import type { CreditCard, CreditCardWithBalance } from '@/types/models';
-import type { CreditCardInput } from '@/lib/validations';
+import type { CardChargeInput, CreditCardInput } from '@/lib/validations';
 
 interface PayCardArgs {
   amount: number;
@@ -73,5 +74,14 @@ export function useCreditCards() {
     [user, refresh],
   );
 
-  return { cards, loading, error, refresh, create, update, remove, payCard };
+  const addCharge = useCallback(
+    async (cardId: string, input: CardChargeInput) => {
+      if (!user) throw new Error('Sesión no válida');
+      await registerCardCharge(user.id, cardId, input);
+      await refresh();
+    },
+    [user, refresh],
+  );
+
+  return { cards, loading, error, refresh, create, update, remove, payCard, addCharge };
 }
