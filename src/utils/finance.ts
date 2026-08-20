@@ -21,11 +21,12 @@ export function sumByType(transactions: readonly AmountTyped[], type: Transactio
   return round2(total);
 }
 
-/** Resumen del mes: ingresos, gastos y balance. */
+/** Resumen del mes: ingresos, gastos, ahorro y disponible (ingresos − gastos − ahorro). */
 export function monthlySummary(transactions: readonly AmountTyped[]): MonthlySummary {
   const income = sumByType(transactions, 'INCOME');
   const expense = sumByType(transactions, 'EXPENSE');
-  return { income, expense, balance: round2(income - expense) };
+  const saving = sumByType(transactions, 'SAVING');
+  return { income, expense, saving, balance: round2(income - expense - saving) };
 }
 
 /**

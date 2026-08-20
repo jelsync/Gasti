@@ -14,6 +14,8 @@ import { TransactionForm } from '@/components/transactions/TransactionForm';
 import { TransactionList } from '@/components/transactions/TransactionList';
 import { useCategories } from '@/hooks/useCategories';
 import { useTransactions } from '@/hooks/useTransactions';
+import { useCreditCards } from '@/hooks/useCreditCards';
+import { useSavingsAccounts } from '@/hooks/useSavingsAccounts';
 import { monthlySummary } from '@/utils/finance';
 import { formatCurrency } from '@/utils/format';
 import { getCurrentMonthYear, monthRange } from '@/utils/date';
@@ -36,6 +38,8 @@ export default function TransactionsPage() {
   const [deleting, setDeleting] = useState<TransactionWithCategory | null>(null);
 
   const { categories } = useCategories();
+  const { cards } = useCreditCards();
+  const { accounts } = useSavingsAccounts();
 
   const range = useMemo(() => monthRange(month.year, month.month), [month]);
   const filters = useMemo(() => ({ dateStart: range.start, dateEnd: range.end }), [range]);
@@ -114,6 +118,7 @@ export default function TransactionsPage() {
     { value: 'ALL', label: 'Todas' },
     { value: 'EXPENSE', label: 'Gastos' },
     { value: 'INCOME', label: 'Ingresos' },
+    { value: 'SAVING', label: 'Ahorro' },
   ];
 
   return (
@@ -131,10 +136,11 @@ export default function TransactionsPage() {
       <div className="mb-6 flex flex-col gap-4">
         <MonthSelector value={month} onChange={setMonth} />
 
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <SummaryPill label="Ingresos" value={summary.income} tone="income" />
           <SummaryPill label="Gastos" value={summary.expense} tone="expense" />
-          <SummaryPill label="Balance" value={summary.balance} tone="neutral" />
+          <SummaryPill label="Ahorro" value={summary.saving} tone="saving" />
+          <SummaryPill label="Disponible" value={summary.balance} tone="neutral" />
         </div>
       </div>
 
@@ -253,8 +259,10 @@ export default function TransactionsPage() {
         onClose={() => setFormOpen(false)}
         onSubmit={handleSubmit}
         categories={categories}
+        creditCards={cards}
+        savingsAccounts={accounts}
         initial={editing}
-        defaultType={typeFilter === 'INCOME' ? 'INCOME' : 'EXPENSE'}
+        defaultType={typeFilter === 'INCOME' || typeFilter === 'SAVING' ? typeFilter : 'EXPENSE'}
       />
 
       <ConfirmDialog
@@ -276,10 +284,16 @@ function SummaryPill({
 }: {
   label: string;
   value: number;
-  tone: 'income' | 'expense' | 'neutral';
+  tone: 'income' | 'expense' | 'saving' | 'neutral';
 }) {
   const toneClass =
-    tone === 'income' ? 'text-income' : tone === 'expense' ? 'text-expense' : 'text-foreground';
+    tone === 'income'
+      ? 'text-income'
+      : tone === 'expense'
+        ? 'text-expense'
+        : tone === 'saving'
+          ? 'text-primary'
+          : 'text-foreground';
   return (
     <div className="rounded-[var(--radius)] border border-border bg-card px-4 py-3">
       <p className="text-xs text-muted-foreground">{label}</p>

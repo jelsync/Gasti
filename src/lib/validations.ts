@@ -53,12 +53,14 @@ const dateStringSchema = z
   .refine((value) => !Number.isNaN(new Date(value).getTime()), 'Fecha inválida');
 
 export const transactionSchema = z.object({
-  type: z.enum(['INCOME', 'EXPENSE']),
+  type: z.enum(['INCOME', 'EXPENSE', 'SAVING']),
   amount: z.coerce
     .number({ invalid_type_error: 'Ingresa un monto válido' })
     .positive('El monto debe ser mayor que cero')
     .max(9_999_999_999, 'El monto es demasiado grande'),
   category_id: z.string().uuid('Selecciona una categoría').nullable(),
+  credit_card_id: z.string().uuid().nullable().optional(),
+  savings_account_id: z.string().uuid().nullable().optional(),
   description: z.string().trim().max(200, 'Máximo 200 caracteres').optional(),
   transaction_date: dateStringSchema,
 });
@@ -133,6 +135,47 @@ export const loanSchema = z.object({
   category_id: z.string().uuid('Selecciona una categoría').nullable(),
 });
 
+// ---------------------------------------------------------------------------
+// Tarjetas de crédito y ahorro
+// ---------------------------------------------------------------------------
+const optionalPositive = z.preprocess(
+  (v) => (v === '' || v === null || v === undefined ? undefined : v),
+  z.coerce
+    .number({ invalid_type_error: 'Monto inválido' })
+    .positive('Debe ser mayor que cero')
+    .max(999_999_999, 'Monto demasiado grande')
+    .optional(),
+);
+
+export const creditCardSchema = z.object({
+  name: z.string().trim().min(1, 'El nombre es obligatorio').max(40, 'Máximo 40 caracteres'),
+  bank: z.string().trim().max(40, 'Máximo 40 caracteres').optional(),
+  opening_balance: z.coerce
+    .number({ invalid_type_error: 'Ingresa un saldo válido' })
+    .min(0, 'No puede ser negativo')
+    .max(999_999_999, 'Demasiado grande'),
+  credit_limit: optionalPositive,
+  color: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Color inválido'),
+});
+
+export const cardPaymentSchema = z.object({
+  amount: z.coerce
+    .number({ invalid_type_error: 'Ingresa un monto válido' })
+    .positive('El monto debe ser mayor que cero')
+    .max(999_999_999, 'Demasiado grande'),
+  payment_date: dateStringSchema,
+});
+
+export const savingsAccountSchema = z.object({
+  name: z.string().trim().min(1, 'El nombre es obligatorio').max(40, 'Máximo 40 caracteres'),
+  institution: z.string().trim().max(40, 'Máximo 40 caracteres').optional(),
+  opening_balance: z.coerce
+    .number({ invalid_type_error: 'Ingresa un saldo válido' })
+    .min(0, 'No puede ser negativo')
+    .max(999_999_999, 'Demasiado grande'),
+  color: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Color inválido'),
+});
+
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
@@ -141,3 +184,6 @@ export type TransactionInput = z.infer<typeof transactionSchema>;
 export type CategoryInput = z.infer<typeof categorySchema>;
 export type BudgetInput = z.infer<typeof budgetSchema>;
 export type LoanInput = z.infer<typeof loanSchema>;
+export type CreditCardInput = z.infer<typeof creditCardSchema>;
+export type CardPaymentInput = z.infer<typeof cardPaymentSchema>;
+export type SavingsAccountInput = z.infer<typeof savingsAccountSchema>;

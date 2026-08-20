@@ -1,12 +1,14 @@
 import {
   BarChart3,
   CalendarClock,
+  CreditCard,
   Landmark,
   LayoutDashboard,
   PiggyBank,
   Receipt,
   Settings,
   Tags,
+  Wallet,
   type LucideIcon,
 } from 'lucide-react';
 import { ROUTES } from '@/constants/routes';
@@ -23,6 +25,8 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Transacciones', to: ROUTES.transactions, icon: Receipt },
   { label: 'Presupuestos', to: ROUTES.budgets, icon: PiggyBank },
   { label: 'Préstamos', to: ROUTES.loans, icon: Landmark },
+  { label: 'Tarjetas', to: ROUTES.cards, icon: CreditCard },
+  { label: 'Ahorro', to: ROUTES.savings, icon: Wallet },
   { label: 'Historial', to: ROUTES.history, icon: CalendarClock },
   { label: 'Reportes', to: ROUTES.reports, icon: BarChart3 },
   { label: 'Categorías', to: ROUTES.categories, icon: Tags },

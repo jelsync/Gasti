@@ -9,14 +9,16 @@ import { Button } from '@/components/ui/Button';
 import { categorySchema, type CategoryInput } from '@/lib/validations';
 import { COLOR_OPTIONS, ICON_OPTIONS, getIconComponent } from '@/lib/icons';
 import { cn } from '@/lib/utils';
-import type { Category, TransactionType } from '@/types/models';
+import type { Category } from '@/types/models';
+
+type CategoryType = 'INCOME' | 'EXPENSE';
 
 interface CategoryFormProps {
   open: boolean;
   onClose: () => void;
   onSubmit: (input: CategoryInput) => Promise<void>;
   initial?: Category | null;
-  defaultType?: TransactionType;
+  defaultType?: CategoryType;
 }
 
 export function CategoryForm({
@@ -46,7 +48,7 @@ export function CategoryForm({
     if (!open) return;
     reset({
       name: initial?.name ?? '',
-      type: initial?.type ?? defaultType,
+      type: (initial?.type as CategoryType) ?? defaultType,
       icon: initial?.icon ?? 'circle',
       color: initial?.color ?? COLOR_OPTIONS[0],
     });

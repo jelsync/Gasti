@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { PiggyBank, Receipt, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
+import { CreditCard, PiggyBank, Receipt, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
 import { PageHeader } from '@/components/PageHeader';
 import { MonthSelector } from '@/components/MonthSelector';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -12,6 +12,8 @@ import { CategoryBreakdown } from '@/components/dashboard/CategoryBreakdown';
 import { TransactionList } from '@/components/transactions/TransactionList';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useBudgets } from '@/hooks/useBudgets';
+import { useCreditCards } from '@/hooks/useCreditCards';
+import { useSavingsAccounts } from '@/hooks/useSavingsAccounts';
 import { groupByCategory, monthlySummary, totalBudgetUsage } from '@/utils/finance';
 import { formatCurrency, formatPercent } from '@/utils/format';
 import { getCurrentMonthYear, monthRange } from '@/utils/date';
@@ -24,6 +26,11 @@ export default function DashboardPage() {
 
   const { transactions, loading } = useTransactions(filters);
   const { budgets } = useBudgets(month);
+  const { cards } = useCreditCards();
+  const { accounts } = useSavingsAccounts();
+
+  const totalCardDebt = useMemo(() => cards.reduce((acc, c) => acc + c.balance, 0), [cards]);
+  const totalSavings = useMemo(() => accounts.reduce((acc, a) => acc + a.balance, 0), [accounts]);
 
   const summary = useMemo(() => monthlySummary(transactions), [transactions]);
   const expenseByCategory = useMemo(() => groupByCategory(transactions, 'EXPENSE'), [transactions]);
@@ -52,11 +59,43 @@ export default function DashboardPage() {
         </div>
       ) : (
         <div className="space-y-6">
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             <StatCard label="Ingresos" value={summary.income} icon={TrendingUp} tone="income" />
             <StatCard label="Gastos" value={summary.expense} icon={TrendingDown} tone="expense" />
-            <StatCard label="Disponible" value={summary.balance} icon={Wallet} tone="primary" />
+            <StatCard label="Ahorro" value={summary.saving} icon={PiggyBank} tone="primary" />
+            <StatCard label="Disponible" value={summary.balance} icon={Wallet} tone="neutral" />
           </div>
+
+          {(cards.length > 0 || accounts.length > 0) && (
+            <div className="grid gap-4 sm:grid-cols-2">
+              {cards.length > 0 && (
+                <Link to={ROUTES.cards}>
+                  <Card className="flex items-center justify-between p-5 transition-colors hover:bg-muted">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Deuda en tarjetas</p>
+                      <p className="mt-1 text-xl font-bold tabular-nums text-expense">
+                        {formatCurrency(totalCardDebt)}
+                      </p>
+                    </div>
+                    <CreditCard className="h-6 w-6 text-muted-foreground" />
+                  </Card>
+                </Link>
+              )}
+              {accounts.length > 0 && (
+                <Link to={ROUTES.savings}>
+                  <Card className="flex items-center justify-between p-5 transition-colors hover:bg-muted">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Total ahorrado</p>
+                      <p className="mt-1 text-xl font-bold tabular-nums text-primary">
+                        {formatCurrency(totalSavings)}
+                      </p>
+                    </div>
+                    <Wallet className="h-6 w-6 text-muted-foreground" />
+                  </Card>
+                </Link>
+              )}
+            </div>
+          )}
 
           {budgetUsage && (
             <Card>

@@ -9,6 +9,8 @@ export const ROUTES = {
   transactions: '/transacciones',
   budgets: '/presupuestos',
   loans: '/prestamos',
+  cards: '/tarjetas',
+  savings: '/ahorro',
   history: '/historial',
   reports: '/reportes',
   categories: '/categorias',

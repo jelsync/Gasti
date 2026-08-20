@@ -16,6 +16,8 @@ function tx(
     id: crypto.randomUUID(),
     user_id: 'u1',
     category_id: overrides.category?.id ?? null,
+    credit_card_id: null,
+    savings_account_id: null,
     description: '',
     transaction_date: '2026-08-10',
     created_at: '',
@@ -50,9 +52,26 @@ describe('sumByType', () => {
 });
 
 describe('monthlySummary', () => {
-  it('calcula ingresos, gastos y balance', () => {
+  it('calcula ingresos, gastos, ahorro y disponible', () => {
     const list = [tx({ type: 'INCOME', amount: 25000 }), tx({ type: 'EXPENSE', amount: 14850 })];
-    expect(monthlySummary(list)).toEqual({ income: 25000, expense: 14850, balance: 10150 });
+    expect(monthlySummary(list)).toEqual({
+      income: 25000,
+      expense: 14850,
+      saving: 0,
+      balance: 10150,
+    });
+  });
+
+  it('el ahorro baja el disponible pero no cuenta como gasto', () => {
+    const list = [
+      tx({ type: 'INCOME', amount: 25000 }),
+      tx({ type: 'EXPENSE', amount: 10000 }),
+      tx({ type: 'SAVING', amount: 3000 }),
+    ];
+    const summary = monthlySummary(list);
+    expect(summary.expense).toBe(10000);
+    expect(summary.saving).toBe(3000);
+    expect(summary.balance).toBe(12000);
   });
 
   it('balance puede ser negativo', () => {

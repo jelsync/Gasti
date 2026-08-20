@@ -10,7 +10,9 @@ supabase/
 │   ├── 0001_init.sql          # Tipos, tablas, índices y constraints
 │   ├── 0002_rls.sql           # Row Level Security + policies
 │   ├── 0003_triggers_seed.sql # updated_at, alta de usuario y seed de categorías
-│   └── 0004_loans.sql         # Préstamos (tabla + RLS + trigger)
+│   ├── 0004_loans.sql         # Préstamos (tabla + RLS + trigger)
+│   ├── 0005_add_saving_type.sql # Agrega el tipo de movimiento SAVING (ejecutar solo)
+│   └── 0006_cards_savings.sql # Tarjetas de crédito y cuentas de ahorro
 ├── seed.sql                   # Seed opcional para usuarios preexistentes
 └── README.md
 ```
@@ -23,6 +25,8 @@ supabase/
    2. `migrations/0002_rls.sql`
    3. `migrations/0003_triggers_seed.sql`
    4. `migrations/0004_loans.sql`
+   5. `migrations/0005_add_saving_type.sql`  (ejecútala sola: agrega un valor al enum)
+   6. `migrations/0006_cards_savings.sql`
 3. (Opcional) Si ya tenías usuarios creados antes de aplicar el paso 3,
    ejecuta `seed.sql` para sembrarles las categorías predeterminadas.
 
@@ -44,6 +48,9 @@ supabase db push
 | `transactions` | Ingresos y gastos.                                      |
 | `budgets`      | Presupuesto mensual por categoría.                      |
 | `loans`        | Préstamos (saldo/pasivo). Las cuotas se registran como transacciones. |
+| `credit_cards` | Tarjetas de crédito. Deuda = apertura + compras − pagos.       |
+| `card_payments`| Pagos a tarjetas (reducen la deuda, no son gastos).            |
+| `savings_accounts` | Cuentas de ahorro. Saldo = apertura + aportes (SAVING).    |
 
 ### Decisiones de diseño
 

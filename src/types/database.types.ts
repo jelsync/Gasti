@@ -2,7 +2,7 @@
 // Reflejan el esquema definido en supabase/migrations/.
 // Si cambias el esquema, actualiza estos tipos (o regenéralos con la CLI de Supabase).
 
-export type TransactionType = 'INCOME' | 'EXPENSE';
+export type TransactionType = 'INCOME' | 'EXPENSE' | 'SAVING';
 
 export interface Database {
   public: {
@@ -63,6 +63,8 @@ export interface Database {
           id: string;
           user_id: string;
           category_id: string | null;
+          credit_card_id: string | null;
+          savings_account_id: string | null;
           type: TransactionType;
           amount: number;
           description: string;
@@ -74,6 +76,8 @@ export interface Database {
           id?: string;
           user_id: string;
           category_id?: string | null;
+          credit_card_id?: string | null;
+          savings_account_id?: string | null;
           type: TransactionType;
           amount: number;
           description?: string;
@@ -81,6 +85,8 @@ export interface Database {
         };
         Update: {
           category_id?: string | null;
+          credit_card_id?: string | null;
+          savings_account_id?: string | null;
           type?: TransactionType;
           amount?: number;
           description?: string;
@@ -92,6 +98,20 @@ export interface Database {
             columns: ['category_id'];
             isOneToOne: false;
             referencedRelation: 'categories';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'transactions_credit_card_id_fkey';
+            columns: ['credit_card_id'];
+            isOneToOne: false;
+            referencedRelation: 'credit_cards';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'transactions_savings_account_id_fkey';
+            columns: ['savings_account_id'];
+            isOneToOne: false;
+            referencedRelation: 'savings_accounts';
             referencedColumns: ['id'];
           },
         ];
@@ -186,6 +206,93 @@ export interface Database {
             referencedColumns: ['id'];
           },
         ];
+      };
+      credit_cards: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          bank: string;
+          opening_balance: number;
+          credit_limit: number | null;
+          color: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          name: string;
+          bank?: string;
+          opening_balance?: number;
+          credit_limit?: number | null;
+          color?: string;
+        };
+        Update: {
+          name?: string;
+          bank?: string;
+          opening_balance?: number;
+          credit_limit?: number | null;
+          color?: string;
+        };
+        Relationships: [];
+      };
+      card_payments: {
+        Row: {
+          id: string;
+          user_id: string;
+          card_id: string;
+          amount: number;
+          payment_date: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          card_id: string;
+          amount: number;
+          payment_date?: string;
+        };
+        Update: {
+          amount?: number;
+          payment_date?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'card_payments_card_id_fkey';
+            columns: ['card_id'];
+            isOneToOne: false;
+            referencedRelation: 'credit_cards';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      savings_accounts: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          institution: string;
+          opening_balance: number;
+          color: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          name: string;
+          institution?: string;
+          opening_balance?: number;
+          color?: string;
+        };
+        Update: {
+          name?: string;
+          institution?: string;
+          opening_balance?: number;
+          color?: string;
+        };
+        Relationships: [];
       };
     };
     Views: Record<never, never>;

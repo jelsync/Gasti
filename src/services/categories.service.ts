@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import type { Category, TransactionType } from '@/types/models';
+import type { Category } from '@/types/models';
 import type { CategoryInput } from '@/lib/validations';
 
 /** Lista las categorías del usuario (RLS restringe a las propias). */
@@ -43,7 +43,10 @@ export async function deleteCategory(id: string): Promise<void> {
 }
 
 /** Agrupa categorías por tipo, útil para selects. */
-export function splitCategoriesByType(categories: Category[]): Record<TransactionType, Category[]> {
+export function splitCategoriesByType(categories: Category[]): {
+  INCOME: Category[];
+  EXPENSE: Category[];
+} {
   return {
     INCOME: categories.filter((c) => c.type === 'INCOME'),
     EXPENSE: categories.filter((c) => c.type === 'EXPENSE'),

@@ -11,19 +11,21 @@ import { CategoryIcon } from '@/components/CategoryIcon';
 import { CategoryForm } from '@/components/categories/CategoryForm';
 import { useCategories } from '@/hooks/useCategories';
 import { splitCategoriesByType } from '@/services/categories.service';
-import type { Category, TransactionType } from '@/types/models';
+import type { Category } from '@/types/models';
 import type { CategoryInput } from '@/lib/validations';
+
+type CategoryType = 'INCOME' | 'EXPENSE';
 
 export default function CategoriesPage() {
   const { categories, loading, create, update, remove } = useCategories();
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Category | null>(null);
-  const [formType, setFormType] = useState<TransactionType>('EXPENSE');
+  const [formType, setFormType] = useState<CategoryType>('EXPENSE');
   const [deleting, setDeleting] = useState<Category | null>(null);
 
   const grouped = useMemo(() => splitCategoriesByType(categories), [categories]);
 
-  const openCreate = (type: TransactionType) => {
+  const openCreate = (type: CategoryType) => {
     setEditing(null);
     setFormType(type);
     setFormOpen(true);
@@ -31,7 +33,7 @@ export default function CategoriesPage() {
 
   const openEdit = (category: Category) => {
     setEditing(category);
-    setFormType(category.type);
+    setFormType(category.type as CategoryType);
     setFormOpen(true);
   };
 
@@ -55,7 +57,7 @@ export default function CategoriesPage() {
     }
   };
 
-  const sections: { type: TransactionType; title: string }[] = [
+  const sections: { type: CategoryType; title: string }[] = [
     { type: 'EXPENSE', title: 'Gastos' },
     { type: 'INCOME', title: 'Ingresos' },
   ];

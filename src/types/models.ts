@@ -7,15 +7,29 @@ export type Category = Database['public']['Tables']['categories']['Row'];
 export type Transaction = Database['public']['Tables']['transactions']['Row'];
 export type Budget = Database['public']['Tables']['budgets']['Row'];
 export type Loan = Database['public']['Tables']['loans']['Row'];
+export type CreditCard = Database['public']['Tables']['credit_cards']['Row'];
+export type SavingsAccount = Database['public']['Tables']['savings_accounts']['Row'];
 
 /** Préstamo con su categoría de pago embebida. */
 export interface LoanWithCategory extends Loan {
   category: Pick<Category, 'id' | 'name' | 'icon' | 'color'> | null;
 }
 
-/** Transacción con su categoría embebida (resultado de un join). */
+/** Tarjeta de crédito con su deuda calculada. */
+export interface CreditCardWithBalance extends CreditCard {
+  balance: number;
+}
+
+/** Cuenta de ahorro con su saldo calculado. */
+export interface SavingsAccountWithBalance extends SavingsAccount {
+  balance: number;
+}
+
+/** Transacción con su categoría (y tarjeta/ahorro) embebidas (resultado de un join). */
 export interface TransactionWithCategory extends Transaction {
   category: Pick<Category, 'id' | 'name' | 'icon' | 'color' | 'type'> | null;
+  credit_card?: Pick<CreditCard, 'id' | 'name' | 'color'> | null;
+  savings_account?: Pick<SavingsAccount, 'id' | 'name' | 'color'> | null;
 }
 
 /** Presupuesto enriquecido con lo gastado y el cálculo de avance. */
@@ -35,9 +49,10 @@ export interface CategorySummary {
   total: number;
 }
 
-/** Resumen financiero de un mes. */
+/** Resumen financiero de un mes. Disponible = ingresos − gastos − ahorro. */
 export interface MonthlySummary {
   income: number;
   expense: number;
+  saving: number;
   balance: number;
 }

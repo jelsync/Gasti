@@ -15,6 +15,8 @@ import DashboardPage from '@/pages/DashboardPage';
 import TransactionsPage from '@/pages/TransactionsPage';
 import BudgetsPage from '@/pages/BudgetsPage';
 import LoansPage from '@/pages/LoansPage';
+import CardsPage from '@/pages/CardsPage';
+import SavingsPage from '@/pages/SavingsPage';
 import HistoryPage from '@/pages/HistoryPage';
 import CategoriesPage from '@/pages/CategoriesPage';
 import SettingsPage from '@/pages/SettingsPage';
@@ -43,6 +45,8 @@ export default function App() {
           <Route path={ROUTES.transactions} element={<TransactionsPage />} />
           <Route path={ROUTES.budgets} element={<BudgetsPage />} />
           <Route path={ROUTES.loans} element={<LoansPage />} />
+          <Route path={ROUTES.cards} element={<CardsPage />} />
+          <Route path={ROUTES.savings} element={<SavingsPage />} />
           <Route path={ROUTES.history} element={<HistoryPage />} />
           <Route
             path={ROUTES.reports}
