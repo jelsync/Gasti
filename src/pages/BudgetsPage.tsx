@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Pencil, PiggyBank, Plus, Trash2 } from 'lucide-react';
+import { Copy, Pencil, PiggyBank, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/PageHeader';
 import { MonthSelector } from '@/components/MonthSelector';
@@ -26,7 +26,7 @@ export default function BudgetsPage() {
   const range = useMemo(() => monthRange(month.year, month.month), [month]);
   const filters = useMemo(() => ({ dateStart: range.start, dateEnd: range.end }), [range]);
 
-  const { budgets, loading, save, remove } = useBudgets(month);
+  const { budgets, loading, save, remove, copyFromPrevious } = useBudgets(month);
   const { transactions } = useTransactions(filters);
   const { categories } = useCategories();
 
@@ -70,6 +70,20 @@ export default function BudgetsPage() {
     }
   };
 
+  const [copying, setCopying] = useState(false);
+  const handleCopyPrevious = async () => {
+    try {
+      setCopying(true);
+      const count = await copyFromPrevious();
+      if (count > 0) toast.success(`Se copiaron ${count} presupuestos del mes anterior`);
+      else toast.info('El mes anterior no tiene presupuestos para copiar');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'No se pudo copiar');
+    } finally {
+      setCopying(false);
+    }
+  };
+
   const canAdd = expenseCategories.some((c) => !usedCategoryIds.includes(c.id));
 
   return (
@@ -78,15 +92,20 @@ export default function BudgetsPage() {
         title="Presupuestos"
         description="Define límites mensuales por categoría"
         actions={
-          <Button
-            onClick={() => {
-              setEditing(null);
-              setFormOpen(true);
-            }}
-            disabled={!canAdd}
-          >
-            <Plus className="h-4 w-4" /> Nuevo
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={handleCopyPrevious} loading={copying}>
+              <Copy className="h-4 w-4" /> Copiar mes anterior
+            </Button>
+            <Button
+              onClick={() => {
+                setEditing(null);
+                setFormOpen(true);
+              }}
+              disabled={!canAdd}
+            >
+              <Plus className="h-4 w-4" /> Nuevo
+            </Button>
+          </div>
         }
       />
 

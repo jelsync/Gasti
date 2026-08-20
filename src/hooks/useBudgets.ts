@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/auth';
 import {
+  copyBudgets,
   deleteBudget,
   getBudgets,
   upsertBudget,
   type BudgetWithCategory,
 } from '@/services/budgets.service';
 import { mapDbError } from '@/lib/errors';
-import type { MonthYear } from '@/utils/date';
+import { previousMonth, type MonthYear } from '@/utils/date';
 import type { BudgetInput } from '@/lib/validations';
 
 export function useBudgets(month: MonthYear) {
@@ -51,5 +52,12 @@ export function useBudgets(month: MonthYear) {
     [refresh],
   );
 
-  return { budgets, loading, error, refresh, save, remove };
+  const copyFromPrevious = useCallback(async (): Promise<number> => {
+    if (!user) throw new Error('Sesión no válida');
+    const count = await copyBudgets(user.id, previousMonth(month), month);
+    await refresh();
+    return count;
+  }, [user, month, refresh]);
+
+  return { budgets, loading, error, refresh, save, remove, copyFromPrevious };
 }

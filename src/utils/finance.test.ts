@@ -62,7 +62,7 @@ describe('monthlySummary', () => {
     });
   });
 
-  it('el ahorro baja el disponible pero no cuenta como gasto', () => {
+  it('el ahorro es informativo: no cuenta como gasto ni resta al disponible', () => {
     const list = [
       tx({ type: 'INCOME', amount: 25000 }),
       tx({ type: 'EXPENSE', amount: 10000 }),
@@ -71,7 +71,7 @@ describe('monthlySummary', () => {
     const summary = monthlySummary(list);
     expect(summary.expense).toBe(10000);
     expect(summary.saving).toBe(3000);
-    expect(summary.balance).toBe(12000);
+    expect(summary.balance).toBe(15000);
   });
 
   it('balance puede ser negativo', () => {

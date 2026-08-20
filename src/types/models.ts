@@ -49,7 +49,7 @@ export interface CategorySummary {
   total: number;
 }
 
-/** Resumen financiero de un mes. Disponible = ingresos − gastos − ahorro. */
+/** Resumen financiero de un mes. Disponible = ingresos − gastos (el ahorro es informativo). */
 export interface MonthlySummary {
   income: number;
   expense: number;

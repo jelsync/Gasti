@@ -46,3 +46,31 @@ export async function deleteBudget(id: string): Promise<void> {
   const { error } = await supabase.from('budgets').delete().eq('id', id);
   if (error) throw error;
 }
+
+/**
+ * Copia los presupuestos de un mes/año origen a un mes/año destino (upsert).
+ * Devuelve la cantidad copiada.
+ */
+export async function copyBudgets(
+  userId: string,
+  from: { year: number; month: number },
+  to: { year: number; month: number },
+): Promise<number> {
+  const source = await getBudgets(from.year, from.month);
+  if (source.length === 0) return 0;
+
+  const rows = source.map((b) => ({
+    user_id: userId,
+    category_id: b.category_id,
+    amount: b.amount,
+    month: to.month,
+    year: to.year,
+  }));
+
+  const { error } = await supabase
+    .from('budgets')
+    .upsert(rows, { onConflict: 'user_id,category_id,year,month' });
+
+  if (error) throw error;
+  return rows.length;
+}
