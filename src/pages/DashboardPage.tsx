@@ -15,7 +15,7 @@ import { useBudgets } from '@/hooks/useBudgets';
 import { useCreditCards } from '@/hooks/useCreditCards';
 import { useSavingsAccounts } from '@/hooks/useSavingsAccounts';
 import { groupByCategory, monthlySummary, totalBudgetUsage } from '@/utils/finance';
-import { formatCurrency, formatPercent } from '@/utils/format';
+import { formatCurrency, formatMoney, formatPercent } from '@/utils/format';
 import { getCurrentMonthYear, monthRange } from '@/utils/date';
 import { ROUTES } from '@/constants/routes';
 
@@ -29,7 +29,11 @@ export default function DashboardPage() {
   const { cards } = useCreditCards();
   const { accounts } = useSavingsAccounts();
 
-  const totalCardDebt = useMemo(() => cards.reduce((acc, c) => acc + c.balance, 0), [cards]);
+  const cardDebt = useMemo(() => {
+    const acc = { HNL: 0, USD: 0 };
+    for (const c of cards) acc[c.currency] += c.balance;
+    return acc;
+  }, [cards]);
   const totalSavings = useMemo(() => accounts.reduce((acc, a) => acc + a.balance, 0), [accounts]);
 
   const summary = useMemo(() => monthlySummary(transactions), [transactions]);
@@ -74,7 +78,10 @@ export default function DashboardPage() {
                     <div>
                       <p className="text-sm text-muted-foreground">Deuda en tarjetas</p>
                       <p className="mt-1 text-xl font-bold tabular-nums text-expense">
-                        {formatCurrency(totalCardDebt)}
+                        {formatMoney(cardDebt.HNL, 'HNL')}
+                        {cardDebt.USD > 0 && (
+                          <span className="ml-3">{formatMoney(cardDebt.USD, 'USD')}</span>
+                        )}
                       </p>
                     </div>
                     <CreditCard className="h-6 w-6 text-muted-foreground" />

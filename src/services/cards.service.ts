@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { createTransaction } from '@/services/transactions.service';
 import { round2 } from '@/utils/finance';
 import { todayISO } from '@/utils/date';
 import type { CreditCard, CreditCardWithBalance } from '@/types/models';
@@ -53,6 +54,7 @@ export async function createCreditCard(
       user_id: userId,
       name: input.name,
       bank: input.bank ?? '',
+      currency: input.currency,
       opening_balance: input.opening_balance,
       credit_limit: input.credit_limit ?? null,
       color: input.color,
@@ -70,6 +72,7 @@ export async function updateCreditCard(id: string, input: CreditCardInput): Prom
     .update({
       name: input.name,
       bank: input.bank ?? '',
+      currency: input.currency,
       opening_balance: input.opening_balance,
       credit_limit: input.credit_limit ?? null,
       color: input.color,
@@ -87,18 +90,45 @@ export async function deleteCreditCard(id: string): Promise<void> {
   if (error) throw error;
 }
 
-/** Registra un pago a la tarjeta (reduce la deuda; NO es un gasto). */
+interface PaymentArgs {
+  /** Monto que reduce la deuda, en la moneda de la tarjeta. */
+  amount: number;
+  /** Monto pagado en lempiras (solo tarjetas USD). Se registra como gasto. */
+  amountHnl?: number | null;
+  /** Categoría opcional para el gasto en lempiras. */
+  categoryId?: string | null;
+}
+
+/**
+ * Registra un pago a la tarjeta.
+ * - Reduce la deuda por `amount` (moneda de la tarjeta).
+ * - Para tarjetas en dólares: si se indica `amountHnl`, se crea un gasto en
+ *   lempiras por ese monto (afecta el disponible), pues es dinero real que sale.
+ * - Para tarjetas en lempiras: solo reduce la deuda (las compras ya son los gastos).
+ */
 export async function registerCardPayment(
   userId: string,
-  cardId: string,
-  amount: number,
+  card: CreditCard,
+  { amount, amountHnl = null, categoryId = null }: PaymentArgs,
   dateISO: string = todayISO(),
 ): Promise<void> {
   const { error } = await supabase.from('card_payments').insert({
     user_id: userId,
-    card_id: cardId,
+    card_id: card.id,
     amount,
+    amount_hnl: card.currency === 'USD' ? amountHnl : null,
     payment_date: dateISO,
   });
   if (error) throw error;
+
+  // Tarjeta en dólares: el pago en lempiras es el gasto real (débito a ingresos).
+  if (card.currency === 'USD' && amountHnl && amountHnl > 0) {
+    await createTransaction(userId, {
+      type: 'EXPENSE',
+      amount: amountHnl,
+      category_id: categoryId,
+      description: `Pago tarjeta ${card.name} ($${amount.toFixed(2)})`,
+      transaction_date: dateISO,
+    });
+  }
 }

@@ -9,9 +9,9 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { CreditCardForm } from '@/components/cards/CreditCardForm';
-import { CardPaymentModal } from '@/components/cards/CardPaymentModal';
+import { CardPaymentModal, type CardPaymentArgs } from '@/components/cards/CardPaymentModal';
 import { useCreditCards } from '@/hooks/useCreditCards';
-import { formatCurrency, formatPercent } from '@/utils/format';
+import { formatMoney, formatPercent } from '@/utils/format';
 import type { CreditCardWithBalance } from '@/types/models';
 import type { CreditCardInput } from '@/lib/validations';
 
@@ -22,7 +22,11 @@ export default function CardsPage() {
   const [deleting, setDeleting] = useState<CreditCardWithBalance | null>(null);
   const [paying, setPaying] = useState<CreditCardWithBalance | null>(null);
 
-  const totalOwed = useMemo(() => cards.reduce((acc, c) => acc + c.balance, 0), [cards]);
+  const totals = useMemo(() => {
+    const acc = { HNL: 0, USD: 0 };
+    for (const c of cards) acc[c.currency] += c.balance;
+    return acc;
+  }, [cards]);
 
   const handleSubmit = async (input: CreditCardInput) => {
     if (editing) {
@@ -44,9 +48,9 @@ export default function CardsPage() {
     }
   };
 
-  const handlePay = async (amount: number) => {
+  const handlePay = async (args: CardPaymentArgs) => {
     if (!paying) return;
-    await payCard(paying.id, amount);
+    await payCard(paying, args);
     toast.success('Pago registrado');
   };
 
@@ -86,9 +90,16 @@ export default function CardsPage() {
         <div className="space-y-6">
           <Card className="p-5">
             <p className="text-sm text-muted-foreground">Total que debes en tarjetas</p>
-            <p className="mt-1 text-2xl font-bold tabular-nums text-expense">
-              {formatCurrency(totalOwed)}
-            </p>
+            <div className="mt-1 flex flex-wrap items-baseline gap-x-6 gap-y-1">
+              <p className="text-2xl font-bold tabular-nums text-expense">
+                {formatMoney(totals.HNL, 'HNL')}
+              </p>
+              {totals.USD > 0 && (
+                <p className="text-2xl font-bold tabular-nums text-expense">
+                  {formatMoney(totals.USD, 'USD')}
+                </p>
+              )}
+            </div>
           </Card>
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -109,7 +120,14 @@ export default function CardsPage() {
                           <CardIcon className="h-5 w-5" />
                         </span>
                         <div className="min-w-0">
-                          <p className="truncate font-semibold">{card.name}</p>
+                          <p className="flex items-center gap-2 truncate font-semibold">
+                            {card.name}
+                            {card.currency === 'USD' && (
+                              <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                                USD
+                              </span>
+                            )}
+                          </p>
                           {card.bank && (
                             <p className="truncate text-xs text-muted-foreground">{card.bank}</p>
                           )}
@@ -141,7 +159,7 @@ export default function CardsPage() {
                     <div>
                       <p className="text-xs text-muted-foreground">Deuda actual</p>
                       <p className="text-2xl font-bold tabular-nums">
-                        {formatCurrency(card.balance)}
+                        {formatMoney(card.balance, card.currency)}
                       </p>
                     </div>
 
@@ -149,7 +167,7 @@ export default function CardsPage() {
                       <div>
                         <div className="mb-1 flex justify-between text-xs text-muted-foreground">
                           <span>Uso del límite {formatPercent(usage)}</span>
-                          <span>de {formatCurrency(card.credit_limit ?? 0)}</span>
+                          <span>de {formatMoney(card.credit_limit ?? 0, card.currency)}</span>
                         </div>
                         <ProgressBar value={usage} color={card.color} />
                       </div>

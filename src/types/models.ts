@@ -1,6 +1,6 @@
-import type { Database, TransactionType } from '@/types/database.types';
+import type { Currency, Database, TransactionType } from '@/types/database.types';
 
-export type { TransactionType };
+export type { TransactionType, Currency };
 
 export type Profile = Database['public']['Tables']['profiles']['Row'];
 export type Category = Database['public']['Tables']['categories']['Row'];

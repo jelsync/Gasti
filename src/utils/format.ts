@@ -3,6 +3,13 @@
 
 export const CURRENCY_SYMBOL = 'L';
 
+export type Currency = 'HNL' | 'USD';
+
+export const CURRENCY_SYMBOLS: Record<Currency, string> = {
+  HNL: 'L',
+  USD: '$',
+};
+
 const amountFormatter = new Intl.NumberFormat('en-US', {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
@@ -15,6 +22,12 @@ const amountFormatter = new Intl.NumberFormat('en-US', {
 export function formatCurrency(amount: number): string {
   const safe = Number.isFinite(amount) ? amount : 0;
   return `${CURRENCY_SYMBOL} ${amountFormatter.format(safe)}`;
+}
+
+/** Formatea un monto en la moneda indicada: (1250,'USD') -> "$ 1,250.00". */
+export function formatMoney(amount: number, currency: Currency = 'HNL'): string {
+  const safe = Number.isFinite(amount) ? amount : 0;
+  return `${CURRENCY_SYMBOLS[currency]} ${amountFormatter.format(safe)}`;
 }
 
 /** Formatea un número sin símbolo: 1250 -> "1,250.00". */

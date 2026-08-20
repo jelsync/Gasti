@@ -3,6 +3,7 @@
 // Si cambias el esquema, actualiza estos tipos (o regenéralos con la CLI de Supabase).
 
 export type TransactionType = 'INCOME' | 'EXPENSE' | 'SAVING';
+export type Currency = 'HNL' | 'USD';
 
 export interface Database {
   public: {
@@ -213,6 +214,7 @@ export interface Database {
           user_id: string;
           name: string;
           bank: string;
+          currency: Currency;
           opening_balance: number;
           credit_limit: number | null;
           color: string;
@@ -224,6 +226,7 @@ export interface Database {
           user_id: string;
           name: string;
           bank?: string;
+          currency?: Currency;
           opening_balance?: number;
           credit_limit?: number | null;
           color?: string;
@@ -231,6 +234,7 @@ export interface Database {
         Update: {
           name?: string;
           bank?: string;
+          currency?: Currency;
           opening_balance?: number;
           credit_limit?: number | null;
           color?: string;
@@ -243,6 +247,7 @@ export interface Database {
           user_id: string;
           card_id: string;
           amount: number;
+          amount_hnl: number | null;
           payment_date: string;
           created_at: string;
         };
@@ -251,10 +256,12 @@ export interface Database {
           user_id: string;
           card_id: string;
           amount: number;
+          amount_hnl?: number | null;
           payment_date?: string;
         };
         Update: {
           amount?: number;
+          amount_hnl?: number | null;
           payment_date?: string;
         };
         Relationships: [

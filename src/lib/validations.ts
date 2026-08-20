@@ -150,6 +150,7 @@ const optionalPositive = z.preprocess(
 export const creditCardSchema = z.object({
   name: z.string().trim().min(1, 'El nombre es obligatorio').max(40, 'Máximo 40 caracteres'),
   bank: z.string().trim().max(40, 'Máximo 40 caracteres').optional(),
+  currency: z.enum(['HNL', 'USD']),
   opening_balance: z.coerce
     .number({ invalid_type_error: 'Ingresa un saldo válido' })
     .min(0, 'No puede ser negativo')

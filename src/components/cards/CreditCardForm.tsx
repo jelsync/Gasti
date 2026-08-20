@@ -8,9 +8,9 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { creditCardSchema, type CreditCardInput } from '@/lib/validations';
 import { COLOR_OPTIONS } from '@/lib/icons';
-import { CURRENCY_SYMBOL } from '@/utils/format';
+import { CURRENCY_SYMBOLS } from '@/utils/format';
 import { cn } from '@/lib/utils';
-import type { CreditCard } from '@/types/models';
+import type { CreditCard, Currency } from '@/types/models';
 
 interface CreditCardFormProps {
   open: boolean;
@@ -29,16 +29,19 @@ export function CreditCardForm({ open, onClose, onSubmit, initial }: CreditCardF
     formState: { errors, isSubmitting },
   } = useForm<CreditCardInput>({
     resolver: zodResolver(creditCardSchema),
-    defaultValues: { color: COLOR_OPTIONS[9] },
+    defaultValues: { color: COLOR_OPTIONS[9], currency: 'HNL' },
   });
 
   const color = watch('color');
+  const currency = (watch('currency') ?? 'HNL') as Currency;
+  const symbol = CURRENCY_SYMBOLS[currency];
 
   useEffect(() => {
     if (!open) return;
     reset({
       name: initial?.name ?? '',
       bank: initial?.bank ?? '',
+      currency: initial?.currency ?? 'HNL',
       opening_balance: initial?.opening_balance ?? 0,
       credit_limit: initial?.credit_limit ?? undefined,
       color: initial?.color ?? COLOR_OPTIONS[9],
@@ -70,6 +73,26 @@ export function CreditCardForm({ open, onClose, onSubmit, initial }: CreditCardF
           <Input id="bank" placeholder="Ej. Atlántida" {...register('bank')} />
         </Field>
 
+        <Field label="Moneda">
+          <div className="grid grid-cols-2 gap-2">
+            {(['HNL', 'USD'] as const).map((cur) => (
+              <button
+                key={cur}
+                type="button"
+                onClick={() => setValue('currency', cur)}
+                className={cn(
+                  'rounded-[var(--radius)] border p-2.5 text-sm font-medium transition-colors',
+                  currency === cur
+                    ? 'border-primary bg-accent text-accent-foreground'
+                    : 'border-border text-muted-foreground hover:bg-muted',
+                )}
+              >
+                {cur === 'HNL' ? 'Lempiras (L)' : 'Dólares ($)'}
+              </button>
+            ))}
+          </div>
+        </Field>
+
         <div className="grid grid-cols-2 gap-3">
           <Field
             label="Deuda actual"
@@ -79,7 +102,7 @@ export function CreditCardForm({ open, onClose, onSubmit, initial }: CreditCardF
           >
             <div className="relative">
               <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                {CURRENCY_SYMBOL}
+                {symbol}
               </span>
               <Input
                 id="opening_balance"
@@ -101,7 +124,7 @@ export function CreditCardForm({ open, onClose, onSubmit, initial }: CreditCardF
           >
             <div className="relative">
               <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                {CURRENCY_SYMBOL}
+                {symbol}
               </span>
               <Input
                 id="credit_limit"

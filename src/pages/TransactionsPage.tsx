@@ -259,7 +259,7 @@ export default function TransactionsPage() {
         onClose={() => setFormOpen(false)}
         onSubmit={handleSubmit}
         categories={categories}
-        creditCards={cards}
+        creditCards={cards.filter((c) => c.currency === 'HNL')}
         savingsAccounts={accounts}
         initial={editing}
         defaultType={typeFilter === 'INCOME' || typeFilter === 'SAVING' ? typeFilter : 'EXPENSE'}
