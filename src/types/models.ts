@@ -6,6 +6,12 @@ export type Profile = Database['public']['Tables']['profiles']['Row'];
 export type Category = Database['public']['Tables']['categories']['Row'];
 export type Transaction = Database['public']['Tables']['transactions']['Row'];
 export type Budget = Database['public']['Tables']['budgets']['Row'];
+export type Loan = Database['public']['Tables']['loans']['Row'];
+
+/** Préstamo con su categoría de pago embebida. */
+export interface LoanWithCategory extends Loan {
+  category: Pick<Category, 'id' | 'name' | 'icon' | 'color'> | null;
+}
 
 /** Transacción con su categoría embebida (resultado de un join). */
 export interface TransactionWithCategory extends Transaction {

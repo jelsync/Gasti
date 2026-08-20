@@ -105,6 +105,24 @@ export function compareMonthYear(a: MonthYear, b: MonthYear): number {
   return a.year - b.year || a.month - b.month;
 }
 
+/** Suma `months` meses a una fecha 'YYYY-MM-DD' y devuelve 'YYYY-MM-DD'. */
+export function addMonthsToISO(iso: string, months: number): string {
+  const [y, m, d] = iso.split('-').map(Number);
+  if (!y || !m || !d) return iso;
+  const date = new Date(y, m - 1 + months, d);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+/** Número de meses completos transcurridos entre dos fechas 'YYYY-MM-DD' (a <= b). */
+export function monthsBetween(aISO: string, bISO: string): number {
+  const [ay, am, ad] = aISO.split('-').map(Number);
+  const [by, bm, bd] = bISO.split('-').map(Number);
+  let months = (by - ay) * 12 + (bm - am);
+  if (bd < ad) months -= 1;
+  return Math.max(0, months);
+}
+
 /**
  * Lista de los últimos `count` meses (incluyendo el actual), del más reciente
  * al más antiguo.

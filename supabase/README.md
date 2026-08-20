@@ -9,7 +9,8 @@ supabase/
 ├── migrations/
 │   ├── 0001_init.sql          # Tipos, tablas, índices y constraints
 │   ├── 0002_rls.sql           # Row Level Security + policies
-│   └── 0003_triggers_seed.sql # updated_at, alta de usuario y seed de categorías
+│   ├── 0003_triggers_seed.sql # updated_at, alta de usuario y seed de categorías
+│   └── 0004_loans.sql         # Préstamos (tabla + RLS + trigger)
 ├── seed.sql                   # Seed opcional para usuarios preexistentes
 └── README.md
 ```
@@ -21,6 +22,7 @@ supabase/
    1. `migrations/0001_init.sql`
    2. `migrations/0002_rls.sql`
    3. `migrations/0003_triggers_seed.sql`
+   4. `migrations/0004_loans.sql`
 3. (Opcional) Si ya tenías usuarios creados antes de aplicar el paso 3,
    ejecuta `seed.sql` para sembrarles las categorías predeterminadas.
 
@@ -41,6 +43,7 @@ supabase db push
 | `categories`   | Categorías de ingreso/gasto propias de cada usuario.    |
 | `transactions` | Ingresos y gastos.                                      |
 | `budgets`      | Presupuesto mensual por categoría.                      |
+| `loans`        | Préstamos (saldo/pasivo). Las cuotas se registran como transacciones. |
 
 ### Decisiones de diseño
 

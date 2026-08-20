@@ -52,3 +52,6 @@ supabase/.branches
 
 # Prompt de trabajo local (no forma parte de la app)
 promt.txt
+
+# Documentos/capturas personales (datos sensibles: no versionar)
+Docs/

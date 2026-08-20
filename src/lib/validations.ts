@@ -86,6 +86,45 @@ export const budgetSchema = z.object({
   year: z.number().int().min(2000).max(2100),
 });
 
+// ---------------------------------------------------------------------------
+// Préstamos
+// ---------------------------------------------------------------------------
+const optionalDateSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Fecha inválida')
+  .refine((value) => !Number.isNaN(new Date(value).getTime()), 'Fecha inválida')
+  .optional()
+  .or(z.literal(''));
+
+export const loanSchema = z.object({
+  name: z.string().trim().min(1, 'El nombre es obligatorio').max(60, 'Máximo 60 caracteres'),
+  loan_number: z.string().trim().max(40, 'Máximo 40 caracteres').optional(),
+  original_amount: z.coerce
+    .number({ invalid_type_error: 'Ingresa un monto válido' })
+    .positive('El monto debe ser mayor que cero')
+    .max(999_999_999, 'El monto es demasiado grande'),
+  interest_rate: z.coerce
+    .number({ invalid_type_error: 'Ingresa una tasa válida' })
+    .min(0, 'La tasa no puede ser negativa')
+    .max(100, 'Tasa inválida'),
+  term_months: z.coerce
+    .number({ invalid_type_error: 'Ingresa un plazo válido' })
+    .int('Debe ser un número entero')
+    .min(1, 'Mínimo 1 mes')
+    .max(1200, 'Plazo demasiado largo'),
+  installment: z.coerce
+    .number({ invalid_type_error: 'Ingresa una cuota válida' })
+    .positive('La cuota debe ser mayor que cero')
+    .max(999_999_999, 'La cuota es demasiado grande'),
+  current_balance: z.coerce
+    .number({ invalid_type_error: 'Ingresa un saldo válido' })
+    .min(0, 'El saldo no puede ser negativo')
+    .max(999_999_999, 'El saldo es demasiado grande'),
+  start_date: dateStringSchema,
+  end_date: optionalDateSchema,
+  category_id: z.string().uuid('Selecciona una categoría').nullable(),
+});
+
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
@@ -93,3 +132,4 @@ export type UpdatePasswordInput = z.infer<typeof updatePasswordSchema>;
 export type TransactionInput = z.infer<typeof transactionSchema>;
 export type CategoryInput = z.infer<typeof categorySchema>;
 export type BudgetInput = z.infer<typeof budgetSchema>;
+export type LoanInput = z.infer<typeof loanSchema>;

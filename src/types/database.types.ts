@@ -131,6 +131,59 @@ export interface Database {
           },
         ];
       };
+      loans: {
+        Row: {
+          id: string;
+          user_id: string;
+          category_id: string | null;
+          name: string;
+          loan_number: string;
+          original_amount: number;
+          interest_rate: number;
+          term_months: number;
+          installment: number;
+          current_balance: number;
+          start_date: string;
+          end_date: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          category_id?: string | null;
+          name: string;
+          loan_number?: string;
+          original_amount: number;
+          interest_rate?: number;
+          term_months: number;
+          installment: number;
+          current_balance: number;
+          start_date?: string;
+          end_date?: string | null;
+        };
+        Update: {
+          category_id?: string | null;
+          name?: string;
+          loan_number?: string;
+          original_amount?: number;
+          interest_rate?: number;
+          term_months?: number;
+          installment?: number;
+          current_balance?: number;
+          start_date?: string;
+          end_date?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'loans_category_id_fkey';
+            columns: ['category_id'];
+            isOneToOne: false;
+            referencedRelation: 'categories';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
     };
     Views: Record<never, never>;
     Functions: Record<never, never>;

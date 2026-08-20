@@ -1,6 +1,7 @@
 import {
   BarChart3,
   CalendarClock,
+  Landmark,
   LayoutDashboard,
   PiggyBank,
   Receipt,
@@ -21,6 +22,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', to: ROUTES.dashboard, icon: LayoutDashboard, end: true },
   { label: 'Transacciones', to: ROUTES.transactions, icon: Receipt },
   { label: 'Presupuestos', to: ROUTES.budgets, icon: PiggyBank },
+  { label: 'Préstamos', to: ROUTES.loans, icon: Landmark },
   { label: 'Historial', to: ROUTES.history, icon: CalendarClock },
   { label: 'Reportes', to: ROUTES.reports, icon: BarChart3 },
   { label: 'Categorías', to: ROUTES.categories, icon: Tags },
