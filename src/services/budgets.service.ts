@@ -21,14 +21,55 @@ export async function getBudgets(year: number, month: number): Promise<BudgetWit
   return data ?? [];
 }
 
-/** Crea o actualiza el presupuesto de una categoría para un periodo. */
+/** Crea o actualiza un presupuesto (por categoría de gasto o meta de ahorro). */
 export async function upsertBudget(userId: string, input: BudgetInput): Promise<Budget> {
+  // Meta de ahorro: una por mes (category_id null); busca existente y actualiza.
+  if (input.kind === 'SAVINGS') {
+    const { data: existing, error: findError } = await supabase
+      .from('budgets')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('kind', 'SAVINGS')
+      .eq('year', input.year)
+      .eq('month', input.month)
+      .maybeSingle();
+    if (findError) throw findError;
+
+    if (existing) {
+      const { data, error } = await supabase
+        .from('budgets')
+        .update({ amount: input.amount })
+        .eq('id', existing.id)
+        .select('*')
+        .single();
+      if (error) throw error;
+      return data;
+    }
+
+    const { data, error } = await supabase
+      .from('budgets')
+      .insert({
+        user_id: userId,
+        category_id: null,
+        kind: 'SAVINGS',
+        amount: input.amount,
+        month: input.month,
+        year: input.year,
+      })
+      .select('*')
+      .single();
+    if (error) throw error;
+    return data;
+  }
+
+  // Presupuesto por categoría de gasto.
   const { data, error } = await supabase
     .from('budgets')
     .upsert(
       {
         user_id: userId,
         category_id: input.category_id,
+        kind: 'CATEGORY',
         amount: input.amount,
         month: input.month,
         year: input.year,
@@ -59,18 +100,14 @@ export async function copyBudgets(
   const source = await getBudgets(from.year, from.month);
   if (source.length === 0) return 0;
 
-  const rows = source.map((b) => ({
-    user_id: userId,
-    category_id: b.category_id,
-    amount: b.amount,
-    month: to.month,
-    year: to.year,
-  }));
-
-  const { error } = await supabase
-    .from('budgets')
-    .upsert(rows, { onConflict: 'user_id,category_id,year,month' });
-
-  if (error) throw error;
-  return rows.length;
+  for (const b of source) {
+    await upsertBudget(userId, {
+      kind: b.kind,
+      category_id: b.category_id,
+      amount: b.amount,
+      month: to.month,
+      year: to.year,
+    });
+  }
+  return source.length;
 }

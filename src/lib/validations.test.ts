@@ -71,17 +71,27 @@ describe('transactionSchema', () => {
 
 describe('budgetSchema', () => {
   const base = {
+    kind: 'CATEGORY' as const,
     category_id: '11111111-1111-1111-1111-111111111111',
     amount: 5000,
     month: 8,
     year: 2026,
   };
 
-  it('acepta un presupuesto válido', () => {
+  it('acepta un presupuesto de categoría válido', () => {
     expect(budgetSchema.safeParse(base).success).toBe(true);
   });
 
   it('rechaza mes fuera de rango', () => {
     expect(budgetSchema.safeParse({ ...base, month: 13 }).success).toBe(false);
+  });
+
+  it('rechaza categoría sin seleccionar cuando es de categoría', () => {
+    expect(budgetSchema.safeParse({ ...base, category_id: null }).success).toBe(false);
+  });
+
+  it('acepta una meta de ahorro (sin categoría)', () => {
+    const result = budgetSchema.safeParse({ ...base, kind: 'SAVINGS', category_id: null });
+    expect(result.success).toBe(true);
   });
 });

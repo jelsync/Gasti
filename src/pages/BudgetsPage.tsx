@@ -14,7 +14,7 @@ import { BudgetForm } from '@/components/budgets/BudgetForm';
 import { useBudgets } from '@/hooks/useBudgets';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useCategories } from '@/hooks/useCategories';
-import { budgetProgress, groupByCategory } from '@/utils/finance';
+import { budgetProgress, groupByCategory, sumByType } from '@/utils/finance';
 import { formatCurrency, formatPercent } from '@/utils/format';
 import { getCurrentMonthYear, monthRange } from '@/utils/date';
 import { cn } from '@/lib/utils';
@@ -39,21 +39,29 @@ export default function BudgetsPage() {
     [categories],
   );
 
+  const categoryBudgets = useMemo(() => budgets.filter((b) => b.kind === 'CATEGORY'), [budgets]);
+  const savingsBudget = useMemo(() => budgets.find((b) => b.kind === 'SAVINGS') ?? null, [budgets]);
+
   const spentByCategory = useMemo(() => {
     const groups = groupByCategory(transactions, 'EXPENSE');
     return new Map(groups.map((g) => [g.categoryId, g.total]));
   }, [transactions]);
 
-  const usedCategoryIds = useMemo(() => budgets.map((b) => b.category_id), [budgets]);
+  const savedThisMonth = useMemo(() => sumByType(transactions, 'SAVING'), [transactions]);
+
+  const usedCategoryIds = useMemo(
+    () => categoryBudgets.map((b) => b.category_id).filter((id): id is string => !!id),
+    [categoryBudgets],
+  );
 
   const totals = useMemo(() => {
-    const totalBudget = budgets.reduce((acc, b) => acc + b.amount, 0);
-    const totalSpent = budgets.reduce(
+    const totalBudget = categoryBudgets.reduce((acc, b) => acc + b.amount, 0);
+    const totalSpent = categoryBudgets.reduce(
       (acc, b) => acc + (spentByCategory.get(b.category_id) ?? 0),
       0,
     );
     return { totalBudget, totalSpent };
-  }, [budgets, spentByCategory]);
+  }, [categoryBudgets, spentByCategory]);
 
   const handleSubmit = async (input: BudgetInput) => {
     await save(input);
@@ -84,7 +92,7 @@ export default function BudgetsPage() {
     }
   };
 
-  const canAdd = expenseCategories.some((c) => !usedCategoryIds.includes(c.id));
+  const canAdd = expenseCategories.some((c) => !usedCategoryIds.includes(c.id)) || !savingsBudget;
 
   return (
     <>
@@ -145,7 +153,72 @@ export default function BudgetsPage() {
         />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
-          {budgets.map((budget) => {
+          {savingsBudget && (
+            <Card key={savingsBudget.id} className="border-primary/40">
+              <CardContent>
+                <div className="mb-3 flex items-center gap-3">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-primary">
+                    <PiggyBank className="h-4 w-4" />
+                  </span>
+                  <span className="flex-1 truncate font-medium">Meta de ahorro</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditing(savingsBudget);
+                      setFormOpen(true);
+                    }}
+                    aria-label="Editar"
+                    className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDeleting(savingsBudget)}
+                    aria-label="Eliminar"
+                    className="rounded-md p-1.5 text-muted-foreground hover:bg-expense-soft hover:text-expense"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+
+                <ProgressBar
+                  value={budgetProgress(savingsBudget.amount, savedThisMonth).percentage}
+                  color="#0ea5e9"
+                />
+
+                <div className="mt-3 flex items-end justify-between">
+                  <div className="text-xs text-muted-foreground">
+                    <p>
+                      Ahorrado{' '}
+                      <span className="font-medium text-foreground">
+                        {formatCurrency(savedThisMonth)}
+                      </span>
+                    </p>
+                    <p className="text-primary">
+                      {savedThisMonth >= savingsBudget.amount ? 'Meta cumplida 🎉' : 'Faltan '}
+                      {savedThisMonth < savingsBudget.amount && (
+                        <span className="font-medium">
+                          {formatCurrency(savingsBudget.amount - savedThisMonth)}
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-lg font-bold tabular-nums">
+                      {formatPercent(
+                        budgetProgress(savingsBudget.amount, savedThisMonth).percentage,
+                      )}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      meta {formatCurrency(savingsBudget.amount)}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+          {categoryBudgets.map((budget) => {
             const spent = spentByCategory.get(budget.category_id) ?? 0;
             const progress = budgetProgress(budget.amount, spent);
             const over = progress.remaining < 0;
@@ -221,6 +294,7 @@ export default function BudgetsPage() {
         month={month}
         initial={editing}
         usedCategoryIds={usedCategoryIds}
+        savingsUsed={!!savingsBudget}
       />
 
       <ConfirmDialog

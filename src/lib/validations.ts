@@ -78,15 +78,21 @@ export const categorySchema = z.object({
 // ---------------------------------------------------------------------------
 // Presupuestos
 // ---------------------------------------------------------------------------
-export const budgetSchema = z.object({
-  category_id: z.string().uuid('Selecciona una categoría'),
-  amount: z.coerce
-    .number({ invalid_type_error: 'Ingresa un monto válido' })
-    .positive('El monto debe ser mayor que cero')
-    .max(9_999_999_999, 'El monto es demasiado grande'),
-  month: z.number().int().min(1).max(12),
-  year: z.number().int().min(2000).max(2100),
-});
+export const budgetSchema = z
+  .object({
+    kind: z.enum(['CATEGORY', 'SAVINGS']),
+    category_id: z.string().uuid('Selecciona una categoría').nullable(),
+    amount: z.coerce
+      .number({ invalid_type_error: 'Ingresa un monto válido' })
+      .positive('El monto debe ser mayor que cero')
+      .max(9_999_999_999, 'El monto es demasiado grande'),
+    month: z.number().int().min(1).max(12),
+    year: z.number().int().min(2000).max(2100),
+  })
+  .refine((d) => (d.kind === 'CATEGORY' ? !!d.category_id : d.category_id === null), {
+    message: 'Selecciona una categoría',
+    path: ['category_id'],
+  });
 
 // ---------------------------------------------------------------------------
 // Préstamos

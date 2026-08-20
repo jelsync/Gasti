@@ -4,6 +4,7 @@
 
 export type TransactionType = 'INCOME' | 'EXPENSE' | 'SAVING';
 export type Currency = 'HNL' | 'USD';
+export type BudgetKind = 'CATEGORY' | 'SAVINGS';
 
 export interface Database {
   public: {
@@ -121,7 +122,8 @@ export interface Database {
         Row: {
           id: string;
           user_id: string;
-          category_id: string;
+          category_id: string | null;
+          kind: BudgetKind;
           amount: number;
           month: number;
           year: number;
@@ -131,13 +133,15 @@ export interface Database {
         Insert: {
           id?: string;
           user_id: string;
-          category_id: string;
+          category_id?: string | null;
+          kind?: BudgetKind;
           amount: number;
           month: number;
           year: number;
         };
         Update: {
-          category_id?: string;
+          category_id?: string | null;
+          kind?: BudgetKind;
           amount?: number;
           month?: number;
           year?: number;
