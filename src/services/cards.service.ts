@@ -11,39 +11,26 @@ function accumulate(map: Map<string, number>, key: string | null, amount: number
 }
 
 /**
- * Tarjetas con sus deudas calculadas (Lempiras y Dólares):
- * - Deuda L = apertura_L + compras con tarjeta en L (gastos) − pagos en L
- * - Deuda $ = apertura_$ + compras en $ (cargos) − pagos en $
+ * Tarjetas con sus deudas (Lempiras y Dólares):
+ *   Deuda = apertura + compras (card_charges) − pagos (card_payments), por moneda.
+ * Las compras suben la deuda; el gasto (en L) se reconoce al pagar.
  */
 export async function getCreditCards(): Promise<CreditCardWithBalance[]> {
-  const [cardsRes, purchasesRes, chargesRes, paymentsRes] = await Promise.all([
+  const [cardsRes, chargesRes, paymentsRes] = await Promise.all([
     supabase.from('credit_cards').select('*').order('created_at', { ascending: true }),
-    supabase
-      .from('transactions')
-      .select('credit_card_id, amount')
-      .eq('type', 'EXPENSE')
-      .not('credit_card_id', 'is', null),
     supabase.from('card_charges').select('card_id, amount, currency'),
     supabase.from('card_payments').select('card_id, amount, currency'),
   ]);
 
   if (cardsRes.error) throw cardsRes.error;
-  if (purchasesRes.error) throw purchasesRes.error;
   if (chargesRes.error) throw chargesRes.error;
   if (paymentsRes.error) throw paymentsRes.error;
 
-  // Compras con tarjeta en L (son gastos → viven en transactions).
-  const purchasesHnl = new Map<string, number>();
-  for (const r of purchasesRes.data ?? []) accumulate(purchasesHnl, r.credit_card_id, r.amount);
-
-  // Cargos (por moneda).
   const chargesHnl = new Map<string, number>();
   const chargesUsd = new Map<string, number>();
   for (const r of chargesRes.data ?? []) {
     accumulate(r.currency === 'USD' ? chargesUsd : chargesHnl, r.card_id, r.amount);
   }
-
-  // Pagos (por moneda).
   const paymentsHnl = new Map<string, number>();
   const paymentsUsd = new Map<string, number>();
   for (const r of paymentsRes.data ?? []) {
@@ -53,10 +40,7 @@ export async function getCreditCards(): Promise<CreditCardWithBalance[]> {
   return (cardsRes.data ?? []).map((card) => ({
     ...card,
     balanceHnl: round2(
-      card.opening_balance +
-        (purchasesHnl.get(card.id) ?? 0) +
-        (chargesHnl.get(card.id) ?? 0) -
-        (paymentsHnl.get(card.id) ?? 0),
+      card.opening_balance + (chargesHnl.get(card.id) ?? 0) - (paymentsHnl.get(card.id) ?? 0),
     ),
     balanceUsd: round2(
       card.opening_balance_usd + (chargesUsd.get(card.id) ?? 0) - (paymentsUsd.get(card.id) ?? 0),
@@ -113,22 +97,19 @@ export async function deleteCreditCard(id: string): Promise<void> {
 }
 
 export interface CardPaymentArgs {
-  /** Moneda del pago (qué deuda reduce). */
   currency: Currency;
   /** Monto que reduce la deuda, en la moneda indicada. */
   amount: number;
-  /** Monto pagado en lempiras (para pagos en dólares). Se registra como gasto. */
+  /** Monto pagado en lempiras (para pagos en dólares). */
   amountHnl?: number | null;
-  /** Categoría opcional para el gasto en lempiras. */
   categoryId?: string | null;
 }
 
 /**
  * Registra un pago a la tarjeta.
  * - Reduce la deuda por `amount` en la moneda indicada.
- * - Pago en dólares: si se indica `amountHnl`, se crea un gasto en lempiras por ese
- *   monto (afecta el disponible), pues es el dinero real que sale.
- * - Pago en lempiras: solo reduce la deuda (las compras en L ya fueron los gastos).
+ * - Crea un gasto en lempiras (afecta el disponible): en pagos en L es `amount`;
+ *   en pagos en $ es `amountHnl` (lo que pagaste realmente en lempiras).
  */
 export async function registerCardPayment(
   userId: string,
@@ -147,33 +128,70 @@ export async function registerCardPayment(
   });
   if (error) throw error;
 
-  if (currency === 'USD' && amountHnl && amountHnl > 0) {
+  const gastoHnl = currency === 'USD' ? (amountHnl ?? 0) : amount;
+  if (gastoHnl > 0) {
+    const label = currency === 'USD' ? `$${amount.toFixed(2)}` : `L ${amount.toFixed(2)}`;
     await createTransaction(userId, {
       type: 'EXPENSE',
-      amount: amountHnl,
+      amount: gastoHnl,
       category_id: categoryId,
-      description: `Pago tarjeta ${cardName} ($${amount.toFixed(2)})`,
+      description: `Pago tarjeta ${cardName} (${label})`,
       transaction_date: dateISO,
     });
   }
 }
 
 /**
- * Registra una compra/cargo en dólares en la tarjeta (aumenta la deuda en $).
- * No genera gasto en lempiras (el gasto en L se reconoce al pagar).
+ * Registra una compra/cargo en la tarjeta (aumenta la deuda en la moneda dada).
+ * No genera gasto en lempiras (el gasto se reconoce al pagar).
  */
 export async function registerCardCharge(
   userId: string,
   cardId: string,
+  currency: Currency,
   input: CardChargeInput,
 ): Promise<void> {
   const { error } = await supabase.from('card_charges').insert({
     user_id: userId,
     card_id: cardId,
     amount: input.amount,
-    currency: 'USD',
+    currency,
     description: input.description ?? '',
     charge_date: input.charge_date,
   });
+  if (error) throw error;
+}
+
+export interface CardChargeWithCard {
+  id: string;
+  card_id: string;
+  amount: number;
+  currency: Currency;
+  description: string;
+  charge_date: string;
+  card: Pick<CreditCard, 'id' | 'name' | 'color'> | null;
+}
+
+/** Compras/cargos de tarjeta en un rango de fechas (para mostrarlos en la lista). */
+export async function getCardCharges(
+  dateStart: string,
+  dateEnd: string,
+): Promise<CardChargeWithCard[]> {
+  const { data, error } = await supabase
+    .from('card_charges')
+    .select(
+      'id, card_id, amount, currency, description, charge_date, card:credit_cards(id, name, color)',
+    )
+    .gte('charge_date', dateStart)
+    .lte('charge_date', dateEnd)
+    .order('charge_date', { ascending: false })
+    .returns<CardChargeWithCard[]>();
+
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function deleteCardCharge(id: string): Promise<void> {
+  const { error } = await supabase.from('card_charges').delete().eq('id', id);
   if (error) throw error;
 }

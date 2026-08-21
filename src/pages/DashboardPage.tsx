@@ -17,12 +17,13 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { CategoryBreakdown } from '@/components/dashboard/CategoryBreakdown';
-import { TransactionList } from '@/components/transactions/TransactionList';
+import { MovementList, type MovementItem } from '@/components/transactions/MovementList';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useBudgets } from '@/hooks/useBudgets';
 import { useCreditCards } from '@/hooks/useCreditCards';
 import { useSavingsAccounts } from '@/hooks/useSavingsAccounts';
 import { useLoans } from '@/hooks/useLoans';
+import { useCardCharges } from '@/hooks/useCardCharges';
 import { groupByCategory, monthlySummary, totalBudgetUsage } from '@/utils/finance';
 import { formatCurrency, formatMoney, formatPercent } from '@/utils/format';
 import { getCurrentMonthYear, monthRange } from '@/utils/date';
@@ -38,6 +39,7 @@ export default function DashboardPage() {
   const { cards } = useCreditCards();
   const { accounts } = useSavingsAccounts();
   const { loans } = useLoans();
+  const { charges } = useCardCharges(range);
 
   const cardDebt = useMemo(() => {
     const acc = { HNL: 0, USD: 0 };
@@ -61,7 +63,13 @@ export default function DashboardPage() {
     return { totalBudget, spent, percentage: totalBudgetUsage(totalBudget, spent) };
   }, [budgets, expenseByCategory]);
 
-  const recent = transactions.slice(0, 5);
+  const recent = useMemo<MovementItem[]>(() => {
+    const items: MovementItem[] = [
+      ...transactions.map((t) => ({ type: 'tx' as const, date: t.transaction_date, tx: t })),
+      ...charges.map((c) => ({ type: 'charge' as const, date: c.charge_date, charge: c })),
+    ];
+    return items.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0)).slice(0, 5);
+  }, [transactions, charges]);
 
   return (
     <>
@@ -179,7 +187,7 @@ export default function DashboardPage() {
                 {recent.length === 0 ? (
                   <EmptyState icon={Receipt} title="Sin movimientos" />
                 ) : (
-                  <TransactionList transactions={recent} />
+                  <MovementList items={recent} />
                 )}
               </CardContent>
             </Card>

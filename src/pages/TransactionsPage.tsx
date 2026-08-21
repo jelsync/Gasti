@@ -11,16 +11,18 @@ import { Spinner } from '@/components/ui/Spinner';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { TransactionForm, type TransactionSubmit } from '@/components/transactions/TransactionForm';
-import { TransactionList } from '@/components/transactions/TransactionList';
+import { MovementList, type MovementItem } from '@/components/transactions/MovementList';
 import { useCategories } from '@/hooks/useCategories';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useCreditCards } from '@/hooks/useCreditCards';
 import { useSavingsAccounts } from '@/hooks/useSavingsAccounts';
+import { useCardCharges } from '@/hooks/useCardCharges';
 import { monthlySummary } from '@/utils/finance';
 import { formatCurrency } from '@/utils/format';
 import { getCurrentMonthYear, monthRange } from '@/utils/date';
 import { cn } from '@/lib/utils';
 import type { TransactionType, TransactionWithCategory } from '@/types/models';
+import type { CardChargeWithCard } from '@/services/cards.service';
 
 type TypeFilter = 'ALL' | TransactionType;
 
@@ -35,6 +37,7 @@ export default function TransactionsPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<TransactionWithCategory | null>(null);
   const [deleting, setDeleting] = useState<TransactionWithCategory | null>(null);
+  const [deletingCharge, setDeletingCharge] = useState<CardChargeWithCard | null>(null);
 
   const { categories } = useCategories();
   const { cards, addCharge, payCard } = useCreditCards();
@@ -42,7 +45,15 @@ export default function TransactionsPage() {
 
   const range = useMemo(() => monthRange(month.year, month.month), [month]);
   const filters = useMemo(() => ({ dateStart: range.start, dateEnd: range.end }), [range]);
-  const { transactions, loading, create, update, remove } = useTransactions(filters);
+  const {
+    transactions,
+    loading,
+    create,
+    update,
+    remove,
+    refresh: refreshTx,
+  } = useTransactions(filters);
+  const { charges, remove: removeCharge, refresh: refreshCharges } = useCardCharges(range);
 
   const summary = useMemo(() => monthlySummary(transactions), [transactions]);
 
@@ -65,6 +76,30 @@ export default function TransactionsPage() {
       return true;
     });
   }, [transactions, typeFilter, categoryFilter, minAmount, maxAmount, search]);
+
+  const visibleCharges = useMemo(() => {
+    if (typeFilter !== 'ALL' || categoryFilter !== 'ALL') return [];
+    const q = search.trim().toLowerCase();
+    const min = minAmount ? Number(minAmount) : null;
+    const max = maxAmount ? Number(maxAmount) : null;
+    return charges.filter((c) => {
+      if (min !== null && c.amount < min) return false;
+      if (max !== null && c.amount > max) return false;
+      if (q) {
+        const hay = `${c.description} ${c.card?.name ?? ''}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [charges, typeFilter, categoryFilter, minAmount, maxAmount, search]);
+
+  const movements = useMemo<MovementItem[]>(() => {
+    const items: MovementItem[] = [
+      ...visible.map((t) => ({ type: 'tx' as const, date: t.transaction_date, tx: t })),
+      ...visibleCharges.map((c) => ({ type: 'charge' as const, date: c.charge_date, charge: c })),
+    ];
+    return items.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+  }, [visible, visibleCharges]);
 
   const hasActiveFilters =
     categoryFilter !== 'ALL' || minAmount !== '' || maxAmount !== '' || typeFilter !== 'ALL';
@@ -94,13 +129,15 @@ export default function TransactionsPage() {
   };
 
   const handleSubmit = async (payload: TransactionSubmit) => {
-    if (payload.kind === 'cardChargeUsd') {
-      await addCharge(payload.cardId, payload.input);
+    if (payload.kind === 'cardCharge') {
+      await addCharge(payload.cardId, payload.currency, payload.input);
+      await refreshCharges();
       toast.success('Compra registrada');
       return;
     }
     if (payload.kind === 'cardPayment') {
       await payCard(payload.cardId, payload.cardName, payload.args);
+      await refreshTx();
       toast.success('Pago de tarjeta registrado');
       return;
     }
@@ -118,6 +155,16 @@ export default function TransactionsPage() {
     try {
       await remove(deleting.id);
       toast.success('Transacción eliminada');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'No se pudo eliminar');
+    }
+  };
+
+  const handleDeleteCharge = async () => {
+    if (!deletingCharge) return;
+    try {
+      await removeCharge(deletingCharge.id);
+      toast.success('Compra eliminada');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'No se pudo eliminar');
     }
@@ -246,7 +293,7 @@ export default function TransactionsPage() {
             <div className="flex justify-center py-10">
               <Spinner />
             </div>
-          ) : visible.length === 0 ? (
+          ) : movements.length === 0 ? (
             <EmptyState
               icon={Receipt}
               title="Sin transacciones"
@@ -258,7 +305,12 @@ export default function TransactionsPage() {
               }
             />
           ) : (
-            <TransactionList transactions={visible} onEdit={openEdit} onDelete={setDeleting} />
+            <MovementList
+              items={movements}
+              onEditTx={openEdit}
+              onDeleteTx={setDeleting}
+              onDeleteCharge={setDeletingCharge}
+            />
           )}
         </CardContent>
       </Card>
@@ -281,6 +333,15 @@ export default function TransactionsPage() {
         confirmLabel="Eliminar"
         onConfirm={handleDelete}
         onClose={() => setDeleting(null)}
+      />
+
+      <ConfirmDialog
+        open={!!deletingCharge}
+        title="Eliminar compra de tarjeta"
+        description="Se eliminará la compra y bajará la deuda de la tarjeta. Esta acción no se puede deshacer."
+        confirmLabel="Eliminar"
+        onConfirm={handleDeleteCharge}
+        onClose={() => setDeletingCharge(null)}
       />
     </>
   );

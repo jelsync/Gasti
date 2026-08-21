@@ -22,11 +22,11 @@ import type {
   TransactionWithCategory,
 } from '@/types/models';
 
-type Kind = TransactionType | 'CARD_CHARGE_USD' | 'CARD_PAYMENT';
+type Kind = TransactionType | 'CARD_CHARGE' | 'CARD_PAYMENT';
 
 export type TransactionSubmit =
   | { kind: 'transaction'; input: TransactionInput }
-  | { kind: 'cardChargeUsd'; cardId: string; input: CardChargeInput }
+  | { kind: 'cardCharge'; cardId: string; currency: Currency; input: CardChargeInput }
   | { kind: 'cardPayment'; cardId: string; cardName: string; args: CardPaymentArgs };
 
 interface TransactionFormProps {
@@ -41,10 +41,10 @@ interface TransactionFormProps {
 }
 
 const KIND_OPTIONS: { value: Kind; label: string }[] = [
-  { value: 'EXPENSE', label: 'Gasto' },
+  { value: 'EXPENSE', label: 'Gasto (efectivo / débito)' },
   { value: 'INCOME', label: 'Ingreso' },
   { value: 'SAVING', label: 'Ahorro' },
-  { value: 'CARD_CHARGE_USD', label: 'Compra con tarjeta (dólares)' },
+  { value: 'CARD_CHARGE', label: 'Compra con tarjeta' },
   { value: 'CARD_PAYMENT', label: 'Pago de tarjeta' },
 ];
 
@@ -64,7 +64,7 @@ export function TransactionForm({
   const [categoryId, setCategoryId] = useState('');
   const [cardId, setCardId] = useState('');
   const [savingsId, setSavingsId] = useState('');
-  const [payCurrency, setPayCurrency] = useState<Currency>('HNL');
+  const [cardCurrency, setCardCurrency] = useState<Currency>('HNL');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState(todayISO());
   const [error, setError] = useState<string | null>(null);
@@ -79,9 +79,9 @@ export function TransactionForm({
     setAmount(initial?.amount != null ? String(initial.amount) : '');
     setAmountHnl('');
     setCategoryId(initial?.category_id ?? '');
-    setCardId(initial?.credit_card_id ?? '');
+    setCardId('');
     setSavingsId(initial?.savings_account_id ?? '');
-    setPayCurrency('HNL');
+    setCardCurrency('HNL');
     setDescription(initial?.description ?? '');
     setDate(initial?.transaction_date ?? todayISO());
   }, [open, initial, defaultType]);
@@ -89,34 +89,34 @@ export function TransactionForm({
   const kindOptions = isEditing
     ? KIND_OPTIONS.filter((k) => ['EXPENSE', 'INCOME', 'SAVING'].includes(k.value))
     : KIND_OPTIONS;
-  const categoryOptions = categories.filter((c) => c.type === kind);
-  const symbol =
-    kind === 'CARD_CHARGE_USD' || (kind === 'CARD_PAYMENT' && payCurrency === 'USD') ? '$' : 'L';
-  const needsCard = kind === 'CARD_CHARGE_USD' || kind === 'CARD_PAYMENT';
+  const categoryType = kind === 'CARD_PAYMENT' ? 'EXPENSE' : kind;
+  const categoryOptions = categories.filter((c) => c.type === categoryType);
+  const needsCard = kind === 'CARD_CHARGE' || kind === 'CARD_PAYMENT';
+  const showCategory = kind === 'EXPENSE' || kind === 'INCOME' || kind === 'CARD_PAYMENT';
+  const symbol = needsCard && cardCurrency === 'USD' ? '$' : 'L';
   const noCards = needsCard && creditCards.length === 0;
 
-  const fail = (msg: string) => {
+  const fail = (msg: string): null => {
     setError(msg);
-    return false;
+    return null;
   };
 
   const buildSubmit = (): TransactionSubmit | null => {
     setError(null);
     const amt = Number(amount);
 
-    if (kind === 'CARD_CHARGE_USD') {
-      if (!cardId) return (fail('Selecciona una tarjeta'), null);
+    if (kind === 'CARD_CHARGE') {
+      if (!cardId) return fail('Selecciona una tarjeta');
       const parsed = cardChargeSchema.safeParse({ amount, description, charge_date: date });
-      if (!parsed.success)
-        return (fail(parsed.error.issues[0]?.message ?? 'Datos inválidos'), null);
-      return { kind: 'cardChargeUsd', cardId, input: parsed.data };
+      if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? 'Datos inválidos');
+      return { kind: 'cardCharge', cardId, currency: cardCurrency, input: parsed.data };
     }
 
     if (kind === 'CARD_PAYMENT') {
-      if (!cardId) return (fail('Selecciona una tarjeta'), null);
-      if (!(amt > 0)) return (fail('Ingresa un monto válido'), null);
-      if (payCurrency === 'USD' && !(Number(amountHnl) > 0)) {
-        return (fail('Ingresa el pago en lempiras'), null);
+      if (!cardId) return fail('Selecciona una tarjeta');
+      if (!(amt > 0)) return fail('Ingresa un monto válido');
+      if (cardCurrency === 'USD' && !(Number(amountHnl) > 0)) {
+        return fail('Ingresa el pago en lempiras');
       }
       const card = creditCards.find((c) => c.id === cardId);
       return {
@@ -124,25 +124,25 @@ export function TransactionForm({
         cardId,
         cardName: card?.name ?? 'tarjeta',
         args: {
-          currency: payCurrency,
+          currency: cardCurrency,
           amount: amt,
-          amountHnl: payCurrency === 'USD' ? Number(amountHnl) : null,
+          amountHnl: cardCurrency === 'USD' ? Number(amountHnl) : null,
+          categoryId: categoryId || null,
         },
       };
     }
 
-    // Gasto / Ingreso / Ahorro
     const input = {
       type: kind,
       amount,
       category_id: kind === 'SAVING' ? null : categoryId || null,
-      credit_card_id: kind === 'EXPENSE' ? cardId || null : null,
+      credit_card_id: null,
       savings_account_id: kind === 'SAVING' ? savingsId || null : null,
       description,
       transaction_date: date,
     };
     const parsed = transactionSchema.safeParse(input);
-    if (!parsed.success) return (fail(parsed.error.issues[0]?.message ?? 'Datos inválidos'), null);
+    if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? 'Datos inválidos');
     return { kind: 'transaction', input: parsed.data };
   };
 
@@ -208,17 +208,17 @@ export function TransactionForm({
               </Field>
             )}
 
-            {kind === 'CARD_PAYMENT' && (
-              <Field label="Moneda del pago" htmlFor="pay-currency">
+            {needsCard && (
+              <Field label="Moneda">
                 <div className="grid grid-cols-2 gap-2">
                   {(['HNL', 'USD'] as const).map((cur) => (
                     <button
                       key={cur}
                       type="button"
-                      onClick={() => setPayCurrency(cur)}
+                      onClick={() => setCardCurrency(cur)}
                       className={
                         'rounded-[var(--radius)] border p-2.5 text-sm font-medium transition-colors ' +
-                        (payCurrency === cur
+                        (cardCurrency === cur
                           ? 'border-primary bg-accent text-accent-foreground'
                           : 'border-border text-muted-foreground hover:bg-muted')
                       }
@@ -249,11 +249,11 @@ export function TransactionForm({
               </div>
             </Field>
 
-            {kind === 'CARD_PAYMENT' && payCurrency === 'USD' && (
+            {kind === 'CARD_PAYMENT' && cardCurrency === 'USD' && (
               <Field
                 label="Pago en lempiras (L)"
                 htmlFor="amount-hnl"
-                hint="Lo que realmente pagaste en lempiras. Se registra como gasto."
+                hint="Lo que realmente pagaste en lempiras. Es el gasto que afecta tu disponible."
               >
                 <div className="relative">
                   <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
@@ -274,7 +274,7 @@ export function TransactionForm({
               </Field>
             )}
 
-            {(kind === 'EXPENSE' || kind === 'INCOME') && (
+            {showCategory && (
               <Field label="Categoría" htmlFor="category">
                 <Select
                   id="category"
@@ -285,19 +285,6 @@ export function TransactionForm({
                   {categoryOptions.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name}
-                    </option>
-                  ))}
-                </Select>
-              </Field>
-            )}
-
-            {kind === 'EXPENSE' && (
-              <Field label="Medio de pago" htmlFor="pay-method">
-                <Select id="pay-method" value={cardId} onChange={(e) => setCardId(e.target.value)}>
-                  <option value="">Efectivo / débito</option>
-                  {creditCards.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      Tarjeta: {c.name}
                     </option>
                   ))}
                 </Select>

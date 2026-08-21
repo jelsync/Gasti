@@ -10,7 +10,7 @@ import {
   type CardPaymentArgs,
 } from '@/services/cards.service';
 import { mapDbError } from '@/lib/errors';
-import type { CreditCardWithBalance } from '@/types/models';
+import type { CreditCardWithBalance, Currency } from '@/types/models';
 import type { CardChargeInput, CreditCardInput } from '@/lib/validations';
 
 export function useCreditCards() {
@@ -70,9 +70,9 @@ export function useCreditCards() {
   );
 
   const addCharge = useCallback(
-    async (cardId: string, input: CardChargeInput) => {
+    async (cardId: string, currency: Currency, input: CardChargeInput) => {
       if (!user) throw new Error('Sesión no válida');
-      await registerCardCharge(user.id, cardId, input);
+      await registerCardCharge(user.id, cardId, currency, input);
       await refresh();
     },
     [user, refresh],
