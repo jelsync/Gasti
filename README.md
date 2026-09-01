@@ -88,10 +88,8 @@ VITE_SUPABASE_ANON_KEY=tu_anon_public_key
 ## Configuración de Supabase
 
 1. Crea un proyecto en [supabase.com](https://supabase.com).
-2. En **SQL Editor**, ejecuta en orden:
-   - `supabase/migrations/0001_init.sql`
-   - `supabase/migrations/0002_rls.sql`
-   - `supabase/migrations/0003_triggers_seed.sql`
+2. En **SQL Editor**, ejecuta en orden las migraciones de
+   `supabase/migrations/0001_init.sql` a `0011_income_accounts.sql`.
 3. En **Authentication → URL Configuration**, agrega a *Redirect URLs*:
    `http://localhost:5173/**` (y tu dominio de producción cuando despliegues).
 4. (Opcional, para pruebas locales) En **Authentication → Providers → Email**,

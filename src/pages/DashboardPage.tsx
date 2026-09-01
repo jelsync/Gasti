@@ -127,7 +127,7 @@ export default function DashboardPage() {
                 <Link to={ROUTES.savings}>
                   <Card className="flex items-center justify-between p-5 transition-colors hover:bg-muted">
                     <div>
-                      <p className="text-sm text-muted-foreground">Total ahorrado</p>
+                      <p className="text-sm text-muted-foreground">Saldo en cuentas</p>
                       <p className="mt-1 text-xl font-bold tabular-nums text-primary">
                         {formatCurrency(totalSavings)}
                       </p>

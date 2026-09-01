@@ -23,6 +23,7 @@ import { getCurrentMonthYear, monthRange } from '@/utils/date';
 import { cn } from '@/lib/utils';
 import type { TransactionType, TransactionWithCategory } from '@/types/models';
 import type { CardChargeWithCard } from '@/services/cards.service';
+import { getIncomeCategories } from '@/constants/incomeCategories';
 
 type TypeFilter = 'ALL' | TransactionType;
 
@@ -113,7 +114,7 @@ export default function TransactionsPage() {
   };
 
   const categoryOptions = useMemo(() => {
-    if (typeFilter === 'INCOME') return categories.filter((c) => c.type === 'INCOME');
+    if (typeFilter === 'INCOME') return getIncomeCategories(categories);
     if (typeFilter === 'EXPENSE') return categories.filter((c) => c.type === 'EXPENSE');
     return categories;
   }, [categories, typeFilter]);

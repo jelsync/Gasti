@@ -13,6 +13,7 @@ import { useCategories } from '@/hooks/useCategories';
 import { splitCategoriesByType } from '@/services/categories.service';
 import type { Category } from '@/types/models';
 import type { CategoryInput } from '@/lib/validations';
+import { getIncomeCategories } from '@/constants/incomeCategories';
 
 type CategoryType = 'INCOME' | 'EXPENSE';
 
@@ -23,7 +24,10 @@ export default function CategoriesPage() {
   const [formType, setFormType] = useState<CategoryType>('EXPENSE');
   const [deleting, setDeleting] = useState<Category | null>(null);
 
-  const grouped = useMemo(() => splitCategoriesByType(categories), [categories]);
+  const grouped = useMemo(() => {
+    const result = splitCategoriesByType(categories);
+    return { ...result, INCOME: getIncomeCategories(categories) };
+  }, [categories]);
 
   const openCreate = (type: CategoryType) => {
     setEditing(null);
@@ -76,9 +80,11 @@ export default function CategoriesPage() {
             <Card key={type}>
               <CardHeader className="flex-row items-center justify-between">
                 <CardTitle>{title}</CardTitle>
-                <Button size="sm" variant="outline" onClick={() => openCreate(type)}>
-                  <Plus className="h-4 w-4" /> Nueva
-                </Button>
+                {type === 'EXPENSE' && (
+                  <Button size="sm" variant="outline" onClick={() => openCreate(type)}>
+                    <Plus className="h-4 w-4" /> Nueva
+                  </Button>
+                )}
               </CardHeader>
               <CardContent>
                 {grouped[type].length === 0 ? (
@@ -89,25 +95,34 @@ export default function CategoriesPage() {
                       <li key={c.id} className="flex items-center gap-3 py-2.5">
                         <CategoryIcon icon={c.icon} color={c.color} size="sm" />
                         <span className="flex-1 truncate font-medium">{c.name}</span>
-                        <button
-                          type="button"
-                          onClick={() => openEdit(c)}
-                          aria-label="Editar"
-                          className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setDeleting(c)}
-                          aria-label="Eliminar"
-                          className="rounded-md p-1.5 text-muted-foreground hover:bg-expense-soft hover:text-expense"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                        {type === 'EXPENSE' && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => openEdit(c)}
+                              aria-label="Editar"
+                              className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setDeleting(c)}
+                              aria-label="Eliminar"
+                              className="rounded-md p-1.5 text-muted-foreground hover:bg-expense-soft hover:text-expense"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </>
+                        )}
                       </li>
                     ))}
                   </ul>
+                )}
+                {type === 'INCOME' && (
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    Las categorías de ingreso son fijas para mantener consistentes tus reportes.
+                  </p>
                 )}
               </CardContent>
             </Card>

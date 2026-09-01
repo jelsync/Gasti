@@ -26,7 +26,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Presupuestos', to: ROUTES.budgets, icon: PiggyBank },
   { label: 'Préstamos', to: ROUTES.loans, icon: Landmark },
   { label: 'Tarjetas', to: ROUTES.cards, icon: CreditCard },
-  { label: 'Ahorro', to: ROUTES.savings, icon: Wallet },
+  { label: 'Cuentas', to: ROUTES.savings, icon: Wallet },
   { label: 'Historial', to: ROUTES.history, icon: CalendarClock },
   { label: 'Reportes', to: ROUTES.reports, icon: BarChart3 },
   { label: 'Categorías', to: ROUTES.categories, icon: Tags },

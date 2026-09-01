@@ -50,6 +50,9 @@ export function TransactionList({ transactions, onEdit, onDelete }: TransactionL
                 )}
                 {t.description ? `${t.description} · ` : ''}
                 {formatDate(t.transaction_date)}
+                {t.type === 'INCOME' && t.savings_account
+                  ? ` · Depositado en ${t.savings_account.name}`
+                  : ''}
               </p>
             </div>
             <span className={cn('shrink-0 font-semibold tabular-nums', d.amountClass)}>

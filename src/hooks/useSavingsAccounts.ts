@@ -22,7 +22,7 @@ export function useSavingsAccounts() {
       setError(null);
       setAccounts(await getSavingsAccounts());
     } catch (e) {
-      setError(mapDbError(e, 'No se pudieron cargar las cuentas de ahorro.'));
+      setError(mapDbError(e, 'No se pudieron cargar las cuentas.'));
     } finally {
       setLoading(false);
     }

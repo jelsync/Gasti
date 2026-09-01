@@ -16,7 +16,8 @@ supabase/
 │   ├── 0007_card_currency.sql # Moneda (HNL/USD) de las tarjetas
 │   ├── 0008_card_charges.sql  # Compras/cargos de tarjetas (deuda en su moneda)
 │   ├── 0009_dual_currency_cards.sql # Tarjetas con deuda en L y $ a la vez
-│   └── 0010_savings_budget.sql # Meta de ahorro en presupuestos
+│   ├── 0010_savings_budget.sql # Meta de ahorro en presupuestos
+│   └── 0011_income_accounts.sql # Categorías de ingreso y depósitos en cuentas
 ├── seed.sql                   # Seed opcional para usuarios preexistentes
 └── README.md
 ```
@@ -35,6 +36,7 @@ supabase/
    8. `migrations/0008_card_charges.sql`
    9. `migrations/0009_dual_currency_cards.sql`
    10. `migrations/0010_savings_budget.sql`
+   11. `migrations/0011_income_accounts.sql`
 3. (Opcional) Si ya tenías usuarios creados antes de aplicar el paso 3,
    ejecuta `seed.sql` para sembrarles las categorías predeterminadas.
 

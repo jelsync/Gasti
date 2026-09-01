@@ -54,16 +54,12 @@ export function SavingsAccountForm({ open, onClose, onSubmit, initial }: Savings
   };
 
   return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      title={initial ? 'Editar cuenta' : 'Nueva cuenta de ahorro'}
-    >
+    <Modal open={open} onClose={onClose} title={initial ? 'Editar cuenta' : 'Nueva cuenta'}>
       <form onSubmit={handleSubmit(submit)} className="space-y-4" noValidate>
         <Field label="Nombre" htmlFor="name" error={errors.name?.message}>
           <Input
             id="name"
-            placeholder="Ej. Ahorro Cooperativa"
+            placeholder="Ej. Cuenta principal"
             aria-invalid={!!errors.name}
             {...register('name')}
           />
@@ -82,10 +78,10 @@ export function SavingsAccountForm({ open, onClose, onSubmit, initial }: Savings
         </Field>
 
         <Field
-          label="Saldo actual"
+          label="Saldo inicial"
           htmlFor="opening_balance"
           error={errors.opening_balance?.message}
-          hint="Lo que ya tienes ahorrado hoy"
+          hint="Dinero que ya tenía la cuenta antes de registrar movimientos en Gasti"
         >
           <div className="relative">
             <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">

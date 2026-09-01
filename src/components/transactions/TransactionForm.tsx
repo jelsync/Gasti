@@ -21,6 +21,7 @@ import type {
   TransactionType,
   TransactionWithCategory,
 } from '@/types/models';
+import { getIncomeCategories } from '@/constants/incomeCategories';
 
 type Kind = TransactionType | 'CARD_CHARGE' | 'CARD_PAYMENT';
 
@@ -90,7 +91,10 @@ export function TransactionForm({
     ? KIND_OPTIONS.filter((k) => ['EXPENSE', 'INCOME', 'SAVING'].includes(k.value))
     : KIND_OPTIONS;
   const categoryType = kind === 'CARD_PAYMENT' ? 'EXPENSE' : kind;
-  const categoryOptions = categories.filter((c) => c.type === categoryType);
+  const categoryOptions =
+    categoryType === 'INCOME'
+      ? getIncomeCategories(categories)
+      : categories.filter((c) => c.type === categoryType);
   const needsCard = kind === 'CARD_CHARGE' || kind === 'CARD_PAYMENT';
   const showCategory = kind === 'EXPENSE' || kind === 'INCOME' || kind === 'CARD_PAYMENT';
   const symbol = needsCard && cardCurrency === 'USD' ? '$' : 'L';
@@ -132,12 +136,16 @@ export function TransactionForm({
       };
     }
 
+    if (kind === 'INCOME' && !categoryId) {
+      return fail('Selecciona una categoría de ingreso');
+    }
+
     const input = {
       type: kind,
       amount,
       category_id: kind === 'SAVING' ? null : categoryId || null,
       credit_card_id: null,
-      savings_account_id: kind === 'SAVING' ? savingsId || null : null,
+      savings_account_id: kind === 'SAVING' || kind === 'INCOME' ? savingsId || null : null,
       description,
       transaction_date: date,
     };
@@ -281,7 +289,7 @@ export function TransactionForm({
                   value={categoryId}
                   onChange={(e) => setCategoryId(e.target.value)}
                 >
-                  <option value="">Sin categoría</option>
+                  <option value="">{kind === 'INCOME' ? 'Selecciona…' : 'Sin categoría'}</option>
                   {categoryOptions.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name}
@@ -291,12 +299,16 @@ export function TransactionForm({
               </Field>
             )}
 
-            {kind === 'SAVING' && (
+            {(kind === 'SAVING' || kind === 'INCOME') && (
               <Field
-                label="Cuenta de ahorro"
+                label={kind === 'INCOME' ? 'Depositar en cuenta (opcional)' : 'Cuenta'}
                 htmlFor="savings"
                 hint={
-                  savingsAccounts.length === 0 ? 'Crea una cuenta de ahorro primero.' : undefined
+                  savingsAccounts.length === 0
+                    ? 'Crea una cuenta primero en la sección Cuentas.'
+                    : kind === 'INCOME'
+                      ? 'El ingreso seguirá sumando al dashboard y también aumentará el saldo de la cuenta.'
+                      : undefined
                 }
               >
                 <Select
@@ -304,7 +316,7 @@ export function TransactionForm({
                   value={savingsId}
                   onChange={(e) => setSavingsId(e.target.value)}
                 >
-                  <option value="">Sin asignar</option>
+                  <option value="">No depositar en una cuenta</option>
                   {savingsAccounts.map((a) => (
                     <option key={a.id} value={a.id}>
                       {a.name}
