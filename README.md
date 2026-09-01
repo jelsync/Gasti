@@ -147,18 +147,17 @@ Al registrarse, un trigger crea el perfil y **siembra categorías predeterminada
 
 ---
 
-## Deploy (Cloudflare Pages)
+## Deploy (Cloudflare Workers)
 
-El build genera archivos estáticos en `dist/`, ideales para Cloudflare Pages:
+El build genera archivos estáticos en `dist/`, publicados por Cloudflare Workers:
 
 - **Build command:** `npm run build`
-- **Output directory:** `dist`
+- **Deploy command:** `npx wrangler deploy`
 - **Variables de entorno:** `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
 - Recuerda agregar el dominio de producción a las *Redirect URLs* de Supabase.
 
-Como es una SPA, configura un *fallback* a `index.html` (Cloudflare Pages lo hace
-automáticamente para rutas no encontradas con un archivo `_redirects` si fuese necesario:
-`/*  /index.html  200`).
+El archivo `wrangler.jsonc` publica `dist/` y configura el modo
+`single-page-application`, que sirve `index.html` para las rutas internas de React.
 
 ---
 
