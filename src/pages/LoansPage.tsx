@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle,
   Banknote,
@@ -19,6 +19,7 @@ import { ProgressBar } from '@/components/ui/ProgressBar';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { LoanForm } from '@/components/loans/LoanForm';
 import { ExtraPaymentModal } from '@/components/loans/ExtraPaymentModal';
+import { LoanMovementHistory } from '@/components/loans/LoanMovementHistory';
 import { useLoans } from '@/hooks/useLoans';
 import { useCategories } from '@/hooks/useCategories';
 import { nextPaymentBreakdown, percentPaid, projectLoan } from '@/utils/loan';
@@ -37,6 +38,21 @@ export default function LoansPage() {
   const [deleting, setDeleting] = useState<LoanWithCategory | null>(null);
   const [paying, setPaying] = useState<LoanWithCategory | null>(null);
   const [extraFor, setExtraFor] = useState<LoanWithCategory | null>(null);
+  const [selectedLoanId, setSelectedLoanId] = useState<string | null>(null);
+  const [movementRefreshKey, setMovementRefreshKey] = useState(0);
+
+  const selectedLoan = useMemo(
+    () => loans.find((loan) => loan.id === selectedLoanId) ?? null,
+    [loans, selectedLoanId],
+  );
+
+  useEffect(() => {
+    if (loans.length === 0) {
+      setSelectedLoanId(null);
+    } else if (!loans.some((loan) => loan.id === selectedLoanId)) {
+      setSelectedLoanId(loans[0].id);
+    }
+  }, [loans, selectedLoanId]);
 
   const expenseCategories = useMemo(
     () => categories.filter((c) => c.type === 'EXPENSE'),
@@ -75,6 +91,7 @@ export default function LoansPage() {
     if (!paying) return;
     try {
       const result = await pay(paying);
+      setMovementRefreshKey((current) => current + 1);
       toast.success(
         `Pago registrado. Capital: ${formatCurrency(result.principal)} · Nuevo saldo: ${formatCurrency(result.newBalance)}`,
       );
@@ -86,6 +103,7 @@ export default function LoansPage() {
   const handleExtra = async (amount: number) => {
     if (!extraFor) return;
     const result = await payExtra(extraFor, amount);
+    setMovementRefreshKey((current) => current + 1);
     toast.success(`Abono registrado. Nuevo saldo: ${formatCurrency(result.newBalance)}`);
   };
 
@@ -153,7 +171,23 @@ export default function LoansPage() {
               );
               const settled = loan.current_balance <= 0;
               return (
-                <Card key={loan.id}>
+                <Card
+                  key={loan.id}
+                  role="button"
+                  tabIndex={0}
+                  aria-pressed={selectedLoanId === loan.id}
+                  onClick={() => setSelectedLoanId(loan.id)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      setSelectedLoanId(loan.id);
+                    }
+                  }}
+                  className={cn(
+                    'cursor-pointer transition-colors hover:border-primary/60',
+                    selectedLoanId === loan.id && 'border-primary ring-1 ring-primary/30',
+                  )}
+                >
                   <CardContent className="space-y-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
@@ -167,7 +201,8 @@ export default function LoansPage() {
                       <div className="flex shrink-0 items-center gap-1">
                         <button
                           type="button"
-                          onClick={() => {
+                          onClick={(event) => {
+                            event.stopPropagation();
                             setEditing(loan);
                             setFormOpen(true);
                           }}
@@ -178,7 +213,10 @@ export default function LoansPage() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => setDeleting(loan)}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setDeleting(loan);
+                          }}
                           aria-label="Eliminar"
                           className="rounded-md p-1.5 text-muted-foreground hover:bg-expense-soft hover:text-expense"
                         >
@@ -247,10 +285,24 @@ export default function LoansPage() {
                       </p>
                     ) : (
                       <div className="grid grid-cols-2 gap-2">
-                        <Button variant="outline" onClick={() => setPaying(loan)}>
+                        <Button
+                          variant="outline"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setSelectedLoanId(loan.id);
+                            setPaying(loan);
+                          }}
+                        >
                           <Banknote className="h-4 w-4" /> Pago
                         </Button>
-                        <Button variant="outline" onClick={() => setExtraFor(loan)}>
+                        <Button
+                          variant="outline"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setSelectedLoanId(loan.id);
+                            setExtraFor(loan);
+                          }}
+                        >
                           <CirclePlus className="h-4 w-4" /> Abono
                         </Button>
                       </div>
@@ -260,6 +312,10 @@ export default function LoansPage() {
               );
             })}
           </div>
+
+          {selectedLoan && (
+            <LoanMovementHistory loan={selectedLoan} refreshKey={movementRefreshKey} />
+          )}
         </div>
       )}
 

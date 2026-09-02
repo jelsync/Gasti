@@ -87,9 +87,11 @@ export function MovementList({ items, onEditTx, onDeleteTx, onDeleteCharge }: Mo
               <p className="truncate text-xs text-muted-foreground">
                 {t.description ? `${t.description} · ` : ''}
                 {formatDate(t.transaction_date)}
-                {t.type === 'INCOME' && t.savings_account
+                {t.savings_account && t.type === 'INCOME'
                   ? ` · Depositado en ${t.savings_account.name}`
-                  : ''}
+                  : t.savings_account && t.type === 'EXPENSE'
+                    ? ` · Debitado de ${t.savings_account.name}`
+                    : ''}
               </p>
             </div>
             <span className={cn('shrink-0 font-semibold tabular-nums', d.amountClass)}>

@@ -24,7 +24,7 @@ import { useCreditCards } from '@/hooks/useCreditCards';
 import { useSavingsAccounts } from '@/hooks/useSavingsAccounts';
 import { useLoans } from '@/hooks/useLoans';
 import { useCardCharges } from '@/hooks/useCardCharges';
-import { groupByCategory, monthlySummary, totalBudgetUsage } from '@/utils/finance';
+import { budgetOverview, groupByCategory, monthlySummary } from '@/utils/finance';
 import { formatCurrency, formatMoney, formatPercent } from '@/utils/format';
 import { getCurrentMonthYear, monthRange } from '@/utils/date';
 import { ROUTES } from '@/constants/routes';
@@ -58,10 +58,8 @@ export default function DashboardPage() {
   const budgetUsage = useMemo(() => {
     if (budgets.length === 0) return null;
     const spentByCategory = new Map(expenseByCategory.map((s) => [s.categoryId, s.total]));
-    const totalBudget = budgets.reduce((acc, b) => acc + b.amount, 0);
-    const spent = budgets.reduce((acc, b) => acc + (spentByCategory.get(b.category_id) ?? 0), 0);
-    return { totalBudget, spent, percentage: totalBudgetUsage(totalBudget, spent) };
-  }, [budgets, expenseByCategory]);
+    return budgetOverview(budgets, spentByCategory, summary.saving);
+  }, [budgets, expenseByCategory, summary.saving]);
 
   const recent = useMemo<MovementItem[]>(() => {
     const items: MovementItem[] = [
@@ -153,7 +151,8 @@ export default function DashboardPage() {
                 </div>
                 <ProgressBar value={budgetUsage.percentage} />
                 <p className="mt-2 text-xs text-muted-foreground">
-                  {formatCurrency(budgetUsage.spent)} de {formatCurrency(budgetUsage.totalBudget)}
+                  {formatCurrency(budgetUsage.totalUsed)} de{' '}
+                  {formatCurrency(budgetUsage.totalBudget)}
                 </p>
               </CardContent>
             </Card>

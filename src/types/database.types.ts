@@ -67,6 +67,11 @@ export interface Database {
           category_id: string | null;
           credit_card_id: string | null;
           savings_account_id: string | null;
+          loan_id: string | null;
+          loan_payment_kind: 'INSTALLMENT' | 'EXTRA' | null;
+          loan_principal_amount: number | null;
+          loan_interest_amount: number | null;
+          loan_balance_after: number | null;
           type: TransactionType;
           amount: number;
           description: string;
@@ -80,6 +85,11 @@ export interface Database {
           category_id?: string | null;
           credit_card_id?: string | null;
           savings_account_id?: string | null;
+          loan_id?: string | null;
+          loan_payment_kind?: 'INSTALLMENT' | 'EXTRA' | null;
+          loan_principal_amount?: number | null;
+          loan_interest_amount?: number | null;
+          loan_balance_after?: number | null;
           type: TransactionType;
           amount: number;
           description?: string;
@@ -89,6 +99,11 @@ export interface Database {
           category_id?: string | null;
           credit_card_id?: string | null;
           savings_account_id?: string | null;
+          loan_id?: string | null;
+          loan_payment_kind?: 'INSTALLMENT' | 'EXTRA' | null;
+          loan_principal_amount?: number | null;
+          loan_interest_amount?: number | null;
+          loan_balance_after?: number | null;
           type?: TransactionType;
           amount?: number;
           description?: string;
@@ -114,6 +129,13 @@ export interface Database {
             columns: ['savings_account_id'];
             isOneToOne: false;
             referencedRelation: 'savings_accounts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'transactions_loan_id_fkey';
+            columns: ['loan_id'];
+            isOneToOne: false;
+            referencedRelation: 'loans';
             referencedColumns: ['id'];
           },
         ];

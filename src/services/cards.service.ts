@@ -172,6 +172,69 @@ export interface CardChargeWithCard {
   card: Pick<CreditCard, 'id' | 'name' | 'color'> | null;
 }
 
+export type CardMovement =
+  | {
+      kind: 'CHARGE';
+      id: string;
+      amount: number;
+      currency: Currency;
+      description: string;
+      date: string;
+      createdAt: string;
+    }
+  | {
+      kind: 'PAYMENT';
+      id: string;
+      amount: number;
+      amountHnl: number | null;
+      currency: Currency;
+      date: string;
+      createdAt: string;
+    };
+
+/** Compras y pagos de una tarjeta, del más reciente al más antiguo. */
+export async function getCreditCardMovements(cardId: string): Promise<CardMovement[]> {
+  const [chargesRes, paymentsRes] = await Promise.all([
+    supabase
+      .from('card_charges')
+      .select('id, amount, currency, description, charge_date, created_at')
+      .eq('card_id', cardId),
+    supabase
+      .from('card_payments')
+      .select('id, amount, amount_hnl, currency, payment_date, created_at')
+      .eq('card_id', cardId),
+  ]);
+
+  if (chargesRes.error) throw chargesRes.error;
+  if (paymentsRes.error) throw paymentsRes.error;
+
+  const movements: CardMovement[] = [
+    ...(chargesRes.data ?? []).map((charge) => ({
+      kind: 'CHARGE' as const,
+      id: charge.id,
+      amount: charge.amount,
+      currency: charge.currency,
+      description: charge.description,
+      date: charge.charge_date,
+      createdAt: charge.created_at,
+    })),
+    ...(paymentsRes.data ?? []).map((payment) => ({
+      kind: 'PAYMENT' as const,
+      id: payment.id,
+      amount: payment.amount,
+      amountHnl: payment.amount_hnl,
+      currency: payment.currency,
+      date: payment.payment_date,
+      createdAt: payment.created_at,
+    })),
+  ];
+
+  return movements.sort(
+    (left, right) =>
+      right.date.localeCompare(left.date) || right.createdAt.localeCompare(left.createdAt),
+  );
+}
+
 /** Compras/cargos de tarjeta en un rango de fechas (para mostrarlos en la lista). */
 export async function getCardCharges(
   dateStart: string,

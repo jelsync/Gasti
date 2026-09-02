@@ -17,7 +17,8 @@ supabase/
 │   ├── 0008_card_charges.sql  # Compras/cargos de tarjetas (deuda en su moneda)
 │   ├── 0009_dual_currency_cards.sql # Tarjetas con deuda en L y $ a la vez
 │   ├── 0010_savings_budget.sql # Meta de ahorro en presupuestos
-│   └── 0011_income_accounts.sql # Categorías de ingreso y depósitos en cuentas
+│   ├── 0011_income_accounts.sql # Categorías de ingreso y depósitos en cuentas
+│   └── 0012_loan_payment_history.sql # Historial detallado de pagos de préstamos
 ├── seed.sql                   # Seed opcional para usuarios preexistentes
 └── README.md
 ```
@@ -37,6 +38,7 @@ supabase/
    9. `migrations/0009_dual_currency_cards.sql`
    10. `migrations/0010_savings_budget.sql`
    11. `migrations/0011_income_accounts.sql`
+   12. `migrations/0012_loan_payment_history.sql`
 3. (Opcional) Si ya tenías usuarios creados antes de aplicar el paso 3,
    ejecuta `seed.sql` para sembrarles las categorías predeterminadas.
 
@@ -55,12 +57,12 @@ supabase db push
 | -------------- | ------------------------------------------------------- |
 | `profiles`     | Perfil del usuario (1:1 con `auth.users`).              |
 | `categories`   | Categorías de ingreso/gasto propias de cada usuario.    |
-| `transactions` | Ingresos y gastos.                                      |
+| `transactions` | Ingresos y gastos; las cuotas y abonos pueden guardar su desglose de préstamo. |
 | `budgets`      | Presupuesto mensual por categoría.                      |
-| `loans`        | Préstamos (saldo/pasivo). Las cuotas se registran como transacciones. |
+| `loans`        | Préstamos (saldo/pasivo). Las cuotas y abonos se registran como transacciones vinculadas. |
 | `credit_cards` | Tarjetas de crédito. Deuda = apertura + compras − pagos.       |
 | `card_payments`| Pagos a tarjetas (reducen la deuda, no son gastos).            |
-| `savings_accounts` | Cuentas de ahorro. Saldo = apertura + aportes (SAVING).    |
+| `savings_accounts` | Cuentas. Saldo = apertura + ingresos/aportes − gastos vinculados. |
 
 ### Decisiones de diseño
 

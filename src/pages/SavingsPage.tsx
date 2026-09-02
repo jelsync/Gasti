@@ -179,7 +179,7 @@ export default function SavingsPage() {
                 <div>
                   <CardTitle>Movimientos de {selectedAccount.name}</CardTitle>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Ingresos y aportes depositados en esta cuenta
+                    Ingresos, aportes y gastos debitados de esta cuenta
                   </p>
                 </div>
                 <span className="shrink-0 font-bold tabular-nums text-primary">
@@ -197,35 +197,47 @@ export default function SavingsPage() {
                   <EmptyState
                     icon={ArrowDownToLine}
                     title="Sin movimientos"
-                    description="Cuando deposites un ingreso en esta cuenta aparecerá aquí."
+                    description="Cuando deposites un ingreso o debites un gasto aparecerá aquí."
                   />
                 ) : (
                   <ul className="divide-y divide-border">
                     {movements.map((movement) => {
                       const isIncome = movement.type === 'INCOME';
+                      const isExpense = movement.type === 'EXPENSE';
                       return (
                         <li key={movement.id} className="flex items-center gap-3 py-3">
                           <CategoryIcon
                             icon={
-                              isIncome ? (movement.category?.icon ?? 'circle-plus') : 'piggy-bank'
+                              isIncome || isExpense
+                                ? (movement.category?.icon ?? (isIncome ? 'circle-plus' : 'circle'))
+                                : 'piggy-bank'
                             }
                             color={
-                              isIncome
+                              isIncome || isExpense
                                 ? (movement.category?.color ?? '#10b981')
                                 : selectedAccount.color
                             }
                           />
                           <div className="min-w-0 flex-1">
                             <p className="truncate font-medium">
-                              {isIncome ? (movement.category?.name ?? 'Ingreso') : 'Aporte'}
+                              {isIncome
+                                ? (movement.category?.name ?? 'Ingreso')
+                                : isExpense
+                                  ? (movement.category?.name ?? 'Débito')
+                                  : 'Aporte'}
                             </p>
                             <p className="truncate text-xs text-muted-foreground">
                               {movement.description ? `${movement.description} · ` : ''}
                               {formatDate(movement.transaction_date)}
                             </p>
                           </div>
-                          <span className="shrink-0 font-semibold tabular-nums text-income">
-                            + {formatCurrency(movement.amount)}
+                          <span
+                            className={cn(
+                              'shrink-0 font-semibold tabular-nums',
+                              isExpense ? 'text-expense' : 'text-income',
+                            )}
+                          >
+                            {isExpense ? '−' : '+'} {formatCurrency(movement.amount)}
                           </span>
                         </li>
                       );

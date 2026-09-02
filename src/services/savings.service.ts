@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import { round2 } from '@/utils/finance';
+import { accountMovementAmount, round2 } from '@/utils/finance';
 import type {
   SavingsAccount,
   SavingsAccountWithBalance,
@@ -8,37 +8,44 @@ import type {
 import type { SavingsAccountInput } from '@/lib/validations';
 
 /**
- * Cuentas con su saldo calculado: apertura + ingresos/aportes depositados en ellas.
+ * Cuentas con saldo calculado: apertura + ingresos/aportes − gastos debitados.
  */
 export async function getSavingsAccounts(): Promise<SavingsAccountWithBalance[]> {
   const [accountsRes, contribRes] = await Promise.all([
     supabase.from('savings_accounts').select('*').order('created_at', { ascending: true }),
     supabase
       .from('transactions')
-      .select('savings_account_id, amount')
-      .in('type', ['INCOME', 'SAVING'])
+      .select('savings_account_id, amount, type')
+      .in('type', ['INCOME', 'SAVING', 'EXPENSE'])
       .not('savings_account_id', 'is', null),
   ]);
 
   if (accountsRes.error) throw accountsRes.error;
   if (contribRes.error) throw contribRes.error;
 
-  const contributions = new Map<string, number>();
+  const movements = new Map<string, number>();
   for (const row of contribRes.data ?? []) {
     if (!row.savings_account_id) continue;
-    contributions.set(
+    movements.set(
       row.savings_account_id,
-      round2((contributions.get(row.savings_account_id) ?? 0) + row.amount),
+      round2(
+        (movements.get(row.savings_account_id) ?? 0) +
+          accountMovementAmount({ type: row.type, amount: row.amount }),
+      ),
     );
   }
 
-  return (accountsRes.data ?? []).map((account) => ({
-    ...account,
-    balance: round2(account.opening_balance + (contributions.get(account.id) ?? 0)),
-  }));
+  return (accountsRes.data ?? []).map((account) => {
+    const movementBalance = movements.get(account.id) ?? 0;
+    return {
+      ...account,
+      movementBalance,
+      balance: round2(account.opening_balance + movementBalance),
+    };
+  });
 }
 
-/** Movimientos que aumentaron el saldo de una cuenta, del más reciente al más antiguo. */
+/** Ingresos, aportes y débitos de una cuenta, del más reciente al más antiguo. */
 export async function getSavingsAccountMovements(
   accountId: string,
 ): Promise<TransactionWithCategory[]> {
@@ -46,7 +53,7 @@ export async function getSavingsAccountMovements(
     .from('transactions')
     .select('*, category:categories(id, name, icon, color, type)')
     .eq('savings_account_id', accountId)
-    .in('type', ['INCOME', 'SAVING'])
+    .in('type', ['INCOME', 'SAVING', 'EXPENSE'])
     .order('transaction_date', { ascending: false })
     .order('created_at', { ascending: false })
     .returns<TransactionWithCategory[]>();

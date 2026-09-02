@@ -62,6 +62,42 @@ export async function deleteLoan(id: string): Promise<void> {
   if (error) throw error;
 }
 
+export interface LoanMovement {
+  id: string;
+  amount: number;
+  kind: 'INSTALLMENT' | 'EXTRA';
+  principal: number;
+  interest: number;
+  balanceAfter: number;
+  description: string;
+  date: string;
+}
+
+/** Cuotas y abonos vinculados a un préstamo, del más reciente al más antiguo. */
+export async function getLoanMovements(loanId: string): Promise<LoanMovement[]> {
+  const { data, error } = await supabase
+    .from('transactions')
+    .select(
+      'id, amount, loan_payment_kind, loan_principal_amount, loan_interest_amount, loan_balance_after, description, transaction_date, created_at',
+    )
+    .eq('loan_id', loanId)
+    .not('loan_payment_kind', 'is', null)
+    .order('transaction_date', { ascending: false })
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return (data ?? []).map((movement) => ({
+    id: movement.id,
+    amount: movement.amount,
+    kind: movement.loan_payment_kind as 'INSTALLMENT' | 'EXTRA',
+    principal: movement.loan_principal_amount ?? 0,
+    interest: movement.loan_interest_amount ?? 0,
+    balanceAfter: movement.loan_balance_after ?? 0,
+    description: movement.description,
+    date: movement.transaction_date,
+  }));
+}
+
 export interface PaymentResult {
   interest: number;
   principal: number;
@@ -88,6 +124,11 @@ export async function registerPayment(
     type: 'EXPENSE',
     amount: loan.installment,
     category_id: loan.category_id,
+    loan_id: loan.id,
+    loan_payment_kind: 'INSTALLMENT',
+    loan_principal_amount: principal,
+    loan_interest_amount: interest,
+    loan_balance_after: newBalance,
     description: `Pago préstamo: ${loan.name}`,
     transaction_date: dateISO,
   });
@@ -124,6 +165,11 @@ export async function registerExtraPrincipal(
     type: 'EXPENSE',
     amount,
     category_id: loan.category_id,
+    loan_id: loan.id,
+    loan_payment_kind: 'EXTRA',
+    loan_principal_amount: amount,
+    loan_interest_amount: 0,
+    loan_balance_after: newBalance,
     description: `Abono a capital: ${loan.name}`,
     transaction_date: dateISO,
   });

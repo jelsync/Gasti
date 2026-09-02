@@ -14,7 +14,7 @@ import { BudgetForm } from '@/components/budgets/BudgetForm';
 import { useBudgets } from '@/hooks/useBudgets';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useCategories } from '@/hooks/useCategories';
-import { budgetProgress, groupByCategory, sumByType } from '@/utils/finance';
+import { budgetOverview, budgetProgress, groupByCategory, sumByType } from '@/utils/finance';
 import { formatCurrency, formatPercent } from '@/utils/format';
 import { getCurrentMonthYear, monthRange } from '@/utils/date';
 import { cn } from '@/lib/utils';
@@ -55,13 +55,8 @@ export default function BudgetsPage() {
   );
 
   const totals = useMemo(() => {
-    const totalBudget = categoryBudgets.reduce((acc, b) => acc + b.amount, 0);
-    const totalSpent = categoryBudgets.reduce(
-      (acc, b) => acc + (spentByCategory.get(b.category_id) ?? 0),
-      0,
-    );
-    return { totalBudget, totalSpent };
-  }, [categoryBudgets, spentByCategory]);
+    return budgetOverview(budgets, spentByCategory, savedThisMonth);
+  }, [budgets, spentByCategory, savedThisMonth]);
 
   const handleSubmit = async (input: BudgetInput) => {
     await save(input);
@@ -125,12 +120,10 @@ export default function BudgetsPage() {
               <div className="mb-2 flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Total presupuestado</span>
                 <span className="font-semibold tabular-nums">
-                  {formatCurrency(totals.totalSpent)} / {formatCurrency(totals.totalBudget)}
+                  {formatCurrency(totals.totalUsed)} / {formatCurrency(totals.totalBudget)}
                 </span>
               </div>
-              <ProgressBar
-                value={totals.totalBudget > 0 ? (totals.totalSpent / totals.totalBudget) * 100 : 0}
-              />
+              <ProgressBar value={totals.percentage} />
             </CardContent>
           </Card>
         )}

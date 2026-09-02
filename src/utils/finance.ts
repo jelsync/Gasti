@@ -15,6 +15,12 @@ interface AmountTyped {
   amount: number;
 }
 
+interface BudgetAmount {
+  kind: 'CATEGORY' | 'SAVINGS';
+  category_id: string | null;
+  amount: number;
+}
+
 /** Suma los montos de las transacciones de un tipo dado. */
 export function sumByType(transactions: readonly AmountTyped[], type: TransactionType): number {
   const total = transactions.reduce((acc, t) => (t.type === type ? acc + t.amount : acc), 0);
@@ -88,4 +94,41 @@ export function budgetProgress(budgetAmount: number, spent: number): BudgetProgr
 export function totalBudgetUsage(budgetTotal: number, spentTotal: number): number {
   if (budgetTotal <= 0) return 0;
   return round2((spentTotal / budgetTotal) * 100);
+}
+
+export interface BudgetOverview {
+  totalBudget: number;
+  totalUsed: number;
+  percentage: number;
+}
+
+/**
+ * Resumen común para Dashboard y Presupuestos.
+ * Incluye límites por categoría y la meta/avance de ahorro.
+ */
+export function budgetOverview(
+  budgets: readonly BudgetAmount[],
+  spentByCategory: ReadonlyMap<string | null, number>,
+  saved: number,
+): BudgetOverview {
+  const totalBudget = round2(budgets.reduce((total, budget) => total + budget.amount, 0));
+  const totalUsed = round2(
+    budgets.reduce(
+      (total, budget) =>
+        total +
+        (budget.kind === 'SAVINGS' ? saved : (spentByCategory.get(budget.category_id) ?? 0)),
+      0,
+    ),
+  );
+
+  return {
+    totalBudget,
+    totalUsed,
+    percentage: totalBudgetUsage(totalBudget, totalUsed),
+  };
+}
+
+/** Impacto firmado de una transacción sobre el saldo de una cuenta. */
+export function accountMovementAmount(transaction: AmountTyped): number {
+  return transaction.type === 'EXPENSE' ? -transaction.amount : transaction.amount;
 }

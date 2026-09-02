@@ -40,6 +40,7 @@ describe('transactionSchema', () => {
     type: 'EXPENSE' as const,
     amount: 100,
     category_id: null,
+    savings_account_id: '11111111-1111-1111-1111-111111111111',
     transaction_date: '2026-08-19',
   };
 
@@ -66,6 +67,10 @@ describe('transactionSchema', () => {
 
   it('rechaza category_id que no sea uuid ni null', () => {
     expect(transactionSchema.safeParse({ ...base, category_id: 'abc' }).success).toBe(false);
+  });
+
+  it('requiere una cuenta para gastos normales', () => {
+    expect(transactionSchema.safeParse({ ...base, savings_account_id: null }).success).toBe(false);
   });
 });
 

@@ -24,6 +24,8 @@ export interface CreditCardWithBalance extends CreditCard {
 /** Cuenta de ahorro con su saldo calculado. */
 export interface SavingsAccountWithBalance extends SavingsAccount {
   balance: number;
+  /** Suma firmada de movimientos: ingresos/aportes − gastos. */
+  movementBalance: number;
 }
 
 /** Transacción con su categoría (y tarjeta/ahorro) embebidas (resultado de un join). */

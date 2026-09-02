@@ -6,6 +6,8 @@ import {
   round2,
   sumByType,
   totalBudgetUsage,
+  budgetOverview,
+  accountMovementAmount,
 } from '@/utils/finance';
 import type { TransactionWithCategory } from '@/types/models';
 
@@ -18,6 +20,11 @@ function tx(
     category_id: overrides.category?.id ?? null,
     credit_card_id: null,
     savings_account_id: null,
+    loan_id: null,
+    loan_payment_kind: null,
+    loan_principal_amount: null,
+    loan_interest_amount: null,
+    loan_balance_after: null,
     description: '',
     transaction_date: '2026-08-10',
     created_at: '',
@@ -131,5 +138,33 @@ describe('totalBudgetUsage', () => {
   });
   it('devuelve 0 si no hay presupuesto', () => {
     expect(totalBudgetUsage(0, 500)).toBe(0);
+  });
+});
+
+describe('budgetOverview', () => {
+  it('incluye presupuestos por categoría y meta de ahorro en el mismo total', () => {
+    const budgets = [
+      { kind: 'CATEGORY' as const, category_id: 'fuel', amount: 3000 },
+      { kind: 'CATEGORY' as const, category_id: 'phone', amount: 500 },
+      { kind: 'SAVINGS' as const, category_id: null, amount: 6000 },
+    ];
+    const spent = new Map<string | null, number>([
+      ['fuel', 250],
+      ['phone', 100],
+    ]);
+
+    expect(budgetOverview(budgets, spent, 1000)).toEqual({
+      totalBudget: 9500,
+      totalUsed: 1350,
+      percentage: 14.21,
+    });
+  });
+});
+
+describe('accountMovementAmount', () => {
+  it('suma ingresos y aportes, y resta gastos', () => {
+    expect(accountMovementAmount({ type: 'INCOME', amount: 1000 })).toBe(1000);
+    expect(accountMovementAmount({ type: 'SAVING', amount: 250 })).toBe(250);
+    expect(accountMovementAmount({ type: 'EXPENSE', amount: 300 })).toBe(-300);
   });
 });

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CreditCard as CardIcon, Pencil, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -10,9 +10,11 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { CreditCardForm } from '@/components/cards/CreditCardForm';
+import { CardMovementHistory } from '@/components/cards/CardMovementHistory';
 import { useCreditCards } from '@/hooks/useCreditCards';
 import { formatMoney, formatPercent } from '@/utils/format';
 import { ROUTES } from '@/constants/routes';
+import { cn } from '@/lib/utils';
 import type { CreditCardWithBalance } from '@/types/models';
 import type { CreditCardInput } from '@/lib/validations';
 
@@ -21,6 +23,20 @@ export default function CardsPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<CreditCardWithBalance | null>(null);
   const [deleting, setDeleting] = useState<CreditCardWithBalance | null>(null);
+  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+
+  const selectedCard = useMemo(
+    () => cards.find((card) => card.id === selectedCardId) ?? null,
+    [cards, selectedCardId],
+  );
+
+  useEffect(() => {
+    if (cards.length === 0) {
+      setSelectedCardId(null);
+    } else if (!cards.some((card) => card.id === selectedCardId)) {
+      setSelectedCardId(cards[0].id);
+    }
+  }, [cards, selectedCardId]);
 
   const totals = useMemo(() => {
     const acc = { hnl: 0, usd: 0 };
@@ -120,7 +136,23 @@ export default function CardsPage() {
               const showUsd =
                 card.balanceUsd > 0 || card.opening_balance_usd > 0 || usageUsd !== null;
               return (
-                <Card key={card.id}>
+                <Card
+                  key={card.id}
+                  role="button"
+                  tabIndex={0}
+                  aria-pressed={selectedCardId === card.id}
+                  onClick={() => setSelectedCardId(card.id)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      setSelectedCardId(card.id);
+                    }
+                  }}
+                  className={cn(
+                    'cursor-pointer transition-colors hover:border-primary/60',
+                    selectedCardId === card.id && 'border-primary ring-1 ring-primary/30',
+                  )}
+                >
                   <CardContent className="space-y-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex min-w-0 items-center gap-3">
@@ -140,7 +172,8 @@ export default function CardsPage() {
                       <div className="flex shrink-0 items-center gap-1">
                         <button
                           type="button"
-                          onClick={() => {
+                          onClick={(event) => {
+                            event.stopPropagation();
                             setEditing(card);
                             setFormOpen(true);
                           }}
@@ -151,7 +184,10 @@ export default function CardsPage() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => setDeleting(card)}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setDeleting(card);
+                          }}
                           aria-label="Eliminar"
                           className="rounded-md p-1.5 text-muted-foreground hover:bg-expense-soft hover:text-expense"
                         >
@@ -199,6 +235,8 @@ export default function CardsPage() {
               );
             })}
           </div>
+
+          {selectedCard && <CardMovementHistory card={selectedCard} />}
         </div>
       )}
 

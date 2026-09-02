@@ -99,6 +99,9 @@ export function TransactionForm({
   const showCategory = kind === 'EXPENSE' || kind === 'INCOME' || kind === 'CARD_PAYMENT';
   const symbol = needsCard && cardCurrency === 'USD' ? '$' : 'L';
   const noCards = needsCard && creditCards.length === 0;
+  const usesAccount = kind === 'EXPENSE' || kind === 'INCOME' || kind === 'SAVING';
+  const accountRequired = kind === 'EXPENSE';
+  const noRequiredAccounts = accountRequired && savingsAccounts.length === 0;
 
   const fail = (msg: string): null => {
     setError(msg);
@@ -139,13 +142,16 @@ export function TransactionForm({
     if (kind === 'INCOME' && !categoryId) {
       return fail('Selecciona una categoría de ingreso');
     }
+    if (kind === 'EXPENSE' && !savingsId) {
+      return fail('Selecciona la cuenta de donde se debitará el gasto');
+    }
 
     const input = {
       type: kind,
       amount,
       category_id: kind === 'SAVING' ? null : categoryId || null,
       credit_card_id: null,
-      savings_account_id: kind === 'SAVING' || kind === 'INCOME' ? savingsId || null : null,
+      savings_account_id: savingsId || null,
       description,
       transaction_date: date,
     };
@@ -299,16 +305,24 @@ export function TransactionForm({
               </Field>
             )}
 
-            {(kind === 'SAVING' || kind === 'INCOME') && (
+            {usesAccount && (
               <Field
-                label={kind === 'INCOME' ? 'Depositar en cuenta (opcional)' : 'Cuenta'}
+                label={
+                  kind === 'EXPENSE'
+                    ? 'Debitar de cuenta'
+                    : kind === 'INCOME'
+                      ? 'Depositar en cuenta (opcional)'
+                      : 'Cuenta'
+                }
                 htmlFor="savings"
                 hint={
                   savingsAccounts.length === 0
                     ? 'Crea una cuenta primero en la sección Cuentas.'
-                    : kind === 'INCOME'
-                      ? 'El ingreso seguirá sumando al dashboard y también aumentará el saldo de la cuenta.'
-                      : undefined
+                    : kind === 'EXPENSE'
+                      ? 'El gasto reducirá el saldo de la cuenta seleccionada.'
+                      : kind === 'INCOME'
+                        ? 'El ingreso seguirá sumando al dashboard y también aumentará el saldo de la cuenta.'
+                        : undefined
                 }
               >
                 <Select
@@ -316,7 +330,9 @@ export function TransactionForm({
                   value={savingsId}
                   onChange={(e) => setSavingsId(e.target.value)}
                 >
-                  <option value="">No depositar en una cuenta</option>
+                  <option value="">
+                    {accountRequired ? 'Selecciona una cuenta…' : 'No asignar a una cuenta'}
+                  </option>
                   {savingsAccounts.map((a) => (
                     <option key={a.id} value={a.id}>
                       {a.name}
@@ -347,7 +363,7 @@ export function TransactionForm({
           <Button type="button" variant="outline" onClick={onClose}>
             Cancelar
           </Button>
-          <Button type="submit" loading={loading} disabled={noCards}>
+          <Button type="submit" loading={loading} disabled={noCards || noRequiredAccounts}>
             {isEditing ? 'Guardar cambios' : 'Agregar'}
           </Button>
         </div>

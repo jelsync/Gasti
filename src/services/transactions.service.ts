@@ -61,6 +61,11 @@ export async function createTransaction(
       category_id: input.category_id,
       credit_card_id: input.credit_card_id ?? null,
       savings_account_id: input.savings_account_id ?? null,
+      loan_id: input.loan_id ?? null,
+      loan_payment_kind: input.loan_payment_kind ?? null,
+      loan_principal_amount: input.loan_principal_amount ?? null,
+      loan_interest_amount: input.loan_interest_amount ?? null,
+      loan_balance_after: input.loan_balance_after ?? null,
       description: input.description ?? '',
       transaction_date: input.transaction_date,
     })

@@ -8,15 +8,16 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { savingsAccountSchema, type SavingsAccountInput } from '@/lib/validations';
 import { COLOR_OPTIONS } from '@/lib/icons';
-import { CURRENCY_SYMBOL } from '@/utils/format';
+import { CURRENCY_SYMBOL, formatCurrency } from '@/utils/format';
+import { round2 } from '@/utils/finance';
 import { cn } from '@/lib/utils';
-import type { SavingsAccount } from '@/types/models';
+import type { SavingsAccountWithBalance } from '@/types/models';
 
 interface SavingsAccountFormProps {
   open: boolean;
   onClose: () => void;
   onSubmit: (input: SavingsAccountInput) => Promise<void>;
-  initial?: SavingsAccount | null;
+  initial?: SavingsAccountWithBalance | null;
 }
 
 export function SavingsAccountForm({ open, onClose, onSubmit, initial }: SavingsAccountFormProps) {
@@ -33,6 +34,12 @@ export function SavingsAccountForm({ open, onClose, onSubmit, initial }: Savings
   });
 
   const color = watch('color');
+  const openingBalance = watch('opening_balance');
+  const parsedOpeningBalance = Number(openingBalance);
+  const nextBalance =
+    initial && Number.isFinite(parsedOpeningBalance)
+      ? round2(parsedOpeningBalance + initial.movementBalance)
+      : null;
 
   useEffect(() => {
     if (!open) return;
@@ -78,10 +85,14 @@ export function SavingsAccountForm({ open, onClose, onSubmit, initial }: Savings
         </Field>
 
         <Field
-          label="Saldo inicial"
+          label={initial ? 'Saldo inicial (reemplaza el anterior)' : 'Saldo inicial'}
           htmlFor="opening_balance"
           error={errors.opening_balance?.message}
-          hint="Dinero que ya tenía la cuenta antes de registrar movimientos en Gasti"
+          hint={
+            initial
+              ? 'Los ingresos y débitos registrados no se borran ni se vuelven a sumar como saldo inicial.'
+              : 'Dinero que ya tenía la cuenta antes de registrar movimientos en Gasti.'
+          }
         >
           <div className="relative">
             <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
@@ -100,6 +111,22 @@ export function SavingsAccountForm({ open, onClose, onSubmit, initial }: Savings
             />
           </div>
         </Field>
+
+        {initial && nextBalance !== null && (
+          <div className="rounded-md border border-border bg-muted/40 px-3 py-2 text-sm">
+            <div className="flex justify-between gap-3 text-muted-foreground">
+              <span>Movimientos netos registrados</span>
+              <span className="tabular-nums">{formatCurrency(initial.movementBalance)}</span>
+            </div>
+            <div className="mt-1 flex justify-between gap-3 font-medium">
+              <span>Saldo resultante</span>
+              <span className="tabular-nums">{formatCurrency(nextBalance)}</span>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Saldo resultante = nuevo saldo inicial + ingresos/aportes − débitos.
+            </p>
+          </div>
+        )}
 
         <Field label="Color" error={errors.color?.message}>
           <div className="flex flex-wrap gap-2">

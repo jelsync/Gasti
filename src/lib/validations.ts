@@ -52,18 +52,33 @@ const dateStringSchema = z
   .regex(/^\d{4}-\d{2}-\d{2}$/, 'Fecha inválida')
   .refine((value) => !Number.isNaN(new Date(value).getTime()), 'Fecha inválida');
 
-export const transactionSchema = z.object({
-  type: z.enum(['INCOME', 'EXPENSE', 'SAVING']),
-  amount: z.coerce
-    .number({ invalid_type_error: 'Ingresa un monto válido' })
-    .positive('El monto debe ser mayor que cero')
-    .max(9_999_999_999, 'El monto es demasiado grande'),
-  category_id: z.string().uuid('Selecciona una categoría').nullable(),
-  credit_card_id: z.string().uuid().nullable().optional(),
-  savings_account_id: z.string().uuid().nullable().optional(),
-  description: z.string().trim().max(200, 'Máximo 200 caracteres').optional(),
-  transaction_date: dateStringSchema,
-});
+export const transactionSchema = z
+  .object({
+    type: z.enum(['INCOME', 'EXPENSE', 'SAVING']),
+    amount: z.coerce
+      .number({ invalid_type_error: 'Ingresa un monto válido' })
+      .positive('El monto debe ser mayor que cero')
+      .max(9_999_999_999, 'El monto es demasiado grande'),
+    category_id: z.string().uuid('Selecciona una categoría').nullable(),
+    credit_card_id: z.string().uuid().nullable().optional(),
+    savings_account_id: z.string().uuid().nullable().optional(),
+    loan_id: z.string().uuid().nullable().optional(),
+    loan_payment_kind: z.enum(['INSTALLMENT', 'EXTRA']).nullable().optional(),
+    loan_principal_amount: z.number().min(0).nullable().optional(),
+    loan_interest_amount: z.number().min(0).nullable().optional(),
+    loan_balance_after: z.number().min(0).nullable().optional(),
+    description: z.string().trim().max(200, 'Máximo 200 caracteres').optional(),
+    transaction_date: dateStringSchema,
+  })
+  .superRefine((transaction, context) => {
+    if (transaction.type === 'EXPENSE' && !transaction.savings_account_id) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['savings_account_id'],
+        message: 'Selecciona la cuenta de donde se debitará el gasto',
+      });
+    }
+  });
 
 // ---------------------------------------------------------------------------
 // Categorías
