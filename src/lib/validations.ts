@@ -54,7 +54,7 @@ const dateStringSchema = z
 
 export const transactionSchema = z
   .object({
-    type: z.enum(['INCOME', 'EXPENSE', 'SAVING']),
+    type: z.enum(['INCOME', 'EXPENSE', 'SAVING', 'TRANSFER']),
     amount: z.coerce
       .number({ invalid_type_error: 'Ingresa un monto válido' })
       .positive('El monto debe ser mayor que cero')
@@ -62,6 +62,7 @@ export const transactionSchema = z
     category_id: z.string().uuid('Selecciona una categoría').nullable(),
     credit_card_id: z.string().uuid().nullable().optional(),
     savings_account_id: z.string().uuid().nullable().optional(),
+    destination_savings_account_id: z.string().uuid().nullable().optional(),
     loan_id: z.string().uuid().nullable().optional(),
     loan_payment_kind: z.enum(['INSTALLMENT', 'EXTRA']).nullable().optional(),
     loan_principal_amount: z.number().min(0).nullable().optional(),
@@ -77,6 +78,28 @@ export const transactionSchema = z
         path: ['savings_account_id'],
         message: 'Selecciona la cuenta de donde se debitará el gasto',
       });
+    }
+    if (transaction.type === 'TRANSFER') {
+      if (!transaction.savings_account_id) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Selecciona la cuenta de origen',
+          path: ['savings_account_id'],
+        });
+      }
+      if (!transaction.destination_savings_account_id) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Selecciona la cuenta de destino',
+          path: ['destination_savings_account_id'],
+        });
+      } else if (transaction.destination_savings_account_id === transaction.savings_account_id) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'La cuenta destino debe ser diferente',
+          path: ['destination_savings_account_id'],
+        });
+      }
     }
   });
 
@@ -189,6 +212,8 @@ export const cardChargeSchema = z.object({
     .positive('El monto debe ser mayor que cero')
     .max(999_999_999, 'Demasiado grande'),
   description: z.string().trim().max(200, 'Máximo 200 caracteres').optional(),
+  amount_hnl: optionalPositive,
+  category_id: z.string().uuid('Selecciona una categoría'),
   charge_date: dateStringSchema,
 });
 

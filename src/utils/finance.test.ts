@@ -20,6 +20,7 @@ function tx(
     category_id: overrides.category?.id ?? null,
     credit_card_id: null,
     savings_account_id: null,
+    destination_savings_account_id: null,
     loan_id: null,
     loan_payment_kind: null,
     loan_principal_amount: null,
@@ -79,6 +80,16 @@ describe('monthlySummary', () => {
     expect(summary.expense).toBe(10000);
     expect(summary.saving).toBe(3000);
     expect(summary.balance).toBe(15000);
+  });
+
+  it('las transferencias no se cuentan como ingreso ni como gasto', () => {
+    const list = [tx({ type: 'INCOME', amount: 1000 }), tx({ type: 'TRANSFER', amount: 300 })];
+    expect(monthlySummary(list)).toEqual({
+      income: 1000,
+      expense: 0,
+      saving: 0,
+      balance: 1000,
+    });
   });
 
   it('balance puede ser negativo', () => {
@@ -166,5 +177,7 @@ describe('accountMovementAmount', () => {
     expect(accountMovementAmount({ type: 'INCOME', amount: 1000 })).toBe(1000);
     expect(accountMovementAmount({ type: 'SAVING', amount: 250 })).toBe(250);
     expect(accountMovementAmount({ type: 'EXPENSE', amount: 300 })).toBe(-300);
+    expect(accountMovementAmount({ type: 'TRANSFER', amount: 300 }, 'SOURCE')).toBe(-300);
+    expect(accountMovementAmount({ type: 'TRANSFER', amount: 300 }, 'DESTINATION')).toBe(300);
   });
 });

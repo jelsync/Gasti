@@ -24,6 +24,7 @@ interface BudgetFormProps {
   usedCategoryIds?: string[];
   /** Si ya existe una meta de ahorro este mes (para no duplicarla al crear). */
   savingsUsed?: boolean;
+  initialCategoryId?: string | null;
 }
 
 export function BudgetForm({
@@ -35,6 +36,7 @@ export function BudgetForm({
   initial,
   usedCategoryIds = [],
   savingsUsed = false,
+  initialCategoryId = null,
 }: BudgetFormProps) {
   const {
     register,
@@ -58,13 +60,13 @@ export function BudgetForm({
     if (!open) return;
     reset({
       kind: initial?.kind ?? 'CATEGORY',
-      category_id: initial?.category_id ?? available[0]?.id ?? null,
+      category_id: initial?.category_id ?? initialCategoryId ?? available[0]?.id ?? null,
       amount: initial?.amount,
       month: month.month,
       year: month.year,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, initial, month.month, month.year, reset]);
+  }, [open, initial, initialCategoryId, month.month, month.year, reset]);
 
   const setKind = (value: 'CATEGORY' | 'SAVINGS') => {
     setValue('kind', value);

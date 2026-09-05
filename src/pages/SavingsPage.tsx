@@ -1,6 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowDownToLine, Landmark, Pencil, Plus, Trash2, Wallet } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import {
+  ArrowDownToLine,
+  ArrowLeftRight,
+  Landmark,
+  Pencil,
+  Plus,
+  Trash2,
+  Wallet,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -20,6 +28,7 @@ import type { SavingsAccountWithBalance } from '@/types/models';
 import type { SavingsAccountInput } from '@/lib/validations';
 
 export default function SavingsPage() {
+  const navigate = useNavigate();
   const { accounts, loading, create, update, remove } = useSavingsAccounts();
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<SavingsAccountWithBalance | null>(null);
@@ -71,14 +80,23 @@ export default function SavingsPage() {
         title="Cuentas"
         description="Consulta tus saldos y los movimientos depositados en cada cuenta"
         actions={
-          <Button
-            onClick={() => {
-              setEditing(null);
-              setFormOpen(true);
-            }}
-          >
-            <Plus className="h-4 w-4" /> Nueva
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => navigate(`${ROUTES.transactions}?new=transfer`)}
+              disabled={accounts.length < 2}
+            >
+              <ArrowLeftRight className="h-4 w-4" /> Transferir
+            </Button>
+            <Button
+              onClick={() => {
+                setEditing(null);
+                setFormOpen(true);
+              }}
+            >
+              <Plus className="h-4 w-4" /> Nueva
+            </Button>
+          </div>
         }
       />
 
@@ -179,7 +197,7 @@ export default function SavingsPage() {
                 <div>
                   <CardTitle>Movimientos de {selectedAccount.name}</CardTitle>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Ingresos, aportes y gastos debitados de esta cuenta
+                    Ingresos, gastos y transferencias de esta cuenta
                   </p>
                 </div>
                 <span className="shrink-0 font-bold tabular-nums text-primary">
@@ -204,27 +222,47 @@ export default function SavingsPage() {
                     {movements.map((movement) => {
                       const isIncome = movement.type === 'INCOME';
                       const isExpense = movement.type === 'EXPENSE';
+                      const isTransfer = movement.type === 'TRANSFER';
+                      const isIncomingTransfer =
+                        isTransfer &&
+                        movement.destination_savings_account_id === selectedAccount.id;
+                      const isOutgoing = isExpense || (isTransfer && !isIncomingTransfer);
                       return (
                         <li key={movement.id} className="flex items-center gap-3 py-3">
                           <CategoryIcon
                             icon={
-                              isIncome || isExpense
-                                ? (movement.category?.icon ?? (isIncome ? 'circle-plus' : 'circle'))
-                                : 'piggy-bank'
+                              isTransfer
+                                ? movement.credit_card
+                                  ? 'credit-card'
+                                  : 'arrow-left-right'
+                                : isIncome || isExpense
+                                  ? (movement.category?.icon ??
+                                    (isIncome ? 'circle-plus' : 'circle'))
+                                  : 'piggy-bank'
                             }
                             color={
-                              isIncome || isExpense
-                                ? (movement.category?.color ?? '#10b981')
-                                : selectedAccount.color
+                              isTransfer
+                                ? isIncomingTransfer
+                                  ? '#10b981'
+                                  : '#0ea5e9'
+                                : isIncome || isExpense
+                                  ? (movement.category?.color ?? '#10b981')
+                                  : selectedAccount.color
                             }
                           />
                           <div className="min-w-0 flex-1">
                             <p className="truncate font-medium">
-                              {isIncome
-                                ? (movement.category?.name ?? 'Ingreso')
-                                : isExpense
-                                  ? (movement.category?.name ?? 'Débito')
-                                  : 'Aporte'}
+                              {isTransfer
+                                ? isIncomingTransfer
+                                  ? `Transferencia recibida de ${movement.savings_account?.name ?? 'otra cuenta'}`
+                                  : movement.credit_card
+                                    ? `Pago de ${movement.credit_card.name}`
+                                    : `Transferencia enviada a ${movement.destination_savings_account?.name ?? 'otra cuenta'}`
+                                : isIncome
+                                  ? (movement.category?.name ?? 'Ingreso')
+                                  : isExpense
+                                    ? (movement.category?.name ?? 'Débito')
+                                    : 'Aporte'}
                             </p>
                             <p className="truncate text-xs text-muted-foreground">
                               {movement.description ? `${movement.description} · ` : ''}
@@ -234,10 +272,10 @@ export default function SavingsPage() {
                           <span
                             className={cn(
                               'shrink-0 font-semibold tabular-nums',
-                              isExpense ? 'text-expense' : 'text-income',
+                              isOutgoing ? 'text-expense' : 'text-income',
                             )}
                           >
-                            {isExpense ? '−' : '+'} {formatCurrency(movement.amount)}
+                            {isOutgoing ? '−' : '+'} {formatCurrency(movement.amount)}
                           </span>
                         </li>
                       );

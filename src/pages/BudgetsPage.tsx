@@ -33,6 +33,7 @@ export default function BudgetsPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<BudgetWithCategory | null>(null);
   const [deleting, setDeleting] = useState<BudgetWithCategory | null>(null);
+  const [initialCategoryId, setInitialCategoryId] = useState<string | null>(null);
 
   const expenseCategories = useMemo(
     () => categories.filter((c) => c.type === 'EXPENSE'),
@@ -52,6 +53,32 @@ export default function BudgetsPage() {
   const usedCategoryIds = useMemo(
     () => categoryBudgets.map((b) => b.category_id).filter((id): id is string => !!id),
     [categoryBudgets],
+  );
+
+  const unbudgetedExpenses = useMemo(
+    () =>
+      Array.from(spentByCategory.entries())
+        .filter(
+          ([categoryId, spent]) =>
+            categoryId !== null && spent > 0 && !usedCategoryIds.includes(categoryId),
+        )
+        .map(([categoryId, spent]) => {
+          const category = expenseCategories.find((item) => item.id === categoryId);
+          return {
+            categoryId: categoryId as string,
+            spent,
+            name: category?.name ?? 'Categoría eliminada',
+            icon: category?.icon ?? 'circle',
+            color: category?.color ?? '#f59e0b',
+          };
+        })
+        .sort((left, right) => right.spent - left.spent),
+    [spentByCategory, usedCategoryIds, expenseCategories],
+  );
+
+  const unbudgetedTotal = useMemo(
+    () => unbudgetedExpenses.reduce((total, item) => total + item.spent, 0),
+    [unbudgetedExpenses],
   );
 
   const totals = useMemo(() => {
@@ -89,6 +116,12 @@ export default function BudgetsPage() {
 
   const canAdd = expenseCategories.some((c) => !usedCategoryIds.includes(c.id)) || !savingsBudget;
 
+  const openNewBudget = (categoryId: string | null = null) => {
+    setEditing(null);
+    setInitialCategoryId(categoryId);
+    setFormOpen(true);
+  };
+
   return (
     <>
       <PageHeader
@@ -101,8 +134,7 @@ export default function BudgetsPage() {
             </Button>
             <Button
               onClick={() => {
-                setEditing(null);
-                setFormOpen(true);
+                openNewBudget();
               }}
               disabled={!canAdd}
             >
@@ -114,7 +146,7 @@ export default function BudgetsPage() {
 
       <div className="mb-6 flex flex-col gap-4">
         <MonthSelector value={month} onChange={setMonth} />
-        {budgets.length > 0 && (
+        {(budgets.length > 0 || unbudgetedTotal > 0) && (
           <Card>
             <CardContent>
               <div className="mb-2 flex items-center justify-between text-sm">
@@ -124,6 +156,11 @@ export default function BudgetsPage() {
                 </span>
               </div>
               <ProgressBar value={totals.percentage} />
+              {unbudgetedTotal > 0 && (
+                <p className="mt-2 text-xs font-medium text-expense">
+                  {formatCurrency(unbudgetedTotal)} adicionales están fuera del presupuesto.
+                </p>
+              )}
             </CardContent>
           </Card>
         )}
@@ -133,13 +170,13 @@ export default function BudgetsPage() {
         <div className="flex justify-center py-10">
           <Spinner />
         </div>
-      ) : budgets.length === 0 ? (
+      ) : budgets.length === 0 && unbudgetedExpenses.length === 0 ? (
         <EmptyState
           icon={PiggyBank}
           title="Sin presupuestos"
           description="Crea un presupuesto para controlar cuánto gastas por categoría."
           action={
-            <Button variant="outline" onClick={() => setFormOpen(true)} disabled={!canAdd}>
+            <Button variant="outline" onClick={() => openNewBudget()} disabled={!canAdd}>
               <Plus className="h-4 w-4" /> Crear presupuesto
             </Button>
           }
@@ -276,6 +313,36 @@ export default function BudgetsPage() {
               </Card>
             );
           })}
+          {unbudgetedExpenses.map((item) => (
+            <Card key={`unbudgeted-${item.categoryId}`} className="border-expense/40">
+              <CardContent>
+                <div className="mb-3 flex items-center gap-3">
+                  <CategoryIcon icon={item.icon} color={item.color} size="sm" />
+                  <span className="flex-1 truncate font-medium">{item.name}</span>
+                  <span className="rounded-full bg-expense-soft px-2 py-1 text-xs font-medium text-expense">
+                    Sin presupuesto
+                  </span>
+                </div>
+                <ProgressBar value={100} color="#f59e0b" />
+                <div className="mt-3 flex items-end justify-between gap-3">
+                  <div className="text-xs text-muted-foreground">
+                    Gastado{' '}
+                    <span className="font-medium text-foreground">
+                      {formatCurrency(item.spent)}
+                    </span>
+                    <p className="text-expense">No existe un límite definido para este mes.</p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => openNewBudget(item.categoryId)}
+                  >
+                    Crear presupuesto
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       )}
 
@@ -288,6 +355,7 @@ export default function BudgetsPage() {
         initial={editing}
         usedCategoryIds={usedCategoryIds}
         savingsUsed={!!savingsBudget}
+        initialCategoryId={initialCategoryId}
       />
 
       <ConfirmDialog

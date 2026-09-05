@@ -4,7 +4,7 @@ import type { TransactionInput } from '@/lib/validations';
 import { monthRange } from '@/utils/date';
 
 const SELECT_WITH_CATEGORY =
-  '*, category:categories(id, name, icon, color, type), credit_card:credit_cards(id, name, color), savings_account:savings_accounts(id, name, color)';
+  '*, category:categories(id, name, icon, color, type), credit_card:credit_cards(id, name, color), savings_account:savings_accounts!transactions_savings_account_id_fkey(id, name, color), destination_savings_account:savings_accounts!transactions_destination_savings_account_id_fkey(id, name, color)';
 
 export interface TransactionFilters {
   dateStart?: string;
@@ -61,6 +61,7 @@ export async function createTransaction(
       category_id: input.category_id,
       credit_card_id: input.credit_card_id ?? null,
       savings_account_id: input.savings_account_id ?? null,
+      destination_savings_account_id: input.destination_savings_account_id ?? null,
       loan_id: input.loan_id ?? null,
       loan_payment_kind: input.loan_payment_kind ?? null,
       loan_principal_amount: input.loan_principal_amount ?? null,
@@ -85,6 +86,7 @@ export async function updateTransaction(id: string, input: TransactionInput): Pr
       category_id: input.category_id,
       credit_card_id: input.credit_card_id ?? null,
       savings_account_id: input.savings_account_id ?? null,
+      destination_savings_account_id: input.destination_savings_account_id ?? null,
       description: input.description ?? '',
       transaction_date: input.transaction_date,
     })

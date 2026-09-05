@@ -22,8 +22,11 @@
 - Saldo de cuenta = `opening_balance` + `INCOME`/`SAVING` vinculados − `EXPENSE` vinculados.
 - Un gasto normal (`EXPENSE`) debe seleccionar `savings_account_id` y debitar esa cuenta. Esta regla no se extiende automáticamente a cargos o pagos de tarjeta.
 - Las únicas categorías de ingreso son: `Salario`, `Transferencia de papá`, `Bonos` y `Otros ingresos`.
-- Las compras con tarjeta aumentan deuda; los pagos reducen deuda y se reflejan según las reglas existentes en `cards.service.ts`.
+- Las compras con tarjeta aumentan deuda y crean el gasto que alimenta dashboard/presupuesto; los pagos reducen deuda y son transferencias desde una cuenta, no un segundo gasto.
 - El historial de una tarjeta combina `card_charges` y `card_payments`, separado por tarjeta y moneda.
+- Borrar una transacción vinculada a una compra o pago debe revertir también el movimiento de tarjeta mediante cascada.
+- `TRANSFER` mueve saldo entre cuentas (o de una cuenta a una tarjeta) y no suma ingresos, gastos ni ahorro.
+- Un gasto en una categoría sin límite mensual se muestra como no presupuestado; nunca se crea automáticamente un presupuesto retroactivo.
 - Los nuevos pagos de préstamo deben vincular la transacción al préstamo y conservar pago total, capital, interés y saldo posterior.
 - No debilites RLS ni uses claves `service_role`/`sb_secret_*` en el frontend. Toda variable `VITE_*` es pública en el navegador.
 

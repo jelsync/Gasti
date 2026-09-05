@@ -1,5 +1,6 @@
 import {
   Banknote,
+  ArrowLeftRight,
   Book,
   Bus,
   Car,
@@ -61,6 +62,7 @@ export const ICON_MAP: Record<string, LucideIcon> = {
   wifi: Wifi,
   'piggy-bank': PiggyBank,
   banknote: Banknote,
+  'arrow-left-right': ArrowLeftRight,
   car: Car,
   pizza: Pizza,
   shirt: Shirt,

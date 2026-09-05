@@ -128,7 +128,13 @@ export function budgetOverview(
   };
 }
 
-/** Impacto firmado de una transacción sobre el saldo de una cuenta. */
-export function accountMovementAmount(transaction: AmountTyped): number {
+/** Impacto firmado sobre una cuenta; una transferencia resta al origen y suma al destino. */
+export function accountMovementAmount(
+  transaction: AmountTyped,
+  role: 'SOURCE' | 'DESTINATION' = 'SOURCE',
+): number {
+  if (transaction.type === 'TRANSFER') {
+    return role === 'DESTINATION' ? transaction.amount : -transaction.amount;
+  }
   return transaction.type === 'EXPENSE' ? -transaction.amount : transaction.amount;
 }

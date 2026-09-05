@@ -102,22 +102,33 @@ export interface CardPaymentArgs {
   amount: number;
   /** Monto pagado en lempiras (para pagos en dólares). */
   amountHnl?: number | null;
-  categoryId?: string | null;
+  accountId: string;
 }
 
 /**
  * Registra un pago a la tarjeta.
  * - Reduce la deuda por `amount` en la moneda indicada.
- * - Crea un gasto en lempiras (afecta el disponible): en pagos en L es `amount`;
- *   en pagos en $ es `amountHnl` (lo que pagaste realmente en lempiras).
+ * - Crea una transferencia desde la cuenta elegida, sin duplicar el gasto.
  */
 export async function registerCardPayment(
   userId: string,
   cardId: string,
   cardName: string,
-  { currency, amount, amountHnl = null, categoryId = null }: CardPaymentArgs,
+  { currency, amount, amountHnl = null, accountId }: CardPaymentArgs,
   dateISO: string = todayISO(),
 ): Promise<void> {
+  const amountPaidHnl = currency === 'USD' ? (amountHnl ?? 0) : amount;
+  const label = currency === 'USD' ? `$${amount.toFixed(2)}` : `L ${amount.toFixed(2)}`;
+  const transaction = await createTransaction(userId, {
+    type: 'TRANSFER',
+    amount: amountPaidHnl,
+    category_id: null,
+    credit_card_id: cardId,
+    savings_account_id: accountId,
+    description: `Pago tarjeta ${cardName} (${label})`,
+    transaction_date: dateISO,
+  });
+
   const { error } = await supabase.from('card_payments').insert({
     user_id: userId,
     card_id: cardId,
@@ -125,25 +136,17 @@ export async function registerCardPayment(
     currency,
     amount_hnl: currency === 'USD' ? amountHnl : null,
     payment_date: dateISO,
+    transaction_id: transaction.id,
   });
-  if (error) throw error;
-
-  const gastoHnl = currency === 'USD' ? (amountHnl ?? 0) : amount;
-  if (gastoHnl > 0) {
-    const label = currency === 'USD' ? `$${amount.toFixed(2)}` : `L ${amount.toFixed(2)}`;
-    await createTransaction(userId, {
-      type: 'EXPENSE',
-      amount: gastoHnl,
-      category_id: categoryId,
-      description: `Pago tarjeta ${cardName} (${label})`,
-      transaction_date: dateISO,
-    });
+  if (error) {
+    await supabase.from('transactions').delete().eq('id', transaction.id);
+    throw error;
   }
 }
 
 /**
  * Registra una compra/cargo en la tarjeta (aumenta la deuda en la moneda dada).
- * No genera gasto en lempiras (el gasto se reconoce al pagar).
+ * Crea el gasto en HNL para dashboard y presupuesto; pagar después no lo duplica.
  */
 export async function registerCardCharge(
   userId: string,
@@ -151,15 +154,31 @@ export async function registerCardCharge(
   currency: Currency,
   input: CardChargeInput,
 ): Promise<void> {
+  const amountHnl = currency === 'USD' ? (input.amount_hnl ?? 0) : input.amount;
+  const transaction = await createTransaction(userId, {
+    type: 'EXPENSE',
+    amount: amountHnl,
+    category_id: input.category_id,
+    credit_card_id: cardId,
+    savings_account_id: null,
+    description: input.description ?? '',
+    transaction_date: input.charge_date,
+  });
+
   const { error } = await supabase.from('card_charges').insert({
     user_id: userId,
     card_id: cardId,
     amount: input.amount,
+    amount_hnl: amountHnl,
     currency,
     description: input.description ?? '',
     charge_date: input.charge_date,
+    transaction_id: transaction.id,
   });
-  if (error) throw error;
+  if (error) {
+    await supabase.from('transactions').delete().eq('id', transaction.id);
+    throw error;
+  }
 }
 
 export interface CardChargeWithCard {
@@ -177,6 +196,7 @@ export type CardMovement =
       kind: 'CHARGE';
       id: string;
       amount: number;
+      amountHnl: number | null;
       currency: Currency;
       description: string;
       date: string;
@@ -197,7 +217,7 @@ export async function getCreditCardMovements(cardId: string): Promise<CardMoveme
   const [chargesRes, paymentsRes] = await Promise.all([
     supabase
       .from('card_charges')
-      .select('id, amount, currency, description, charge_date, created_at')
+      .select('id, amount, amount_hnl, currency, description, charge_date, created_at')
       .eq('card_id', cardId),
     supabase
       .from('card_payments')
@@ -213,6 +233,7 @@ export async function getCreditCardMovements(cardId: string): Promise<CardMoveme
       kind: 'CHARGE' as const,
       id: charge.id,
       amount: charge.amount,
+      amountHnl: charge.amount_hnl,
       currency: charge.currency,
       description: charge.description,
       date: charge.charge_date,
@@ -245,6 +266,7 @@ export async function getCardCharges(
     .select(
       'id, card_id, amount, currency, description, charge_date, card:credit_cards(id, name, color)',
     )
+    .is('transaction_id', null)
     .gte('charge_date', dateStart)
     .lte('charge_date', dateEnd)
     .order('charge_date', { ascending: false })
@@ -255,6 +277,27 @@ export async function getCardCharges(
 }
 
 export async function deleteCardCharge(id: string): Promise<void> {
-  const { error } = await supabase.from('card_charges').delete().eq('id', id);
+  const { data, error: findError } = await supabase
+    .from('card_charges')
+    .select('transaction_id')
+    .eq('id', id)
+    .single();
+  if (findError) throw findError;
+  const { error } = data.transaction_id
+    ? await supabase.from('transactions').delete().eq('id', data.transaction_id)
+    : await supabase.from('card_charges').delete().eq('id', id);
+  if (error) throw error;
+}
+
+export async function deleteCardPayment(id: string): Promise<void> {
+  const { data, error: findError } = await supabase
+    .from('card_payments')
+    .select('transaction_id')
+    .eq('id', id)
+    .single();
+  if (findError) throw findError;
+  const { error } = data.transaction_id
+    ? await supabase.from('transactions').delete().eq('id', data.transaction_id)
+    : await supabase.from('card_payments').delete().eq('id', id);
   if (error) throw error;
 }

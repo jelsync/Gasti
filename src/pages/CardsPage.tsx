@@ -19,7 +19,7 @@ import type { CreditCardWithBalance } from '@/types/models';
 import type { CreditCardInput } from '@/lib/validations';
 
 export default function CardsPage() {
-  const { cards, loading, create, update, remove } = useCreditCards();
+  const { cards, loading, create, update, remove, refresh } = useCreditCards();
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<CreditCardWithBalance | null>(null);
   const [deleting, setDeleting] = useState<CreditCardWithBalance | null>(null);
@@ -236,7 +236,7 @@ export default function CardsPage() {
             })}
           </div>
 
-          {selectedCard && <CardMovementHistory card={selectedCard} />}
+          {selectedCard && <CardMovementHistory card={selectedCard} onChanged={refresh} />}
         </div>
       )}
 

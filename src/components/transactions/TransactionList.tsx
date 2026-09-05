@@ -12,6 +12,15 @@ interface TransactionListProps {
 }
 
 function display(t: TransactionWithCategory) {
+  if (t.type === 'TRANSFER') {
+    return {
+      name: t.credit_card ? `Pago de ${t.credit_card.name}` : 'Transferencia entre cuentas',
+      icon: t.credit_card ? 'credit-card' : 'arrow-left-right',
+      color: t.credit_card?.color ?? '#0ea5e9',
+      sign: '→',
+      amountClass: 'text-primary',
+    };
+  }
   if (t.type === 'SAVING') {
     return {
       name: t.savings_account?.name ?? 'Ahorro',
@@ -36,6 +45,7 @@ export function TransactionList({ transactions, onEdit, onDelete }: TransactionL
     <ul className="divide-y divide-border">
       {transactions.map((t) => {
         const d = display(t);
+        const canEdit = !t.credit_card_id && !t.loan_id;
         return (
           <li key={t.id} className="flex items-center gap-3 py-3">
             <CategoryIcon icon={d.icon} color={d.color} />
@@ -54,7 +64,13 @@ export function TransactionList({ transactions, onEdit, onDelete }: TransactionL
                   ? ` · Depositado en ${t.savings_account.name}`
                   : t.savings_account && t.type === 'EXPENSE'
                     ? ` · Debitado de ${t.savings_account.name}`
-                    : ''}
+                    : t.type === 'TRANSFER'
+                      ? t.credit_card
+                        ? ` · Pagado desde ${t.savings_account?.name ?? 'cuenta'}`
+                        : ` · ${t.savings_account?.name ?? 'Cuenta'} → ${t.destination_savings_account?.name ?? 'Cuenta'}`
+                      : t.credit_card && t.type === 'EXPENSE'
+                        ? ` · Compra con ${t.credit_card.name}`
+                        : ''}
               </p>
             </div>
             <span className={cn('shrink-0 font-semibold tabular-nums', d.amountClass)}>
@@ -62,7 +78,7 @@ export function TransactionList({ transactions, onEdit, onDelete }: TransactionL
             </span>
             {(onEdit || onDelete) && (
               <div className="flex shrink-0 items-center gap-1">
-                {onEdit && (
+                {onEdit && canEdit && (
                   <button
                     type="button"
                     onClick={() => onEdit(t)}

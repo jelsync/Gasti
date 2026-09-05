@@ -45,6 +45,7 @@ const KIND_OPTIONS: { value: Kind; label: string }[] = [
   { value: 'EXPENSE', label: 'Gasto (efectivo / débito)' },
   { value: 'INCOME', label: 'Ingreso' },
   { value: 'SAVING', label: 'Ahorro' },
+  { value: 'TRANSFER', label: 'Transferencia entre cuentas' },
   { value: 'CARD_CHARGE', label: 'Compra con tarjeta' },
   { value: 'CARD_PAYMENT', label: 'Pago de tarjeta' },
 ];
@@ -65,6 +66,7 @@ export function TransactionForm({
   const [categoryId, setCategoryId] = useState('');
   const [cardId, setCardId] = useState('');
   const [savingsId, setSavingsId] = useState('');
+  const [destinationSavingsId, setDestinationSavingsId] = useState('');
   const [cardCurrency, setCardCurrency] = useState<Currency>('HNL');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState(todayISO());
@@ -82,26 +84,34 @@ export function TransactionForm({
     setCategoryId(initial?.category_id ?? '');
     setCardId('');
     setSavingsId(initial?.savings_account_id ?? '');
+    setDestinationSavingsId(initial?.destination_savings_account_id ?? '');
     setCardCurrency('HNL');
     setDescription(initial?.description ?? '');
     setDate(initial?.transaction_date ?? todayISO());
   }, [open, initial, defaultType]);
 
   const kindOptions = isEditing
-    ? KIND_OPTIONS.filter((k) => ['EXPENSE', 'INCOME', 'SAVING'].includes(k.value))
+    ? KIND_OPTIONS.filter((k) => ['EXPENSE', 'INCOME', 'SAVING', 'TRANSFER'].includes(k.value))
     : KIND_OPTIONS;
-  const categoryType = kind === 'CARD_PAYMENT' ? 'EXPENSE' : kind;
+  const categoryType = kind === 'CARD_CHARGE' ? 'EXPENSE' : kind;
   const categoryOptions =
     categoryType === 'INCOME'
       ? getIncomeCategories(categories)
       : categories.filter((c) => c.type === categoryType);
   const needsCard = kind === 'CARD_CHARGE' || kind === 'CARD_PAYMENT';
-  const showCategory = kind === 'EXPENSE' || kind === 'INCOME' || kind === 'CARD_PAYMENT';
+  const showCategory = kind === 'EXPENSE' || kind === 'INCOME' || kind === 'CARD_CHARGE';
   const symbol = needsCard && cardCurrency === 'USD' ? '$' : 'L';
   const noCards = needsCard && creditCards.length === 0;
-  const usesAccount = kind === 'EXPENSE' || kind === 'INCOME' || kind === 'SAVING';
-  const accountRequired = kind === 'EXPENSE';
-  const noRequiredAccounts = accountRequired && savingsAccounts.length === 0;
+  const usesAccount =
+    kind === 'EXPENSE' ||
+    kind === 'INCOME' ||
+    kind === 'SAVING' ||
+    kind === 'TRANSFER' ||
+    kind === 'CARD_PAYMENT';
+  const accountRequired = kind === 'EXPENSE' || kind === 'TRANSFER' || kind === 'CARD_PAYMENT';
+  const noRequiredAccounts =
+    (accountRequired && savingsAccounts.length === 0) ||
+    (kind === 'TRANSFER' && savingsAccounts.length < 2);
 
   const fail = (msg: string): null => {
     setError(msg);
@@ -114,13 +124,24 @@ export function TransactionForm({
 
     if (kind === 'CARD_CHARGE') {
       if (!cardId) return fail('Selecciona una tarjeta');
-      const parsed = cardChargeSchema.safeParse({ amount, description, charge_date: date });
+      if (!categoryId) return fail('Selecciona la categoría de la compra');
+      if (cardCurrency === 'USD' && !(Number(amountHnl) > 0)) {
+        return fail('Ingresa el valor de la compra en lempiras');
+      }
+      const parsed = cardChargeSchema.safeParse({
+        amount,
+        amount_hnl: cardCurrency === 'USD' ? amountHnl : amount,
+        category_id: categoryId,
+        description,
+        charge_date: date,
+      });
       if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? 'Datos inválidos');
       return { kind: 'cardCharge', cardId, currency: cardCurrency, input: parsed.data };
     }
 
     if (kind === 'CARD_PAYMENT') {
       if (!cardId) return fail('Selecciona una tarjeta');
+      if (!savingsId) return fail('Selecciona la cuenta desde donde pagaste');
       if (!(amt > 0)) return fail('Ingresa un monto válido');
       if (cardCurrency === 'USD' && !(Number(amountHnl) > 0)) {
         return fail('Ingresa el pago en lempiras');
@@ -134,7 +155,7 @@ export function TransactionForm({
           currency: cardCurrency,
           amount: amt,
           amountHnl: cardCurrency === 'USD' ? Number(amountHnl) : null,
-          categoryId: categoryId || null,
+          accountId: savingsId,
         },
       };
     }
@@ -149,9 +170,10 @@ export function TransactionForm({
     const input = {
       type: kind,
       amount,
-      category_id: kind === 'SAVING' ? null : categoryId || null,
+      category_id: kind === 'SAVING' || kind === 'TRANSFER' ? null : categoryId || null,
       credit_card_id: null,
       savings_account_id: savingsId || null,
+      destination_savings_account_id: kind === 'TRANSFER' ? destinationSavingsId || null : null,
       description,
       transaction_date: date,
     };
@@ -263,11 +285,19 @@ export function TransactionForm({
               </div>
             </Field>
 
-            {kind === 'CARD_PAYMENT' && cardCurrency === 'USD' && (
+            {(kind === 'CARD_PAYMENT' || kind === 'CARD_CHARGE') && cardCurrency === 'USD' && (
               <Field
-                label="Pago en lempiras (L)"
+                label={
+                  kind === 'CARD_PAYMENT'
+                    ? 'Pago en lempiras (L)'
+                    : 'Valor de la compra en lempiras (L)'
+                }
                 htmlFor="amount-hnl"
-                hint="Lo que realmente pagaste en lempiras. Es el gasto que afecta tu disponible."
+                hint={
+                  kind === 'CARD_PAYMENT'
+                    ? 'Lo que salió de tu cuenta; no se contará otra vez como gasto.'
+                    : 'Este valor se usará en el dashboard y en tu presupuesto.'
+                }
               >
                 <div className="relative">
                   <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
@@ -310,9 +340,13 @@ export function TransactionForm({
                 label={
                   kind === 'EXPENSE'
                     ? 'Debitar de cuenta'
-                    : kind === 'INCOME'
-                      ? 'Depositar en cuenta (opcional)'
-                      : 'Cuenta'
+                    : kind === 'CARD_PAYMENT'
+                      ? 'Pagar desde cuenta'
+                      : kind === 'TRANSFER'
+                        ? 'Cuenta de origen'
+                        : kind === 'INCOME'
+                          ? 'Depositar en cuenta (opcional)'
+                          : 'Cuenta'
                 }
                 htmlFor="savings"
                 hint={
@@ -320,9 +354,13 @@ export function TransactionForm({
                     ? 'Crea una cuenta primero en la sección Cuentas.'
                     : kind === 'EXPENSE'
                       ? 'El gasto reducirá el saldo de la cuenta seleccionada.'
-                      : kind === 'INCOME'
-                        ? 'El ingreso seguirá sumando al dashboard y también aumentará el saldo de la cuenta.'
-                        : undefined
+                      : kind === 'CARD_PAYMENT'
+                        ? 'El pago reducirá esta cuenta y también la deuda de la tarjeta.'
+                        : kind === 'TRANSFER'
+                          ? 'El dinero saldrá de esta cuenta sin contarse como gasto.'
+                          : kind === 'INCOME'
+                            ? 'El ingreso seguirá sumando al dashboard y también aumentará el saldo de la cuenta.'
+                            : undefined
                 }
               >
                 <Select
@@ -338,6 +376,29 @@ export function TransactionForm({
                       {a.name}
                     </option>
                   ))}
+                </Select>
+              </Field>
+            )}
+
+            {kind === 'TRANSFER' && (
+              <Field
+                label="Cuenta de destino"
+                htmlFor="destination-savings"
+                hint="El dinero entrará a esta cuenta sin contarse como ingreso."
+              >
+                <Select
+                  id="destination-savings"
+                  value={destinationSavingsId}
+                  onChange={(e) => setDestinationSavingsId(e.target.value)}
+                >
+                  <option value="">Selecciona una cuenta…</option>
+                  {savingsAccounts
+                    .filter((account) => account.id !== savingsId)
+                    .map((account) => (
+                      <option key={account.id} value={account.id}>
+                        {account.name}
+                      </option>
+                    ))}
                 </Select>
               </Field>
             )}

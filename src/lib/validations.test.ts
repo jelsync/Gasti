@@ -72,6 +72,26 @@ describe('transactionSchema', () => {
   it('requiere una cuenta para gastos normales', () => {
     expect(transactionSchema.safeParse({ ...base, savings_account_id: null }).success).toBe(false);
   });
+
+  it('acepta transferencias entre dos cuentas diferentes', () => {
+    const result = transactionSchema.safeParse({
+      ...base,
+      type: 'TRANSFER',
+      category_id: null,
+      destination_savings_account_id: '22222222-2222-2222-2222-222222222222',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('rechaza transferencias hacia la misma cuenta', () => {
+    const result = transactionSchema.safeParse({
+      ...base,
+      type: 'TRANSFER',
+      category_id: null,
+      destination_savings_account_id: base.savings_account_id,
+    });
+    expect(result.success).toBe(false);
+  });
 });
 
 describe('budgetSchema', () => {

@@ -61,6 +61,16 @@ export default function DashboardPage() {
     return budgetOverview(budgets, spentByCategory, summary.saving);
   }, [budgets, expenseByCategory, summary.saving]);
 
+  const unbudgetedTotal = useMemo(() => {
+    const budgetedIds = new Set(
+      budgets.filter((budget) => budget.kind === 'CATEGORY').map((budget) => budget.category_id),
+    );
+    return expenseByCategory.reduce(
+      (total, item) => total + (budgetedIds.has(item.categoryId) ? 0 : item.total),
+      0,
+    );
+  }, [budgets, expenseByCategory]);
+
   const recent = useMemo<MovementItem[]>(() => {
     const items: MovementItem[] = [
       ...transactions.map((t) => ({ type: 'tx' as const, date: t.transaction_date, tx: t })),
@@ -137,7 +147,7 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {budgetUsage && (
+          {(budgetUsage || unbudgetedTotal > 0) && (
             <Card>
               <CardContent>
                 <div className="mb-2 flex items-center justify-between">
@@ -145,15 +155,29 @@ export default function DashboardPage() {
                     <PiggyBank className="h-5 w-5 text-primary" />
                     <span className="font-medium">Presupuesto utilizado</span>
                   </div>
-                  <span className="text-sm font-semibold tabular-nums">
-                    {formatPercent(budgetUsage.percentage)}
-                  </span>
+                  {budgetUsage && (
+                    <span className="text-sm font-semibold tabular-nums">
+                      {formatPercent(budgetUsage.percentage)}
+                    </span>
+                  )}
                 </div>
-                <ProgressBar value={budgetUsage.percentage} />
-                <p className="mt-2 text-xs text-muted-foreground">
-                  {formatCurrency(budgetUsage.totalUsed)} de{' '}
-                  {formatCurrency(budgetUsage.totalBudget)}
-                </p>
+                {budgetUsage && (
+                  <>
+                    <ProgressBar value={budgetUsage.percentage} />
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      {formatCurrency(budgetUsage.totalUsed)} de{' '}
+                      {formatCurrency(budgetUsage.totalBudget)}
+                    </p>
+                  </>
+                )}
+                {unbudgetedTotal > 0 && (
+                  <p className="mt-2 text-xs font-medium text-expense">
+                    {formatCurrency(unbudgetedTotal)} en gastos sin presupuesto.{' '}
+                    <Link to={ROUTES.budgets} className="underline">
+                      Revisar
+                    </Link>
+                  </p>
+                )}
               </CardContent>
             </Card>
           )}

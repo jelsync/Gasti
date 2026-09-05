@@ -2,7 +2,7 @@
 // Reflejan el esquema definido en supabase/migrations/.
 // Si cambias el esquema, actualiza estos tipos (o regenéralos con la CLI de Supabase).
 
-export type TransactionType = 'INCOME' | 'EXPENSE' | 'SAVING';
+export type TransactionType = 'INCOME' | 'EXPENSE' | 'SAVING' | 'TRANSFER';
 export type Currency = 'HNL' | 'USD';
 export type BudgetKind = 'CATEGORY' | 'SAVINGS';
 
@@ -67,6 +67,7 @@ export interface Database {
           category_id: string | null;
           credit_card_id: string | null;
           savings_account_id: string | null;
+          destination_savings_account_id: string | null;
           loan_id: string | null;
           loan_payment_kind: 'INSTALLMENT' | 'EXTRA' | null;
           loan_principal_amount: number | null;
@@ -85,6 +86,7 @@ export interface Database {
           category_id?: string | null;
           credit_card_id?: string | null;
           savings_account_id?: string | null;
+          destination_savings_account_id?: string | null;
           loan_id?: string | null;
           loan_payment_kind?: 'INSTALLMENT' | 'EXTRA' | null;
           loan_principal_amount?: number | null;
@@ -99,6 +101,7 @@ export interface Database {
           category_id?: string | null;
           credit_card_id?: string | null;
           savings_account_id?: string | null;
+          destination_savings_account_id?: string | null;
           loan_id?: string | null;
           loan_payment_kind?: 'INSTALLMENT' | 'EXTRA' | null;
           loan_principal_amount?: number | null;
@@ -127,6 +130,13 @@ export interface Database {
           {
             foreignKeyName: 'transactions_savings_account_id_fkey';
             columns: ['savings_account_id'];
+            isOneToOne: false;
+            referencedRelation: 'savings_accounts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'transactions_destination_savings_account_id_fkey';
+            columns: ['destination_savings_account_id'];
             isOneToOne: false;
             referencedRelation: 'savings_accounts';
             referencedColumns: ['id'];
@@ -281,6 +291,7 @@ export interface Database {
           amount_hnl: number | null;
           currency: Currency;
           payment_date: string;
+          transaction_id: string | null;
           created_at: string;
         };
         Insert: {
@@ -291,12 +302,14 @@ export interface Database {
           amount_hnl?: number | null;
           currency?: Currency;
           payment_date?: string;
+          transaction_id?: string | null;
         };
         Update: {
           amount?: number;
           amount_hnl?: number | null;
           currency?: Currency;
           payment_date?: string;
+          transaction_id?: string | null;
         };
         Relationships: [
           {
@@ -304,6 +317,13 @@ export interface Database {
             columns: ['card_id'];
             isOneToOne: false;
             referencedRelation: 'credit_cards';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'card_payments_transaction_id_fkey';
+            columns: ['transaction_id'];
+            isOneToOne: true;
+            referencedRelation: 'transactions';
             referencedColumns: ['id'];
           },
         ];
@@ -314,9 +334,11 @@ export interface Database {
           user_id: string;
           card_id: string;
           amount: number;
+          amount_hnl: number | null;
           currency: Currency;
           description: string;
           charge_date: string;
+          transaction_id: string | null;
           created_at: string;
         };
         Insert: {
@@ -324,15 +346,19 @@ export interface Database {
           user_id: string;
           card_id: string;
           amount: number;
+          amount_hnl?: number | null;
           currency?: Currency;
           description?: string;
           charge_date?: string;
+          transaction_id?: string | null;
         };
         Update: {
           amount?: number;
+          amount_hnl?: number | null;
           currency?: Currency;
           description?: string;
           charge_date?: string;
+          transaction_id?: string | null;
         };
         Relationships: [
           {
@@ -340,6 +366,13 @@ export interface Database {
             columns: ['card_id'];
             isOneToOne: false;
             referencedRelation: 'credit_cards';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'card_charges_transaction_id_fkey';
+            columns: ['transaction_id'];
+            isOneToOne: true;
+            referencedRelation: 'transactions';
             referencedColumns: ['id'];
           },
         ];

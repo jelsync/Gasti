@@ -1,18 +1,23 @@
-import { Banknote, CreditCard, ShoppingBag } from 'lucide-react';
+import { useState } from 'react';
+import { Banknote, CreditCard, ShoppingBag, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Spinner } from '@/components/ui/Spinner';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useCreditCardMovements } from '@/hooks/useCreditCardMovements';
 import { formatDate } from '@/utils/date';
 import { formatMoney } from '@/utils/format';
 import type { CreditCardWithBalance, Currency } from '@/types/models';
+import type { CardMovement } from '@/services/cards.service';
 
 interface CardMovementHistoryProps {
   card: CreditCardWithBalance;
+  onChanged?: () => Promise<void> | void;
 }
 
-export function CardMovementHistory({ card }: CardMovementHistoryProps) {
-  const { movements, loading, error } = useCreditCardMovements(card.id);
+export function CardMovementHistory({ card, onChanged }: CardMovementHistoryProps) {
+  const { movements, loading, error, remove } = useCreditCardMovements(card.id);
+  const [deleting, setDeleting] = useState<CardMovement | null>(null);
   const openings: { currency: Currency; amount: number }[] = [
     { currency: 'HNL' as const, amount: card.opening_balance },
     { currency: 'USD' as const, amount: card.opening_balance_usd },
@@ -75,7 +80,9 @@ export function CardMovementHistory({ card }: CardMovementHistoryProps) {
                       {formatDate(movement.date)}
                       {!isCharge && movement.currency === 'USD' && movement.amountHnl
                         ? ` · Pagado ${formatMoney(movement.amountHnl, 'HNL')}`
-                        : ''}
+                        : isCharge && movement.currency === 'USD' && movement.amountHnl
+                          ? ` · Valor ${formatMoney(movement.amountHnl, 'HNL')}`
+                          : ''}
                     </p>
                   </div>
                   <span
@@ -86,6 +93,14 @@ export function CardMovementHistory({ card }: CardMovementHistoryProps) {
                   >
                     {isCharge ? '+' : '−'} {formatMoney(movement.amount, movement.currency)}
                   </span>
+                  <button
+                    type="button"
+                    onClick={() => setDeleting(movement)}
+                    aria-label="Eliminar movimiento"
+                    className="shrink-0 rounded-md p-1.5 text-muted-foreground hover:bg-expense-soft hover:text-expense"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
                 </li>
               );
             })}
@@ -109,6 +124,22 @@ export function CardMovementHistory({ card }: CardMovementHistoryProps) {
           </ul>
         )}
       </CardContent>
+      <ConfirmDialog
+        open={!!deleting}
+        title={deleting?.kind === 'PAYMENT' ? 'Eliminar pago de tarjeta' : 'Eliminar compra'}
+        description={
+          deleting?.kind === 'PAYMENT'
+            ? 'La deuda de la tarjeta volverá a aumentar y se restaurará el saldo de la cuenta usada para pagar.'
+            : 'La deuda de la tarjeta bajará y el gasto desaparecerá del dashboard y del presupuesto.'
+        }
+        confirmLabel="Eliminar"
+        onConfirm={async () => {
+          if (!deleting) return;
+          await remove(deleting);
+          await onChanged?.();
+        }}
+        onClose={() => setDeleting(null)}
+      />
     </Card>
   );
 }

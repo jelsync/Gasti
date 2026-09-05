@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { mapDbError } from '@/lib/errors';
-import { getCreditCardMovements, type CardMovement } from '@/services/cards.service';
+import {
+  deleteCardCharge,
+  deleteCardPayment,
+  getCreditCardMovements,
+  type CardMovement,
+} from '@/services/cards.service';
 
 export function useCreditCardMovements(cardId: string | null) {
   const [movements, setMovements] = useState<CardMovement[]>([]);
@@ -29,5 +34,14 @@ export function useCreditCardMovements(cardId: string | null) {
     void refresh();
   }, [refresh]);
 
-  return { movements, loading, error, refresh };
+  const remove = useCallback(
+    async (movement: CardMovement) => {
+      if (movement.kind === 'CHARGE') await deleteCardCharge(movement.id);
+      else await deleteCardPayment(movement.id);
+      await refresh();
+    },
+    [refresh],
+  );
+
+  return { movements, loading, error, refresh, remove };
 }

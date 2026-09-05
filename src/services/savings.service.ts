@@ -15,9 +15,9 @@ export async function getSavingsAccounts(): Promise<SavingsAccountWithBalance[]>
     supabase.from('savings_accounts').select('*').order('created_at', { ascending: true }),
     supabase
       .from('transactions')
-      .select('savings_account_id, amount, type')
-      .in('type', ['INCOME', 'SAVING', 'EXPENSE'])
-      .not('savings_account_id', 'is', null),
+      .select('savings_account_id, destination_savings_account_id, amount, type')
+      .in('type', ['INCOME', 'SAVING', 'EXPENSE', 'TRANSFER'])
+      .or('savings_account_id.not.is.null,destination_savings_account_id.not.is.null'),
   ]);
 
   if (accountsRes.error) throw accountsRes.error;
@@ -25,14 +25,24 @@ export async function getSavingsAccounts(): Promise<SavingsAccountWithBalance[]>
 
   const movements = new Map<string, number>();
   for (const row of contribRes.data ?? []) {
-    if (!row.savings_account_id) continue;
-    movements.set(
-      row.savings_account_id,
-      round2(
-        (movements.get(row.savings_account_id) ?? 0) +
-          accountMovementAmount({ type: row.type, amount: row.amount }),
-      ),
-    );
+    if (row.savings_account_id) {
+      movements.set(
+        row.savings_account_id,
+        round2(
+          (movements.get(row.savings_account_id) ?? 0) +
+            accountMovementAmount({ type: row.type, amount: row.amount }, 'SOURCE'),
+        ),
+      );
+    }
+    if (row.destination_savings_account_id) {
+      movements.set(
+        row.destination_savings_account_id,
+        round2(
+          (movements.get(row.destination_savings_account_id) ?? 0) +
+            accountMovementAmount({ type: row.type, amount: row.amount }, 'DESTINATION'),
+        ),
+      );
+    }
   }
 
   return (accountsRes.data ?? []).map((account) => {
@@ -51,9 +61,11 @@ export async function getSavingsAccountMovements(
 ): Promise<TransactionWithCategory[]> {
   const { data, error } = await supabase
     .from('transactions')
-    .select('*, category:categories(id, name, icon, color, type)')
-    .eq('savings_account_id', accountId)
-    .in('type', ['INCOME', 'SAVING', 'EXPENSE'])
+    .select(
+      '*, category:categories(id, name, icon, color, type), credit_card:credit_cards(id, name, color), savings_account:savings_accounts!transactions_savings_account_id_fkey(id, name, color), destination_savings_account:savings_accounts!transactions_destination_savings_account_id_fkey(id, name, color)',
+    )
+    .or(`savings_account_id.eq.${accountId},destination_savings_account_id.eq.${accountId}`)
+    .in('type', ['INCOME', 'SAVING', 'EXPENSE', 'TRANSFER'])
     .order('transaction_date', { ascending: false })
     .order('created_at', { ascending: false })
     .returns<TransactionWithCategory[]>();

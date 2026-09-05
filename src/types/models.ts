@@ -33,6 +33,7 @@ export interface TransactionWithCategory extends Transaction {
   category: Pick<Category, 'id' | 'name' | 'icon' | 'color' | 'type'> | null;
   credit_card?: Pick<CreditCard, 'id' | 'name' | 'color'> | null;
   savings_account?: Pick<SavingsAccount, 'id' | 'name' | 'color'> | null;
+  destination_savings_account?: Pick<SavingsAccount, 'id' | 'name' | 'color'> | null;
 }
 
 /** Presupuesto enriquecido con lo gastado y el cálculo de avance. */

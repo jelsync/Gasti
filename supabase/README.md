@@ -18,7 +18,9 @@ supabase/
 │   ├── 0009_dual_currency_cards.sql # Tarjetas con deuda en L y $ a la vez
 │   ├── 0010_savings_budget.sql # Meta de ahorro en presupuestos
 │   ├── 0011_income_accounts.sql # Categorías de ingreso y depósitos en cuentas
-│   └── 0012_loan_payment_history.sql # Historial detallado de pagos de préstamos
+│   ├── 0012_loan_payment_history.sql # Historial detallado de pagos de préstamos
+│   ├── 0013_add_transfer_type.sql # Agrega TRANSFER al enum (ejecutar solo)
+│   └── 0014_card_links_account_transfers.sql # Reversiones y transferencias
 ├── seed.sql                   # Seed opcional para usuarios preexistentes
 └── README.md
 ```
@@ -39,6 +41,8 @@ supabase/
    10. `migrations/0010_savings_budget.sql`
    11. `migrations/0011_income_accounts.sql`
    12. `migrations/0012_loan_payment_history.sql`
+   13. `migrations/0013_add_transfer_type.sql` (ejecútala sola: agrega un valor al enum)
+   14. `migrations/0014_card_links_account_transfers.sql`
 3. (Opcional) Si ya tenías usuarios creados antes de aplicar el paso 3,
    ejecuta `seed.sql` para sembrarles las categorías predeterminadas.
 
@@ -57,7 +61,7 @@ supabase db push
 | -------------- | ------------------------------------------------------- |
 | `profiles`     | Perfil del usuario (1:1 con `auth.users`).              |
 | `categories`   | Categorías de ingreso/gasto propias de cada usuario.    |
-| `transactions` | Ingresos y gastos; las cuotas y abonos pueden guardar su desglose de préstamo. |
+| `transactions` | Ingresos, gastos, ahorro y transferencias; también vincula tarjetas y préstamos. |
 | `budgets`      | Presupuesto mensual por categoría.                      |
 | `loans`        | Préstamos (saldo/pasivo). Las cuotas y abonos se registran como transacciones vinculadas. |
 | `credit_cards` | Tarjetas de crédito. Deuda = apertura + compras − pagos.       |
@@ -76,6 +80,9 @@ supabase db push
   sin su categoría.
 - **Índices** en `(user_id, transaction_date)`, `(user_id, type, transaction_date)`
   y `(user_id, category_id)` para el dashboard y el historial.
+- **Compras con tarjeta**: crean un gasto en HNL; el cargo vinculado aumenta la deuda.
+- **Pagos de tarjeta**: son transferencias desde una cuenta y no duplican el gasto.
+- **Transferencias entre cuentas**: restan al origen, suman al destino y no alteran ingresos/gastos.
 
 ## Seguridad (RLS)
 

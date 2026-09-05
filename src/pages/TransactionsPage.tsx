@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Plus, Receipt, Search, SlidersHorizontal, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/PageHeader';
@@ -28,6 +29,8 @@ import { getIncomeCategories } from '@/constants/incomeCategories';
 type TypeFilter = 'ALL' | TransactionType;
 
 export default function TransactionsPage() {
+  const [searchParams] = useSearchParams();
+  const startsWithTransfer = searchParams.get('new') === 'transfer';
   const [month, setMonth] = useState(getCurrentMonthYear);
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('ALL');
   const [search, setSearch] = useState('');
@@ -35,13 +38,16 @@ export default function TransactionsPage() {
   const [minAmount, setMinAmount] = useState('');
   const [maxAmount, setMaxAmount] = useState('');
   const [showFilters, setShowFilters] = useState(false);
-  const [formOpen, setFormOpen] = useState(false);
+  const [formOpen, setFormOpen] = useState(startsWithTransfer);
+  const [formDefaultType, setFormDefaultType] = useState<TransactionType>(
+    startsWithTransfer ? 'TRANSFER' : 'EXPENSE',
+  );
   const [editing, setEditing] = useState<TransactionWithCategory | null>(null);
   const [deleting, setDeleting] = useState<TransactionWithCategory | null>(null);
   const [deletingCharge, setDeletingCharge] = useState<CardChargeWithCard | null>(null);
 
   const { categories } = useCategories();
-  const { cards, addCharge, payCard } = useCreditCards();
+  const { cards, addCharge, payCard, refresh: refreshCards } = useCreditCards();
   const { accounts } = useSavingsAccounts();
 
   const range = useMemo(() => monthRange(month.year, month.month), [month]);
@@ -121,6 +127,11 @@ export default function TransactionsPage() {
 
   const openCreate = () => {
     setEditing(null);
+    setFormDefaultType(
+      typeFilter === 'INCOME' || typeFilter === 'SAVING' || typeFilter === 'TRANSFER'
+        ? typeFilter
+        : 'EXPENSE',
+    );
     setFormOpen(true);
   };
 
@@ -132,7 +143,7 @@ export default function TransactionsPage() {
   const handleSubmit = async (payload: TransactionSubmit) => {
     if (payload.kind === 'cardCharge') {
       await addCharge(payload.cardId, payload.currency, payload.input);
-      await refreshCharges();
+      await Promise.all([refreshCharges(), refreshTx()]);
       toast.success('Compra registrada');
       return;
     }
@@ -155,6 +166,7 @@ export default function TransactionsPage() {
     if (!deleting) return;
     try {
       await remove(deleting.id);
+      await Promise.all([refreshCards(), refreshCharges()]);
       toast.success('Transacción eliminada');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'No se pudo eliminar');
@@ -165,6 +177,7 @@ export default function TransactionsPage() {
     if (!deletingCharge) return;
     try {
       await removeCharge(deletingCharge.id);
+      await Promise.all([refreshCards(), refreshTx()]);
       toast.success('Compra eliminada');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'No se pudo eliminar');
@@ -176,6 +189,7 @@ export default function TransactionsPage() {
     { value: 'EXPENSE', label: 'Gastos' },
     { value: 'INCOME', label: 'Ingresos' },
     { value: 'SAVING', label: 'Ahorro' },
+    { value: 'TRANSFER', label: 'Transferencias' },
   ];
 
   return (
@@ -324,7 +338,7 @@ export default function TransactionsPage() {
         creditCards={cards}
         savingsAccounts={accounts}
         initial={editing}
-        defaultType={typeFilter === 'INCOME' || typeFilter === 'SAVING' ? typeFilter : 'EXPENSE'}
+        defaultType={formDefaultType}
       />
 
       <ConfirmDialog

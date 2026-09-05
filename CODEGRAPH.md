@@ -1,6 +1,6 @@
 # Codegraph de Gasti
 
-Última actualización: 2026-09-01.
+Última actualización: 2026-09-04.
 
 Este archivo es el índice de navegación del repositorio. Empieza aquí y abre solo los archivos relacionados con la tarea.
 
@@ -73,6 +73,7 @@ TransactionsPage
 - Categorías fijas de ingreso y orden: `src/constants/incomeCategories.ts`.
 - `INCOME` vinculado a una cuenta conserva su tipo, suma al dashboard y aumenta esa cuenta.
 - Un gasto normal exige cuenta: conserva `EXPENSE`, suma a gastos y reduce la cuenta elegida.
+- `TRANSFER` usa `savings_account_id` como origen y `destination_savings_account_id` como destino; no altera los totales del dashboard.
 
 ### Cuentas
 
@@ -88,6 +89,7 @@ SavingsPage
 - Servicio: `src/services/savings.service.ts`.
 - Aunque algunos nombres internos conservan `Savings`, la interfaz se denomina “Cuentas”.
 - Saldo = saldo inicial + `INCOME`/`SAVING` − `EXPENSE` con el mismo `savings_account_id`.
+- Las transferencias restan a la cuenta origen y suman a la cuenta destino; los pagos de tarjeta solo restan a la cuenta origen.
 - Editar una cuenta reemplaza el saldo inicial; el formulario muestra los movimientos netos y el saldo resultante para evitar duplicaciones conceptuales.
 
 ### Categorías
@@ -103,7 +105,8 @@ SavingsPage
 - Hooks: `src/hooks/useCreditCards.ts`, `useCardCharges.ts`, `useCreditCardMovements.ts`.
 - Servicio: `src/services/cards.service.ts`.
 - Tablas relacionadas: `credit_cards`, `card_charges`, `card_payments`.
-- El historial combina compras (+ deuda), pagos (− deuda) y deuda inicial de la tarjeta seleccionada.
+- El historial combina compras (+ deuda), pagos (− deuda) y deuda inicial de la tarjeta seleccionada, y permite eliminar movimientos huérfanos.
+- Compra = `EXPENSE` vinculada a `card_charges`; pago = `TRANSFER` vinculada a `card_payments`. Las FK con cascada mantienen la reversión al borrar.
 - Soporta deuda HNL y USD; revisa `cards.service.ts` antes de cambiar cálculos o pagos.
 
 ### Préstamos
@@ -120,6 +123,7 @@ SavingsPage
 - Hook/servicio: `src/hooks/useBudgets.ts`, `src/services/budgets.service.ts`.
 - Admite presupuesto por categoría de gasto y meta mensual de ahorro.
 - El resumen total común suma ambos tipos de presupuesto y sus respectivos avances mediante `utils/finance.ts::budgetOverview`.
+- Las categorías con gastos pero sin límite aparecen como “Sin presupuesto” y permiten abrir `BudgetForm` con la categoría preseleccionada.
 
 ### Historial y ajustes
 
@@ -137,6 +141,8 @@ SavingsPage
 - Meta de ahorro: `0010`.
 - Categorías fijas de ingreso y depósitos en cuentas: `0011_income_accounts.sql`.
 - Vínculo e historial detallado de pagos de préstamos: `0012_loan_payment_history.sql`.
+- Tipo contable de transferencia: `0013_add_transfer_type.sql` (ejecutar por separado).
+- Transferencias entre cuentas y vínculos reversibles de tarjetas: `0014_card_links_account_transfers.sql`.
 - RLS limita cada fila por `auth.uid()`; no confíes solo en filtros del cliente.
 
 ## Despliegue
