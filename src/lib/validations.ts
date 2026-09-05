@@ -63,6 +63,8 @@ export const transactionSchema = z
     credit_card_id: z.string().uuid().nullable().optional(),
     savings_account_id: z.string().uuid().nullable().optional(),
     destination_savings_account_id: z.string().uuid().nullable().optional(),
+    receivable_person_id: z.string().uuid().nullable().optional(),
+    receivable_movement_kind: z.enum(['LEND', 'REPAYMENT']).nullable().optional(),
     loan_id: z.string().uuid().nullable().optional(),
     loan_payment_kind: z.enum(['INSTALLMENT', 'EXTRA']).nullable().optional(),
     loan_principal_amount: z.number().min(0).nullable().optional(),
@@ -235,6 +237,34 @@ export const savingsAccountSchema = z.object({
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Color inválido'),
 });
 
+export const receivablePersonSchema = z.object({
+  name: z.string().trim().min(1, 'El nombre es obligatorio').max(80, 'Máximo 80 caracteres'),
+  relationship: z.enum(['FAMILY', 'FRIEND', 'OTHER']),
+  phone: z.string().trim().max(30, 'Máximo 30 caracteres').optional(),
+  notes: z.string().trim().max(300, 'Máximo 300 caracteres').optional(),
+});
+
+export const receivableMovementSchema = z.object({
+  amount: z.coerce
+    .number({ invalid_type_error: 'Ingresa un monto válido' })
+    .positive('El monto debe ser mayor que cero')
+    .max(999_999_999, 'El monto es demasiado grande'),
+  account_id: z.string().uuid('Selecciona una cuenta'),
+  movement_date: dateStringSchema,
+  description: z.string().trim().max(200, 'Máximo 200 caracteres').optional(),
+});
+
+export const receivableCreateSchema = receivablePersonSchema.merge(
+  receivableMovementSchema
+    .extend({
+      initial_amount: z.coerce
+        .number({ invalid_type_error: 'Ingresa un monto válido' })
+        .positive('El monto debe ser mayor que cero')
+        .max(999_999_999, 'El monto es demasiado grande'),
+    })
+    .omit({ amount: true }),
+);
+
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
@@ -247,3 +277,6 @@ export type CreditCardInput = z.infer<typeof creditCardSchema>;
 export type CardPaymentInput = z.infer<typeof cardPaymentSchema>;
 export type CardChargeInput = z.infer<typeof cardChargeSchema>;
 export type SavingsAccountInput = z.infer<typeof savingsAccountSchema>;
+export type ReceivablePersonInput = z.infer<typeof receivablePersonSchema>;
+export type ReceivableMovementInput = z.infer<typeof receivableMovementSchema>;
+export type ReceivableCreateInput = z.infer<typeof receivableCreateSchema>;

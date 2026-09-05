@@ -117,6 +117,16 @@ SavingsPage
 - Los nuevos pagos guardan en `transactions` el préstamo, tipo de pago, capital, interés y saldo posterior; el capital anterior a `0012` se muestra agregado.
 - Cálculos puros y pruebas: `src/utils/loan.ts`, `src/utils/loan.test.ts`.
 
+### Personas que me deben
+
+- Ruta/menú: `ROUTES.receivables` (`/personas-que-me-deben`), etiqueta “Por cobrar”.
+- Página: `src/pages/ReceivablesPage.tsx`.
+- Formularios: `src/components/receivables/ReceivablePersonForm.tsx`, `ReceivableMovementModal.tsx`.
+- Hooks: `src/hooks/useReceivables.ts`, `useReceivableMovements.ts`.
+- Servicio: `src/services/receivables.service.ts`.
+- Tabla principal: `receivable_people`; sus movimientos viven en `transactions` con `receivable_movement_kind` (`LEND`/`REPAYMENT`).
+- Saldo por cobrar = dinero prestado − pagos recibidos. Ambos son `TRANSFER`: el primero resta a una cuenta y el segundo suma a la cuenta de depósito.
+
 ### Presupuestos
 
 - Página/formulario: `src/pages/BudgetsPage.tsx`, `src/components/budgets/BudgetForm.tsx`.
@@ -143,6 +153,7 @@ SavingsPage
 - Vínculo e historial detallado de pagos de préstamos: `0012_loan_payment_history.sql`.
 - Tipo contable de transferencia: `0013_add_transfer_type.sql` (ejecutar por separado).
 - Transferencias entre cuentas y vínculos reversibles de tarjetas: `0014_card_links_account_transfers.sql`.
+- Personas, préstamos entregados y pagos recibidos: `0015_receivables.sql`.
 - RLS limita cada fila por `auth.uid()`; no confíes solo en filtros del cliente.
 
 ## Despliegue
@@ -169,6 +180,7 @@ GitHub main
 | Resumen del dashboard | `DashboardPage.tsx`, `utils/finance.ts` |
 | Tarjetas/deuda/pagos | `cards.service.ts`, `CardsPage.tsx` |
 | Préstamos/cuotas | `loans.service.ts`, `utils/loan.ts` |
+| Personas que deben / cobros | `ReceivablesPage.tsx`, `receivables.service.ts` |
 | Presupuestos | `BudgetsPage.tsx`, `budgets.service.ts` |
 | Formato o validación | `utils/format.ts`, `utils/date.ts`, `lib/validations.ts` |
 | Error de Supabase | servicio del dominio, `lib/errors.ts`, migración relacionada |

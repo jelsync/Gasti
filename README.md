@@ -89,7 +89,7 @@ VITE_SUPABASE_ANON_KEY=tu_anon_public_key
 
 1. Crea un proyecto en [supabase.com](https://supabase.com).
 2. En **SQL Editor**, ejecuta en orden las migraciones de
-   `supabase/migrations/0001_init.sql` a `0014_card_links_account_transfers.sql`.
+   `supabase/migrations/0001_init.sql` a `0015_receivables.sql`.
    Ejecuta `0013_add_transfer_type.sql` por separado antes de `0014`.
 3. En **Authentication → URL Configuration**, agrega a *Redirect URLs*:
    `http://localhost:5173/**` (y tu dominio de producción cuando despliegues).

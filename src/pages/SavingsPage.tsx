@@ -253,11 +253,15 @@ export default function SavingsPage() {
                           <div className="min-w-0 flex-1">
                             <p className="truncate font-medium">
                               {isTransfer
-                                ? isIncomingTransfer
-                                  ? `Transferencia recibida de ${movement.savings_account?.name ?? 'otra cuenta'}`
-                                  : movement.credit_card
-                                    ? `Pago de ${movement.credit_card.name}`
-                                    : `Transferencia enviada a ${movement.destination_savings_account?.name ?? 'otra cuenta'}`
+                                ? movement.receivable_person
+                                  ? movement.receivable_movement_kind === 'LEND'
+                                    ? `Préstamo a ${movement.receivable_person.name}`
+                                    : `Pago recibido de ${movement.receivable_person.name}`
+                                  : isIncomingTransfer
+                                    ? `Transferencia recibida de ${movement.savings_account?.name ?? 'otra cuenta'}`
+                                    : movement.credit_card
+                                      ? `Pago de ${movement.credit_card.name}`
+                                      : `Transferencia enviada a ${movement.destination_savings_account?.name ?? 'otra cuenta'}`
                                 : isIncome
                                   ? (movement.category?.name ?? 'Ingreso')
                                   : isExpense

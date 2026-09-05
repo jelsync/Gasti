@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   CreditCard,
+  HandCoins,
   Landmark,
   PiggyBank,
   Receipt,
@@ -23,6 +24,7 @@ import { useBudgets } from '@/hooks/useBudgets';
 import { useCreditCards } from '@/hooks/useCreditCards';
 import { useSavingsAccounts } from '@/hooks/useSavingsAccounts';
 import { useLoans } from '@/hooks/useLoans';
+import { useReceivables } from '@/hooks/useReceivables';
 import { useCardCharges } from '@/hooks/useCardCharges';
 import { budgetOverview, groupByCategory, monthlySummary } from '@/utils/finance';
 import { formatCurrency, formatMoney, formatPercent } from '@/utils/format';
@@ -39,6 +41,7 @@ export default function DashboardPage() {
   const { cards } = useCreditCards();
   const { accounts } = useSavingsAccounts();
   const { loans } = useLoans();
+  const { people: receivablePeople } = useReceivables();
   const { charges } = useCardCharges(range);
 
   const cardDebt = useMemo(() => {
@@ -51,6 +54,10 @@ export default function DashboardPage() {
   }, [cards]);
   const totalSavings = useMemo(() => accounts.reduce((acc, a) => acc + a.balance, 0), [accounts]);
   const totalLoans = useMemo(() => loans.reduce((acc, l) => acc + l.current_balance, 0), [loans]);
+  const totalReceivable = useMemo(
+    () => receivablePeople.reduce((total, person) => total + person.balance, 0),
+    [receivablePeople],
+  );
 
   const summary = useMemo(() => monthlySummary(transactions), [transactions]);
   const expenseByCategory = useMemo(() => groupByCategory(transactions, 'EXPENSE'), [transactions]);
@@ -100,8 +107,8 @@ export default function DashboardPage() {
             <StatCard label="Disponible" value={summary.balance} icon={Wallet} tone="neutral" />
           </div>
 
-          {(cards.length > 0 || accounts.length > 0 || loans.length > 0) && (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {(cards.length > 0 || accounts.length > 0 || loans.length > 0 || totalReceivable > 0) && (
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               {loans.length > 0 && (
                 <Link to={ROUTES.loans}>
                   <Card className="flex items-center justify-between p-5 transition-colors hover:bg-muted">
@@ -141,6 +148,19 @@ export default function DashboardPage() {
                       </p>
                     </div>
                     <Wallet className="h-6 w-6 text-muted-foreground" />
+                  </Card>
+                </Link>
+              )}
+              {totalReceivable > 0 && (
+                <Link to={ROUTES.receivables}>
+                  <Card className="flex items-center justify-between p-5 transition-colors hover:bg-muted">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Pendiente por cobrar</p>
+                      <p className="mt-1 text-xl font-bold tabular-nums text-income">
+                        {formatCurrency(totalReceivable)}
+                      </p>
+                    </div>
+                    <HandCoins className="h-6 w-6 text-muted-foreground" />
                   </Card>
                 </Link>
               )}

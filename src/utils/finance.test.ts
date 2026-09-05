@@ -21,6 +21,8 @@ function tx(
     credit_card_id: null,
     savings_account_id: null,
     destination_savings_account_id: null,
+    receivable_person_id: null,
+    receivable_movement_kind: null,
     loan_id: null,
     loan_payment_kind: null,
     loan_principal_amount: null,

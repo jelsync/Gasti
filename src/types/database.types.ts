@@ -5,6 +5,7 @@
 export type TransactionType = 'INCOME' | 'EXPENSE' | 'SAVING' | 'TRANSFER';
 export type Currency = 'HNL' | 'USD';
 export type BudgetKind = 'CATEGORY' | 'SAVINGS';
+export type ReceivableRelationship = 'FAMILY' | 'FRIEND' | 'OTHER';
 
 export interface Database {
   public: {
@@ -68,6 +69,8 @@ export interface Database {
           credit_card_id: string | null;
           savings_account_id: string | null;
           destination_savings_account_id: string | null;
+          receivable_person_id: string | null;
+          receivable_movement_kind: 'LEND' | 'REPAYMENT' | null;
           loan_id: string | null;
           loan_payment_kind: 'INSTALLMENT' | 'EXTRA' | null;
           loan_principal_amount: number | null;
@@ -87,6 +90,8 @@ export interface Database {
           credit_card_id?: string | null;
           savings_account_id?: string | null;
           destination_savings_account_id?: string | null;
+          receivable_person_id?: string | null;
+          receivable_movement_kind?: 'LEND' | 'REPAYMENT' | null;
           loan_id?: string | null;
           loan_payment_kind?: 'INSTALLMENT' | 'EXTRA' | null;
           loan_principal_amount?: number | null;
@@ -102,6 +107,8 @@ export interface Database {
           credit_card_id?: string | null;
           savings_account_id?: string | null;
           destination_savings_account_id?: string | null;
+          receivable_person_id?: string | null;
+          receivable_movement_kind?: 'LEND' | 'REPAYMENT' | null;
           loan_id?: string | null;
           loan_payment_kind?: 'INSTALLMENT' | 'EXTRA' | null;
           loan_principal_amount?: number | null;
@@ -148,7 +155,44 @@ export interface Database {
             referencedRelation: 'loans';
             referencedColumns: ['id'];
           },
+          {
+            foreignKeyName: 'transactions_receivable_person_id_fkey';
+            columns: ['receivable_person_id'];
+            isOneToOne: false;
+            referencedRelation: 'receivable_people';
+            referencedColumns: ['id'];
+          },
         ];
+      };
+      receivable_people: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          relationship: ReceivableRelationship;
+          phone: string;
+          notes: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          name: string;
+          relationship?: ReceivableRelationship;
+          phone?: string;
+          notes?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          name?: string;
+          relationship?: ReceivableRelationship;
+          phone?: string;
+          notes?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
       };
       budgets: {
         Row: {

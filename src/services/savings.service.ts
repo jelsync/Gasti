@@ -62,7 +62,7 @@ export async function getSavingsAccountMovements(
   const { data, error } = await supabase
     .from('transactions')
     .select(
-      '*, category:categories(id, name, icon, color, type), credit_card:credit_cards(id, name, color), savings_account:savings_accounts!transactions_savings_account_id_fkey(id, name, color), destination_savings_account:savings_accounts!transactions_destination_savings_account_id_fkey(id, name, color)',
+      '*, category:categories(id, name, icon, color, type), credit_card:credit_cards(id, name, color), savings_account:savings_accounts!transactions_savings_account_id_fkey(id, name, color), destination_savings_account:savings_accounts!transactions_destination_savings_account_id_fkey(id, name, color), receivable_person:receivable_people(id, name)',
     )
     .or(`savings_account_id.eq.${accountId},destination_savings_account_id.eq.${accountId}`)
     .in('type', ['INCOME', 'SAVING', 'EXPENSE', 'TRANSFER'])

@@ -1,6 +1,11 @@
-import type { Currency, Database, TransactionType } from '@/types/database.types';
+import type {
+  Currency,
+  Database,
+  ReceivableRelationship,
+  TransactionType,
+} from '@/types/database.types';
 
-export type { TransactionType, Currency };
+export type { TransactionType, Currency, ReceivableRelationship };
 
 export type Profile = Database['public']['Tables']['profiles']['Row'];
 export type Category = Database['public']['Tables']['categories']['Row'];
@@ -9,6 +14,7 @@ export type Budget = Database['public']['Tables']['budgets']['Row'];
 export type Loan = Database['public']['Tables']['loans']['Row'];
 export type CreditCard = Database['public']['Tables']['credit_cards']['Row'];
 export type SavingsAccount = Database['public']['Tables']['savings_accounts']['Row'];
+export type ReceivablePerson = Database['public']['Tables']['receivable_people']['Row'];
 
 /** Préstamo con su categoría de pago embebida. */
 export interface LoanWithCategory extends Loan {
@@ -34,6 +40,13 @@ export interface TransactionWithCategory extends Transaction {
   credit_card?: Pick<CreditCard, 'id' | 'name' | 'color'> | null;
   savings_account?: Pick<SavingsAccount, 'id' | 'name' | 'color'> | null;
   destination_savings_account?: Pick<SavingsAccount, 'id' | 'name' | 'color'> | null;
+  receivable_person?: Pick<ReceivablePerson, 'id' | 'name'> | null;
+}
+
+export interface ReceivablePersonWithBalance extends ReceivablePerson {
+  balance: number;
+  totalLent: number;
+  totalPaid: number;
 }
 
 /** Presupuesto enriquecido con lo gastado y el cálculo de avance. */

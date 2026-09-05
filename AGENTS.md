@@ -26,6 +26,8 @@
 - El historial de una tarjeta combina `card_charges` y `card_payments`, separado por tarjeta y moneda.
 - Borrar una transacción vinculada a una compra o pago debe revertir también el movimiento de tarjeta mediante cascada.
 - `TRANSFER` mueve saldo entre cuentas (o de una cuenta a una tarjeta) y no suma ingresos, gastos ni ahorro.
+- Prestar dinero a una persona es `TRANSFER` desde una cuenta hacia una cuenta por cobrar; recibir capital es `TRANSFER` hacia una cuenta. Ninguno es ingreso o gasto.
+- La deuda de una persona se deriva de movimientos `LEND` menos `REPAYMENT`; no mantengas un saldo mutable duplicado.
 - Un gasto en una categoría sin límite mensual se muestra como no presupuestado; nunca se crea automáticamente un presupuesto retroactivo.
 - Los nuevos pagos de préstamo deben vincular la transacción al préstamo y conservar pago total, capital, interés y saldo posterior.
 - No debilites RLS ni uses claves `service_role`/`sb_secret_*` en el frontend. Toda variable `VITE_*` es pública en el navegador.

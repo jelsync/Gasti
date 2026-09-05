@@ -9,6 +9,7 @@ import {
   Settings,
   Tags,
   Wallet,
+  Users,
   type LucideIcon,
 } from 'lucide-react';
 import { ROUTES } from '@/constants/routes';
@@ -27,6 +28,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Préstamos', to: ROUTES.loans, icon: Landmark },
   { label: 'Tarjetas', to: ROUTES.cards, icon: CreditCard },
   { label: 'Cuentas', to: ROUTES.savings, icon: Wallet },
+  { label: 'Por cobrar', to: ROUTES.receivables, icon: Users },
   { label: 'Historial', to: ROUTES.history, icon: CalendarClock },
   { label: 'Reportes', to: ROUTES.reports, icon: BarChart3 },
   { label: 'Categorías', to: ROUTES.categories, icon: Tags },

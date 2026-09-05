@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { budgetSchema, loginSchema, registerSchema, transactionSchema } from '@/lib/validations';
+import {
+  budgetSchema,
+  loginSchema,
+  receivableCreateSchema,
+  receivableMovementSchema,
+  registerSchema,
+  transactionSchema,
+} from '@/lib/validations';
 
 describe('registerSchema', () => {
   const base = {
@@ -118,5 +125,33 @@ describe('budgetSchema', () => {
   it('acepta una meta de ahorro (sin categoría)', () => {
     const result = budgetSchema.safeParse({ ...base, kind: 'SAVINGS', category_id: null });
     expect(result.success).toBe(true);
+  });
+});
+
+describe('receivables schemas', () => {
+  const movement = {
+    amount: 500,
+    account_id: '11111111-1111-1111-1111-111111111111',
+    movement_date: '2026-09-04',
+    description: 'Préstamo personal',
+  };
+
+  it('acepta un préstamo inicial con persona y cuenta', () => {
+    expect(
+      receivableCreateSchema.safeParse({
+        name: 'Carlos',
+        relationship: 'FRIEND',
+        phone: '',
+        notes: '',
+        initial_amount: 1200,
+        account_id: movement.account_id,
+        movement_date: movement.movement_date,
+        description: movement.description,
+      }).success,
+    ).toBe(true);
+  });
+
+  it('rechaza un pago sin cuenta de depósito', () => {
+    expect(receivableMovementSchema.safeParse({ ...movement, account_id: '' }).success).toBe(false);
   });
 });

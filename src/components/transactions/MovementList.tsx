@@ -19,10 +19,21 @@ interface MovementListProps {
 
 function txDisplay(t: TransactionWithCategory) {
   if (t.type === 'TRANSFER') {
+    const isReceivablePayment = t.receivable_movement_kind === 'REPAYMENT';
     return {
-      name: t.credit_card ? `Pago de ${t.credit_card.name}` : 'Transferencia entre cuentas',
-      icon: t.credit_card ? 'credit-card' : 'arrow-left-right',
-      color: t.credit_card?.color ?? '#0ea5e9',
+      name: t.receivable_person
+        ? isReceivablePayment
+          ? `Pago de ${t.receivable_person.name}`
+          : `Préstamo a ${t.receivable_person.name}`
+        : t.credit_card
+          ? `Pago de ${t.credit_card.name}`
+          : 'Transferencia entre cuentas',
+      icon: t.receivable_person ? 'hand-coins' : t.credit_card ? 'credit-card' : 'arrow-left-right',
+      color: t.receivable_person
+        ? isReceivablePayment
+          ? '#10b981'
+          : '#f59e0b'
+        : (t.credit_card?.color ?? '#0ea5e9'),
       sign: '→',
       amountClass: 'text-primary',
     };
@@ -88,7 +99,7 @@ export function MovementList({ items, onEditTx, onDeleteTx, onDeleteCharge }: Mo
 
         const t = item.tx;
         const d = txDisplay(t);
-        const canEdit = !t.credit_card_id && !t.loan_id;
+        const canEdit = !t.credit_card_id && !t.loan_id && !t.receivable_person_id;
         return (
           <li key={`t-${t.id}`} className="flex items-center gap-3 py-3">
             <CategoryIcon icon={d.icon} color={d.color} />
@@ -102,9 +113,13 @@ export function MovementList({ items, onEditTx, onDeleteTx, onDeleteCharge }: Mo
                   : t.savings_account && t.type === 'EXPENSE'
                     ? ` · Debitado de ${t.savings_account.name}`
                     : t.type === 'TRANSFER'
-                      ? t.credit_card
-                        ? ` · Pagado desde ${t.savings_account?.name ?? 'cuenta'}`
-                        : ` · ${t.savings_account?.name ?? 'Cuenta'} → ${t.destination_savings_account?.name ?? 'Cuenta'}`
+                      ? t.receivable_person
+                        ? t.receivable_movement_kind === 'LEND'
+                          ? ` · Entregado desde ${t.savings_account?.name ?? 'cuenta'}`
+                          : ` · Depositado en ${t.destination_savings_account?.name ?? 'cuenta'}`
+                        : t.credit_card
+                          ? ` · Pagado desde ${t.savings_account?.name ?? 'cuenta'}`
+                          : ` · ${t.savings_account?.name ?? 'Cuenta'} → ${t.destination_savings_account?.name ?? 'Cuenta'}`
                       : t.credit_card && t.type === 'EXPENSE'
                         ? ` · Compra con ${t.credit_card.name}`
                         : ''}

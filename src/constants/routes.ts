@@ -11,6 +11,7 @@ export const ROUTES = {
   loans: '/prestamos',
   cards: '/tarjetas',
   savings: '/ahorro',
+  receivables: '/personas-que-me-deben',
   history: '/historial',
   reports: '/reportes',
   categories: '/categorias',

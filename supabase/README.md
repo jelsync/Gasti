@@ -20,7 +20,8 @@ supabase/
 │   ├── 0011_income_accounts.sql # Categorías de ingreso y depósitos en cuentas
 │   ├── 0012_loan_payment_history.sql # Historial detallado de pagos de préstamos
 │   ├── 0013_add_transfer_type.sql # Agrega TRANSFER al enum (ejecutar solo)
-│   └── 0014_card_links_account_transfers.sql # Reversiones y transferencias
+│   ├── 0014_card_links_account_transfers.sql # Reversiones y transferencias
+│   └── 0015_receivables.sql # Personas que deben y pagos recibidos
 ├── seed.sql                   # Seed opcional para usuarios preexistentes
 └── README.md
 ```
@@ -43,6 +44,7 @@ supabase/
    12. `migrations/0012_loan_payment_history.sql`
    13. `migrations/0013_add_transfer_type.sql` (ejecútala sola: agrega un valor al enum)
    14. `migrations/0014_card_links_account_transfers.sql`
+   15. `migrations/0015_receivables.sql`
 3. (Opcional) Si ya tenías usuarios creados antes de aplicar el paso 3,
    ejecuta `seed.sql` para sembrarles las categorías predeterminadas.
 
@@ -67,6 +69,7 @@ supabase db push
 | `credit_cards` | Tarjetas de crédito. Deuda = apertura + compras − pagos.       |
 | `card_payments`| Pagos a tarjetas (reducen la deuda, no son gastos).            |
 | `savings_accounts` | Cuentas. Saldo = apertura + ingresos/aportes − gastos vinculados. |
+| `receivable_people` | Personas con dinero pendiente; el saldo se deriva de préstamos y pagos. |
 
 ### Decisiones de diseño
 
