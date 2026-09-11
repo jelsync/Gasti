@@ -15,8 +15,9 @@ export async function getSavingsAccounts(): Promise<SavingsAccountWithBalance[]>
     supabase.from('savings_accounts').select('*').order('created_at', { ascending: true }),
     supabase
       .from('transactions')
-      .select('savings_account_id, destination_savings_account_id, amount, type')
+      .select('savings_account_id, destination_savings_account_id, amount, type, currency')
       .in('type', ['INCOME', 'SAVING', 'EXPENSE', 'TRANSFER'])
+      .eq('currency', 'HNL')
       .or('savings_account_id.not.is.null,destination_savings_account_id.not.is.null'),
   ]);
 
@@ -30,7 +31,10 @@ export async function getSavingsAccounts(): Promise<SavingsAccountWithBalance[]>
         row.savings_account_id,
         round2(
           (movements.get(row.savings_account_id) ?? 0) +
-            accountMovementAmount({ type: row.type, amount: row.amount }, 'SOURCE'),
+            accountMovementAmount(
+              { type: row.type, amount: row.amount, currency: row.currency },
+              'SOURCE',
+            ),
         ),
       );
     }
@@ -39,7 +43,10 @@ export async function getSavingsAccounts(): Promise<SavingsAccountWithBalance[]>
         row.destination_savings_account_id,
         round2(
           (movements.get(row.destination_savings_account_id) ?? 0) +
-            accountMovementAmount({ type: row.type, amount: row.amount }, 'DESTINATION'),
+            accountMovementAmount(
+              { type: row.type, amount: row.amount, currency: row.currency },
+              'DESTINATION',
+            ),
         ),
       );
     }
@@ -66,6 +73,7 @@ export async function getSavingsAccountMovements(
     )
     .or(`savings_account_id.eq.${accountId},destination_savings_account_id.eq.${accountId}`)
     .in('type', ['INCOME', 'SAVING', 'EXPENSE', 'TRANSFER'])
+    .eq('currency', 'HNL')
     .order('transaction_date', { ascending: false })
     .order('created_at', { ascending: false })
     .returns<TransactionWithCategory[]>();
@@ -85,6 +93,7 @@ export async function createSavingsAccount(
       name: input.name,
       institution: input.institution ?? '',
       opening_balance: input.opening_balance,
+      include_in_savings_goal: input.include_in_savings_goal,
       color: input.color,
     })
     .select('*')
@@ -104,6 +113,7 @@ export async function updateSavingsAccount(
       name: input.name,
       institution: input.institution ?? '',
       opening_balance: input.opening_balance,
+      include_in_savings_goal: input.include_in_savings_goal,
       color: input.color,
     })
     .eq('id', id)

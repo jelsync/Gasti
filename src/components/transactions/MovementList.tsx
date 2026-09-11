@@ -1,6 +1,6 @@
 import { CreditCard as CardIcon, Pencil, Trash2 } from 'lucide-react';
 import { CategoryIcon } from '@/components/CategoryIcon';
-import { formatCurrency, formatMoney } from '@/utils/format';
+import { formatMoney } from '@/utils/format';
 import { formatDate } from '@/utils/date';
 import { cn } from '@/lib/utils';
 import type { TransactionWithCategory } from '@/types/models';
@@ -126,7 +126,7 @@ export function MovementList({ items, onEditTx, onDeleteTx, onDeleteCharge }: Mo
               </p>
             </div>
             <span className={cn('shrink-0 font-semibold tabular-nums', d.amountClass)}>
-              {d.sign} {formatCurrency(t.amount)}
+              {d.sign} {formatMoney(t.amount, t.currency)}
             </span>
             {(onEditTx || onDeleteTx) && (
               <div className="flex shrink-0 items-center gap-1">

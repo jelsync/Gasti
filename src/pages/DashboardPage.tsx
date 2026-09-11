@@ -26,7 +26,12 @@ import { useSavingsAccounts } from '@/hooks/useSavingsAccounts';
 import { useLoans } from '@/hooks/useLoans';
 import { useReceivables } from '@/hooks/useReceivables';
 import { useCardCharges } from '@/hooks/useCardCharges';
-import { budgetOverview, groupByCategory, monthlySummary } from '@/utils/finance';
+import {
+  budgetOverview,
+  groupByCategory,
+  monthlySummary,
+  savingsGoalMovement,
+} from '@/utils/finance';
 import { formatCurrency, formatMoney, formatPercent } from '@/utils/format';
 import { getCurrentMonthYear, monthRange } from '@/utils/date';
 import { ROUTES } from '@/constants/routes';
@@ -59,24 +64,57 @@ export default function DashboardPage() {
     [receivablePeople],
   );
 
-  const summary = useMemo(() => monthlySummary(transactions), [transactions]);
-  const expenseByCategory = useMemo(() => groupByCategory(transactions, 'EXPENSE'), [transactions]);
+  const summary = useMemo(() => monthlySummary(transactions, 'HNL'), [transactions]);
+  const summaryUsd = useMemo(() => monthlySummary(transactions, 'USD'), [transactions]);
+  const expenseByCategory = useMemo(
+    () => groupByCategory(transactions, 'EXPENSE', 'HNL'),
+    [transactions],
+  );
+  const expenseByCategoryUsd = useMemo(
+    () => groupByCategory(transactions, 'EXPENSE', 'USD'),
+    [transactions],
+  );
+  const savedThisMonth = useMemo(
+    () =>
+      savingsGoalMovement(
+        transactions,
+        new Set(accounts.filter((account) => account.include_in_savings_goal).map((a) => a.id)),
+      ),
+    [transactions, accounts],
+  );
 
   const budgetUsage = useMemo(() => {
-    if (budgets.length === 0) return null;
-    const spentByCategory = new Map(expenseByCategory.map((s) => [s.categoryId, s.total]));
-    return budgetOverview(budgets, spentByCategory, summary.saving);
-  }, [budgets, expenseByCategory, summary.saving]);
+    const categoryBudgets = budgets.filter((budget) => budget.kind === 'CATEGORY');
+    const hnlMap = new Map(expenseByCategory.map((item) => [item.categoryId, item.total]));
+    const usdMap = new Map(expenseByCategoryUsd.map((item) => [item.categoryId, item.total]));
+    return {
+      HNL: budgetOverview(
+        budgets.filter((budget) => budget.currency === 'HNL'),
+        hnlMap,
+        savedThisMonth,
+      ),
+      USD: budgetOverview(
+        categoryBudgets.filter((budget) => budget.currency === 'USD'),
+        usdMap,
+        0,
+      ),
+    };
+  }, [budgets, expenseByCategory, expenseByCategoryUsd, savedThisMonth]);
 
-  const unbudgetedTotal = useMemo(() => {
-    const budgetedIds = new Set(
-      budgets.filter((budget) => budget.kind === 'CATEGORY').map((budget) => budget.category_id),
+  const unbudgetedTotals = useMemo(() => {
+    const budgetedKeys = new Set(
+      budgets
+        .filter((budget) => budget.kind === 'CATEGORY')
+        .map((budget) => `${budget.category_id}:${budget.currency}`),
     );
-    return expenseByCategory.reduce(
-      (total, item) => total + (budgetedIds.has(item.categoryId) ? 0 : item.total),
-      0,
-    );
-  }, [budgets, expenseByCategory]);
+    const outside = (items: typeof expenseByCategory, currency: 'HNL' | 'USD') =>
+      items.reduce(
+        (total, item) =>
+          total + (budgetedKeys.has(`${item.categoryId}:${currency}`) ? 0 : item.total),
+        0,
+      );
+    return { HNL: outside(expenseByCategory, 'HNL'), USD: outside(expenseByCategoryUsd, 'USD') };
+  }, [budgets, expenseByCategory, expenseByCategoryUsd]);
 
   const recent = useMemo<MovementItem[]>(() => {
     const items: MovementItem[] = [
@@ -103,9 +141,21 @@ export default function DashboardPage() {
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             <StatCard label="Ingresos" value={summary.income} icon={TrendingUp} tone="income" />
             <StatCard label="Gastos" value={summary.expense} icon={TrendingDown} tone="expense" />
-            <StatCard label="Ahorro" value={summary.saving} icon={PiggyBank} tone="primary" />
+            <StatCard label="Ahorro" value={savedThisMonth} icon={PiggyBank} tone="primary" />
             <StatCard label="Disponible" value={summary.balance} icon={Wallet} tone="neutral" />
           </div>
+
+          {summaryUsd.expense > 0 && (
+            <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+              <StatCard
+                label="Gastos en dólares"
+                value={summaryUsd.expense}
+                currency="USD"
+                icon={TrendingDown}
+                tone="expense"
+              />
+            </div>
+          )}
 
           {(cards.length > 0 || accounts.length > 0 || loans.length > 0 || totalReceivable > 0) && (
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -167,37 +217,54 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {(budgetUsage || unbudgetedTotal > 0) && (
+          {(budgetUsage.HNL.totalBudget > 0 ||
+            budgetUsage.USD.totalBudget > 0 ||
+            unbudgetedTotals.HNL > 0 ||
+            unbudgetedTotals.USD > 0) && (
             <Card>
               <CardContent>
-                <div className="mb-2 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <PiggyBank className="h-5 w-5 text-primary" />
-                    <span className="font-medium">Presupuesto utilizado</span>
-                  </div>
-                  {budgetUsage && (
-                    <span className="text-sm font-semibold tabular-nums">
-                      {formatPercent(budgetUsage.percentage)}
-                    </span>
-                  )}
+                <div className="mb-3 flex items-center gap-2">
+                  <PiggyBank className="h-5 w-5 text-primary" />
+                  <span className="font-medium">Presupuesto utilizado</span>
                 </div>
-                {budgetUsage && (
-                  <>
-                    <ProgressBar value={budgetUsage.percentage} />
-                    <p className="mt-2 text-xs text-muted-foreground">
-                      {formatCurrency(budgetUsage.totalUsed)} de{' '}
-                      {formatCurrency(budgetUsage.totalBudget)}
-                    </p>
-                  </>
-                )}
-                {unbudgetedTotal > 0 && (
-                  <p className="mt-2 text-xs font-medium text-expense">
-                    {formatCurrency(unbudgetedTotal)} en gastos sin presupuesto.{' '}
-                    <Link to={ROUTES.budgets} className="underline">
-                      Revisar
-                    </Link>
-                  </p>
-                )}
+                <div className="space-y-4">
+                  {(['HNL', 'USD'] as const).map((currency) => {
+                    const usage = budgetUsage[currency];
+                    const outside = unbudgetedTotals[currency];
+                    if (usage.totalBudget === 0 && outside === 0) return null;
+                    return (
+                      <div key={currency}>
+                        <div className="mb-2 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-muted-foreground">{currency}</span>
+                          </div>
+                          {usage.totalBudget > 0 && (
+                            <span className="text-sm font-semibold tabular-nums">
+                              {formatPercent(usage.percentage)}
+                            </span>
+                          )}
+                        </div>
+                        {usage.totalBudget > 0 && (
+                          <>
+                            <ProgressBar value={usage.percentage} />
+                            <p className="mt-2 text-xs text-muted-foreground">
+                              {formatMoney(usage.totalUsed, currency)} de{' '}
+                              {formatMoney(usage.totalBudget, currency)}
+                            </p>
+                          </>
+                        )}
+                        {outside > 0 && (
+                          <p className="mt-2 text-xs font-medium text-expense">
+                            {formatMoney(outside, currency)} en gastos sin presupuesto.{' '}
+                            <Link to={ROUTES.budgets} className="underline">
+                              Revisar
+                            </Link>
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </CardContent>
             </Card>
           )}
@@ -215,6 +282,22 @@ export default function DashboardPage() {
                 )}
               </CardContent>
             </Card>
+
+            {expenseByCategoryUsd.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Gastos por categoría (USD)</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CategoryBreakdown
+                    items={expenseByCategoryUsd}
+                    total={summaryUsd.expense}
+                    currency="USD"
+                    limit={6}
+                  />
+                </CardContent>
+              </Card>
+            )}
 
             <Card>
               <CardHeader className="flex-row items-center justify-between">

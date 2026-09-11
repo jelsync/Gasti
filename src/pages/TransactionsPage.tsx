@@ -18,11 +18,11 @@ import { useTransactions } from '@/hooks/useTransactions';
 import { useCreditCards } from '@/hooks/useCreditCards';
 import { useSavingsAccounts } from '@/hooks/useSavingsAccounts';
 import { useCardCharges } from '@/hooks/useCardCharges';
-import { monthlySummary } from '@/utils/finance';
-import { formatCurrency } from '@/utils/format';
+import { monthlySummary, savingsGoalMovement } from '@/utils/finance';
+import { formatMoney } from '@/utils/format';
 import { getCurrentMonthYear, monthRange } from '@/utils/date';
 import { cn } from '@/lib/utils';
-import type { TransactionType, TransactionWithCategory } from '@/types/models';
+import type { Currency, TransactionType, TransactionWithCategory } from '@/types/models';
 import type { CardChargeWithCard } from '@/services/cards.service';
 import { getIncomeCategories } from '@/constants/incomeCategories';
 
@@ -62,7 +62,16 @@ export default function TransactionsPage() {
   } = useTransactions(filters);
   const { charges, remove: removeCharge, refresh: refreshCharges } = useCardCharges(range);
 
-  const summary = useMemo(() => monthlySummary(transactions), [transactions]);
+  const summary = useMemo(() => monthlySummary(transactions, 'HNL'), [transactions]);
+  const summaryUsd = useMemo(() => monthlySummary(transactions, 'USD'), [transactions]);
+  const savingsThisMonth = useMemo(
+    () =>
+      savingsGoalMovement(
+        transactions,
+        new Set(accounts.filter((account) => account.include_in_savings_goal).map((a) => a.id)),
+      ),
+    [transactions, accounts],
+  );
 
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -210,8 +219,16 @@ export default function TransactionsPage() {
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <SummaryPill label="Ingresos" value={summary.income} tone="income" />
           <SummaryPill label="Gastos" value={summary.expense} tone="expense" />
-          <SummaryPill label="Ahorro" value={summary.saving} tone="saving" />
+          <SummaryPill label="Ahorro" value={savingsThisMonth} tone="saving" />
           <SummaryPill label="Disponible" value={summary.balance} tone="neutral" />
+          {summaryUsd.expense > 0 && (
+            <SummaryPill
+              label="Gastos USD"
+              value={summaryUsd.expense}
+              currency="USD"
+              tone="expense"
+            />
+          )}
         </div>
       </div>
 
@@ -366,10 +383,12 @@ function SummaryPill({
   label,
   value,
   tone,
+  currency = 'HNL',
 }: {
   label: string;
   value: number;
   tone: 'income' | 'expense' | 'saving' | 'neutral';
+  currency?: Currency;
 }) {
   const toneClass =
     tone === 'income'
@@ -383,7 +402,7 @@ function SummaryPill({
     <div className="rounded-[var(--radius)] border border-border bg-card px-4 py-3">
       <p className="text-xs text-muted-foreground">{label}</p>
       <p className={cn('mt-0.5 text-lg font-semibold tabular-nums', toneClass)}>
-        {formatCurrency(value)}
+        {formatMoney(value, currency)}
       </p>
     </div>
   );

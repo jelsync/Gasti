@@ -22,10 +22,12 @@
 - Saldo de cuenta = `opening_balance` + `INCOME`/`SAVING` vinculados − `EXPENSE` vinculados.
 - Un gasto normal (`EXPENSE`) debe seleccionar `savings_account_id` y debitar esa cuenta. Esta regla no se extiende automáticamente a cargos o pagos de tarjeta.
 - Las únicas categorías de ingreso son: `Salario`, `Transferencia de papá`, `Bonos` y `Otros ingresos`.
-- Las compras con tarjeta aumentan deuda y crean el gasto que alimenta dashboard/presupuesto; los pagos reducen deuda y son transferencias desde una cuenta, no un segundo gasto.
+- Las compras con tarjeta aumentan deuda y crean el gasto en la misma moneda que alimenta dashboard/presupuesto; una compra USD nunca exige una conversión HNL. El equivalente HNL se registra solo al pagar, como transferencia desde una cuenta y no como segundo gasto.
 - El historial de una tarjeta combina `card_charges` y `card_payments`, separado por tarjeta y moneda.
 - Borrar una transacción vinculada a una compra o pago debe revertir también el movimiento de tarjeta mediante cascada.
-- `TRANSFER` mueve saldo entre cuentas (o de una cuenta a una tarjeta) y no suma ingresos, gastos ni ahorro.
+- `TRANSFER` mueve saldo entre cuentas (o de una cuenta a una tarjeta) y no suma ingresos ni gastos. Sí puede cambiar el avance de la meta de ahorro por el movimiento neto de las cuentas con `include_in_savings_goal`.
+- Los totales, categorías y presupuestos HNL/USD se calculan por separado; nunca sumes importes de monedas distintas.
+- La meta mensual de ahorro usa el movimiento neto HNL de las cuentas marcadas: entradas suman, salidas restan y transferencias entre dos cuentas marcadas son neutras.
 - Prestar dinero a una persona es `TRANSFER` desde una cuenta hacia una cuenta por cobrar; recibir capital es `TRANSFER` hacia una cuenta. Ninguno es ingreso o gasto.
 - La deuda de una persona se deriva de movimientos `LEND` menos `REPAYMENT`; no mantengas un saldo mutable duplicado.
 - Un gasto en una categoría sin límite mensual se muestra como no presupuestado; nunca se crea automáticamente un presupuesto retroactivo.

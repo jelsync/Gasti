@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   budgetSchema,
+  cardChargeSchema,
   loginSchema,
   receivableCreateSchema,
   receivableMovementSchema,
@@ -114,6 +115,10 @@ describe('budgetSchema', () => {
     expect(budgetSchema.safeParse(base).success).toBe(true);
   });
 
+  it('acepta un presupuesto de categoría en dólares', () => {
+    expect(budgetSchema.safeParse({ ...base, currency: 'USD' }).success).toBe(true);
+  });
+
   it('rechaza mes fuera de rango', () => {
     expect(budgetSchema.safeParse({ ...base, month: 13 }).success).toBe(false);
   });
@@ -125,6 +130,29 @@ describe('budgetSchema', () => {
   it('acepta una meta de ahorro (sin categoría)', () => {
     const result = budgetSchema.safeParse({ ...base, kind: 'SAVINGS', category_id: null });
     expect(result.success).toBe(true);
+  });
+
+  it('mantiene la meta de ahorro en lempiras', () => {
+    const result = budgetSchema.safeParse({
+      ...base,
+      kind: 'SAVINGS',
+      category_id: null,
+      currency: 'USD',
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe('cardChargeSchema', () => {
+  it('acepta una compra sin pedir un equivalente en lempiras', () => {
+    expect(
+      cardChargeSchema.safeParse({
+        amount: 20,
+        category_id: '11111111-1111-1111-1111-111111111111',
+        description: 'Spotify',
+        charge_date: '2026-09-10',
+      }).success,
+    ).toBe(true);
   });
 });
 

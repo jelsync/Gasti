@@ -125,12 +125,8 @@ export function TransactionForm({
     if (kind === 'CARD_CHARGE') {
       if (!cardId) return fail('Selecciona una tarjeta');
       if (!categoryId) return fail('Selecciona la categoría de la compra');
-      if (cardCurrency === 'USD' && !(Number(amountHnl) > 0)) {
-        return fail('Ingresa el valor de la compra en lempiras');
-      }
       const parsed = cardChargeSchema.safeParse({
         amount,
-        amount_hnl: cardCurrency === 'USD' ? amountHnl : amount,
         category_id: categoryId,
         description,
         charge_date: date,
@@ -285,19 +281,11 @@ export function TransactionForm({
               </div>
             </Field>
 
-            {(kind === 'CARD_PAYMENT' || kind === 'CARD_CHARGE') && cardCurrency === 'USD' && (
+            {kind === 'CARD_PAYMENT' && cardCurrency === 'USD' && (
               <Field
-                label={
-                  kind === 'CARD_PAYMENT'
-                    ? 'Pago en lempiras (L)'
-                    : 'Valor de la compra en lempiras (L)'
-                }
+                label="Pago en lempiras (L)"
                 htmlFor="amount-hnl"
-                hint={
-                  kind === 'CARD_PAYMENT'
-                    ? 'Lo que salió de tu cuenta; no se contará otra vez como gasto.'
-                    : 'Este valor se usará en el dashboard y en tu presupuesto.'
-                }
+                hint="Lo que salió de tu cuenta; no se contará otra vez como gasto."
               >
                 <div className="relative">
                   <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">

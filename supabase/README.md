@@ -21,7 +21,8 @@ supabase/
 │   ├── 0012_loan_payment_history.sql # Historial detallado de pagos de préstamos
 │   ├── 0013_add_transfer_type.sql # Agrega TRANSFER al enum (ejecutar solo)
 │   ├── 0014_card_links_account_transfers.sql # Reversiones y transferencias
-│   └── 0015_receivables.sql # Personas que deben y pagos recibidos
+│   ├── 0015_receivables.sql # Personas que deben y pagos recibidos
+│   └── 0016_currencies_savings_goal.sql # Monedas y cuentas incluidas en meta
 ├── seed.sql                   # Seed opcional para usuarios preexistentes
 └── README.md
 ```
@@ -45,6 +46,7 @@ supabase/
    13. `migrations/0013_add_transfer_type.sql` (ejecútala sola: agrega un valor al enum)
    14. `migrations/0014_card_links_account_transfers.sql`
    15. `migrations/0015_receivables.sql`
+   16. `migrations/0016_currencies_savings_goal.sql`
 3. (Opcional) Si ya tenías usuarios creados antes de aplicar el paso 3,
    ejecuta `seed.sql` para sembrarles las categorías predeterminadas.
 
@@ -63,17 +65,17 @@ supabase db push
 | -------------- | ------------------------------------------------------- |
 | `profiles`     | Perfil del usuario (1:1 con `auth.users`).              |
 | `categories`   | Categorías de ingreso/gasto propias de cada usuario.    |
-| `transactions` | Ingresos, gastos, ahorro y transferencias; también vincula tarjetas y préstamos. |
-| `budgets`      | Presupuesto mensual por categoría.                      |
+| `transactions` | Ingresos, gastos, ahorro y transferencias con moneda; también vincula tarjetas y préstamos. |
+| `budgets`      | Presupuesto mensual por categoría y moneda, o meta de ahorro HNL. |
 | `loans`        | Préstamos (saldo/pasivo). Las cuotas y abonos se registran como transacciones vinculadas. |
 | `credit_cards` | Tarjetas de crédito. Deuda = apertura + compras − pagos.       |
 | `card_payments`| Pagos a tarjetas (reducen la deuda, no son gastos).            |
-| `savings_accounts` | Cuentas. Saldo = apertura + ingresos/aportes − gastos vinculados. |
+| `savings_accounts` | Cuentas. Saldo = apertura + ingresos/aportes − gastos vinculados; pueden incluirse en la meta de ahorro. |
 | `receivable_people` | Personas con dinero pendiente; el saldo se deriva de préstamos y pagos. |
 
 ### Decisiones de diseño
 
-- **Enum `transaction_type`** (`INCOME` / `EXPENSE`) para integridad.
+- **Enum `transaction_type`** (`INCOME` / `EXPENSE` / `SAVING` / `TRANSFER`) para integridad.
 - **Categorías por usuario**: al registrarse, cada usuario recibe una copia de
   las categorías predeterminadas (`is_default = true`) y puede editarlas o crear
   nuevas. Esto mantiene la regla uniforme `auth.uid() = user_id` en todas las tablas.
@@ -83,7 +85,8 @@ supabase db push
   sin su categoría.
 - **Índices** en `(user_id, transaction_date)`, `(user_id, type, transaction_date)`
   y `(user_id, category_id)` para el dashboard y el historial.
-- **Compras con tarjeta**: crean un gasto en HNL; el cargo vinculado aumenta la deuda.
+- **Compras con tarjeta**: crean un gasto en la moneda de la compra; el cargo vinculado aumenta la deuda.
+- **Monedas separadas**: los importes HNL y USD no se suman ni convierten automáticamente.
 - **Pagos de tarjeta**: son transferencias desde una cuenta y no duplican el gasto.
 - **Transferencias entre cuentas**: restan al origen, suman al destino y no alteran ingresos/gastos.
 

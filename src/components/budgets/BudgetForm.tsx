@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
 import { budgetSchema, type BudgetInput } from '@/lib/validations';
-import { CURRENCY_SYMBOL } from '@/utils/format';
+import { CURRENCY_SYMBOLS } from '@/utils/format';
 import { cn } from '@/lib/utils';
 import type { MonthYear } from '@/utils/date';
 import type { Category } from '@/types/models';
@@ -21,10 +21,11 @@ interface BudgetFormProps {
   expenseCategories: Category[];
   month: MonthYear;
   initial?: BudgetWithCategory | null;
-  usedCategoryIds?: string[];
+  usedBudgetKeys?: string[];
   /** Si ya existe una meta de ahorro este mes (para no duplicarla al crear). */
   savingsUsed?: boolean;
   initialCategoryId?: string | null;
+  initialCurrency?: 'HNL' | 'USD';
 }
 
 export function BudgetForm({
@@ -34,9 +35,10 @@ export function BudgetForm({
   expenseCategories,
   month,
   initial,
-  usedCategoryIds = [],
+  usedBudgetKeys = [],
   savingsUsed = false,
   initialCategoryId = null,
+  initialCurrency = 'HNL',
 }: BudgetFormProps) {
   const {
     register,
@@ -47,21 +49,33 @@ export function BudgetForm({
     formState: { errors, isSubmitting },
   } = useForm<BudgetInput>({
     resolver: zodResolver(budgetSchema),
-    defaultValues: { kind: 'CATEGORY', category_id: null, month: month.month, year: month.year },
+    defaultValues: {
+      kind: 'CATEGORY',
+      category_id: null,
+      currency: 'HNL',
+      month: month.month,
+      year: month.year,
+    },
   });
 
   const kind = watch('kind');
+  const currency = watch('currency');
 
   const available = initial
     ? expenseCategories
-    : expenseCategories.filter((c) => !usedCategoryIds.includes(c.id));
+    : expenseCategories.filter((c) => !usedBudgetKeys.includes(`${c.id}:${currency}`));
 
   useEffect(() => {
     if (!open) return;
+    const resetCurrency = initial?.currency ?? initialCurrency;
+    const firstAvailable = expenseCategories.find(
+      (category) => !usedBudgetKeys.includes(`${category.id}:${resetCurrency}`),
+    );
     reset({
       kind: initial?.kind ?? 'CATEGORY',
-      category_id: initial?.category_id ?? initialCategoryId ?? available[0]?.id ?? null,
+      category_id: initial?.category_id ?? initialCategoryId ?? firstAvailable?.id ?? null,
       amount: initial?.amount,
+      currency: resetCurrency,
       month: month.month,
       year: month.year,
     });
@@ -70,7 +84,18 @@ export function BudgetForm({
 
   const setKind = (value: 'CATEGORY' | 'SAVINGS') => {
     setValue('kind', value);
+    if (value === 'SAVINGS') setValue('currency', 'HNL');
     setValue('category_id', value === 'SAVINGS' ? null : (available[0]?.id ?? null));
+  };
+
+  const setCurrency = (value: 'HNL' | 'USD') => {
+    setValue('currency', value);
+    if (!initial) {
+      const next = expenseCategories.filter(
+        (category) => !usedBudgetKeys.includes(`${category.id}:${value}`),
+      );
+      setValue('category_id', next[0]?.id ?? null);
+    }
   };
 
   const submit = async (values: BudgetInput) => {
@@ -122,27 +147,48 @@ export function BudgetForm({
         )}
 
         {kind === 'CATEGORY' && (
-          <Field label="Categoría" htmlFor="category_id" error={errors.category_id?.message}>
-            <Select
-              id="category_id"
-              disabled={!!initial}
-              aria-invalid={!!errors.category_id}
-              {...register('category_id', { setValueAs: (v) => (v === '' ? null : v) })}
-            >
-              {available.length === 0 && <option value="">No hay categorías disponibles</option>}
-              {available.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </Select>
-          </Field>
+          <>
+            <Field label="Moneda">
+              <div className="grid grid-cols-2 gap-2">
+                {(['HNL', 'USD'] as const).map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setCurrency(value)}
+                    disabled={!!initial}
+                    className={cn(
+                      'rounded-[var(--radius)] border p-2.5 text-sm font-medium transition-colors disabled:opacity-60',
+                      currency === value
+                        ? 'border-primary bg-accent text-accent-foreground'
+                        : 'border-border text-muted-foreground hover:bg-muted',
+                    )}
+                  >
+                    {value === 'HNL' ? 'Lempiras (L)' : 'Dólares ($)'}
+                  </button>
+                ))}
+              </div>
+            </Field>
+            <Field label="Categoría" htmlFor="category_id" error={errors.category_id?.message}>
+              <Select
+                id="category_id"
+                disabled={!!initial}
+                aria-invalid={!!errors.category_id}
+                {...register('category_id', { setValueAs: (v) => (v === '' ? null : v) })}
+              >
+                {available.length === 0 && <option value="">No hay categorías disponibles</option>}
+                {available.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+          </>
         )}
 
         {kind === 'SAVINGS' && (
           <p className="rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground">
-            Meta de cuánto te gustaría ahorrar este mes. Se mide con tus transacciones de tipo
-            Ahorro.
+            Meta mensual basada en el movimiento neto de las cuentas que marques para ahorro.
           </p>
         )}
 
@@ -153,7 +199,7 @@ export function BudgetForm({
         >
           <div className="relative">
             <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-              {CURRENCY_SYMBOL}
+              {CURRENCY_SYMBOLS[kind === 'SAVINGS' ? 'HNL' : currency]}
             </span>
             <Input
               id="amount"

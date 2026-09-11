@@ -1,6 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
-import { formatCurrency } from '@/utils/format';
+import { formatMoney } from '@/utils/format';
+import type { Currency } from '@/types/models';
 import { cn } from '@/lib/utils';
 
 type Tone = 'income' | 'expense' | 'primary' | 'neutral';
@@ -10,6 +11,7 @@ interface StatCardProps {
   value: number;
   icon: LucideIcon;
   tone?: Tone;
+  currency?: Currency;
 }
 
 const toneStyles: Record<Tone, { text: string; badge: string }> = {
@@ -19,7 +21,13 @@ const toneStyles: Record<Tone, { text: string; badge: string }> = {
   neutral: { text: 'text-foreground', badge: 'bg-muted text-muted-foreground' },
 };
 
-export function StatCard({ label, value, icon: Icon, tone = 'neutral' }: StatCardProps) {
+export function StatCard({
+  label,
+  value,
+  icon: Icon,
+  tone = 'neutral',
+  currency = 'HNL',
+}: StatCardProps) {
   const styles = toneStyles[tone];
   return (
     <Card className="p-5">
@@ -30,7 +38,7 @@ export function StatCard({ label, value, icon: Icon, tone = 'neutral' }: StatCar
         </span>
       </div>
       <p className={cn('mt-3 text-2xl font-bold tabular-nums', styles.text)}>
-        {formatCurrency(value)}
+        {formatMoney(value, currency)}
       </p>
     </Card>
   );

@@ -8,6 +8,7 @@ import {
   totalBudgetUsage,
   budgetOverview,
   accountMovementAmount,
+  savingsGoalMovement,
 } from '@/utils/finance';
 import type { TransactionWithCategory } from '@/types/models';
 
@@ -34,6 +35,7 @@ function tx(
     updated_at: '',
     category: null,
     ...overrides,
+    currency: overrides.currency ?? 'HNL',
   };
 }
 
@@ -97,6 +99,15 @@ describe('monthlySummary', () => {
   it('balance puede ser negativo', () => {
     const list = [tx({ type: 'INCOME', amount: 100 }), tx({ type: 'EXPENSE', amount: 250 })];
     expect(monthlySummary(list).balance).toBe(-150);
+  });
+
+  it('no mezcla transacciones en lempiras y dólares', () => {
+    const list = [
+      tx({ type: 'EXPENSE', amount: 500, currency: 'HNL' }),
+      tx({ type: 'EXPENSE', amount: 20, currency: 'USD' }),
+    ];
+    expect(monthlySummary(list, 'HNL').expense).toBe(500);
+    expect(monthlySummary(list, 'USD').expense).toBe(20);
   });
 });
 
@@ -181,5 +192,39 @@ describe('accountMovementAmount', () => {
     expect(accountMovementAmount({ type: 'EXPENSE', amount: 300 })).toBe(-300);
     expect(accountMovementAmount({ type: 'TRANSFER', amount: 300 }, 'SOURCE')).toBe(-300);
     expect(accountMovementAmount({ type: 'TRANSFER', amount: 300 }, 'DESTINATION')).toBe(300);
+  });
+});
+
+describe('savingsGoalMovement', () => {
+  it('calcula entradas y salidas netas de las cuentas incluidas', () => {
+    const accountIds = new Set(['elga']);
+    const list = [
+      tx({
+        type: 'TRANSFER',
+        amount: 1000,
+        savings_account_id: 'principal',
+        destination_savings_account_id: 'elga',
+      }),
+      tx({ type: 'EXPENSE', amount: 150, savings_account_id: 'elga' }),
+      tx({
+        type: 'TRANSFER',
+        amount: 200,
+        savings_account_id: 'elga',
+        destination_savings_account_id: 'principal',
+      }),
+    ];
+    expect(savingsGoalMovement(list, accountIds)).toBe(650);
+  });
+
+  it('una transferencia entre dos cuentas incluidas es neutra', () => {
+    const list = [
+      tx({
+        type: 'TRANSFER',
+        amount: 300,
+        savings_account_id: 'ahorro-1',
+        destination_savings_account_id: 'ahorro-2',
+      }),
+    ];
+    expect(savingsGoalMovement(list, new Set(['ahorro-1', 'ahorro-2']))).toBe(0);
   });
 });

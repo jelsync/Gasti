@@ -38,7 +38,7 @@ export async function upsertBudget(userId: string, input: BudgetInput): Promise<
     if (existing) {
       const { data, error } = await supabase
         .from('budgets')
-        .update({ amount: input.amount })
+        .update({ amount: input.amount, currency: 'HNL' })
         .eq('id', existing.id)
         .select('*')
         .single();
@@ -53,6 +53,7 @@ export async function upsertBudget(userId: string, input: BudgetInput): Promise<
         category_id: null,
         kind: 'SAVINGS',
         amount: input.amount,
+        currency: 'HNL',
         month: input.month,
         year: input.year,
       })
@@ -71,10 +72,11 @@ export async function upsertBudget(userId: string, input: BudgetInput): Promise<
         category_id: input.category_id,
         kind: 'CATEGORY',
         amount: input.amount,
+        currency: input.currency,
         month: input.month,
         year: input.year,
       },
-      { onConflict: 'user_id,category_id,year,month' },
+      { onConflict: 'user_id,category_id,year,month,currency' },
     )
     .select('*')
     .single();
@@ -105,6 +107,7 @@ export async function copyBudgets(
       kind: b.kind,
       category_id: b.category_id,
       amount: b.amount,
+      currency: b.currency,
       month: to.month,
       year: to.year,
     });

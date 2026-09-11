@@ -78,11 +78,11 @@ export function CardMovementHistory({ card, onChanged }: CardMovementHistoryProp
                     <p className="truncate text-xs text-muted-foreground">
                       {isCharge && movement.description ? `${movement.description} · ` : ''}
                       {formatDate(movement.date)}
-                      {!isCharge && movement.currency === 'USD' && movement.amountHnl
+                      {movement.kind === 'PAYMENT' &&
+                      movement.currency === 'USD' &&
+                      movement.amountHnl
                         ? ` · Pagado ${formatMoney(movement.amountHnl, 'HNL')}`
-                        : isCharge && movement.currency === 'USD' && movement.amountHnl
-                          ? ` · Valor ${formatMoney(movement.amountHnl, 'HNL')}`
-                          : ''}
+                        : ''}
                     </p>
                   </div>
                   <span

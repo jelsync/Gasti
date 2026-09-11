@@ -59,6 +59,7 @@ export const transactionSchema = z
       .number({ invalid_type_error: 'Ingresa un monto válido' })
       .positive('El monto debe ser mayor que cero')
       .max(9_999_999_999, 'El monto es demasiado grande'),
+    currency: z.enum(['HNL', 'USD']).optional(),
     category_id: z.string().uuid('Selecciona una categoría').nullable(),
     credit_card_id: z.string().uuid().nullable().optional(),
     savings_account_id: z.string().uuid().nullable().optional(),
@@ -126,12 +127,17 @@ export const budgetSchema = z
       .number({ invalid_type_error: 'Ingresa un monto válido' })
       .positive('El monto debe ser mayor que cero')
       .max(9_999_999_999, 'El monto es demasiado grande'),
+    currency: z.enum(['HNL', 'USD']).default('HNL'),
     month: z.number().int().min(1).max(12),
     year: z.number().int().min(2000).max(2100),
   })
   .refine((d) => (d.kind === 'CATEGORY' ? !!d.category_id : d.category_id === null), {
     message: 'Selecciona una categoría',
     path: ['category_id'],
+  })
+  .refine((d) => d.kind !== 'SAVINGS' || d.currency === 'HNL', {
+    message: 'La meta de ahorro se registra en lempiras',
+    path: ['currency'],
   });
 
 // ---------------------------------------------------------------------------
@@ -214,7 +220,6 @@ export const cardChargeSchema = z.object({
     .positive('El monto debe ser mayor que cero')
     .max(999_999_999, 'Demasiado grande'),
   description: z.string().trim().max(200, 'Máximo 200 caracteres').optional(),
-  amount_hnl: optionalPositive,
   category_id: z.string().uuid('Selecciona una categoría'),
   charge_date: dateStringSchema,
 });
@@ -234,6 +239,7 @@ export const savingsAccountSchema = z.object({
     .number({ invalid_type_error: 'Ingresa un saldo válido' })
     .min(0, 'No puede ser negativo')
     .max(999_999_999, 'Demasiado grande'),
+  include_in_savings_goal: z.boolean().default(false),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Color inválido'),
 });
 

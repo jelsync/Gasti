@@ -1,6 +1,6 @@
 # Codegraph de Gasti
 
-Última actualización: 2026-09-04.
+Última actualización: 2026-09-10.
 
 Este archivo es el índice de navegación del repositorio. Empieza aquí y abre solo los archivos relacionados con la tarea.
 
@@ -90,6 +90,7 @@ SavingsPage
 - Aunque algunos nombres internos conservan `Savings`, la interfaz se denomina “Cuentas”.
 - Saldo = saldo inicial + `INCOME`/`SAVING` − `EXPENSE` con el mismo `savings_account_id`.
 - Las transferencias restan a la cuenta origen y suman a la cuenta destino; los pagos de tarjeta solo restan a la cuenta origen.
+- `include_in_savings_goal` marca las cuentas cuyo movimiento neto HNL alimenta la meta mensual: entradas suman, salidas restan y una transferencia entre dos cuentas marcadas es neutra.
 - Editar una cuenta reemplaza el saldo inicial; el formulario muestra los movimientos netos y el saldo resultante para evitar duplicaciones conceptuales.
 
 ### Categorías
@@ -107,7 +108,7 @@ SavingsPage
 - Tablas relacionadas: `credit_cards`, `card_charges`, `card_payments`.
 - El historial combina compras (+ deuda), pagos (− deuda) y deuda inicial de la tarjeta seleccionada, y permite eliminar movimientos huérfanos.
 - Compra = `EXPENSE` vinculada a `card_charges`; pago = `TRANSFER` vinculada a `card_payments`. Las FK con cascada mantienen la reversión al borrar.
-- Soporta deuda HNL y USD; revisa `cards.service.ts` antes de cambiar cálculos o pagos.
+- Soporta deuda HNL y USD. Una compra reconoce el gasto en su moneda; el equivalente HNL solo se solicita al pagar una deuda USD.
 
 ### Préstamos
 
@@ -132,6 +133,7 @@ SavingsPage
 - Página/formulario: `src/pages/BudgetsPage.tsx`, `src/components/budgets/BudgetForm.tsx`.
 - Hook/servicio: `src/hooks/useBudgets.ts`, `src/services/budgets.service.ts`.
 - Admite presupuesto por categoría de gasto y meta mensual de ahorro.
+- Una categoría puede tener presupuestos HNL y USD independientes; los cálculos nunca suman monedas distintas.
 - El resumen total común suma ambos tipos de presupuesto y sus respectivos avances mediante `utils/finance.ts::budgetOverview`.
 - Las categorías con gastos pero sin límite aparecen como “Sin presupuesto” y permiten abrir `BudgetForm` con la categoría preseleccionada.
 
@@ -154,6 +156,7 @@ SavingsPage
 - Tipo contable de transferencia: `0013_add_transfer_type.sql` (ejecutar por separado).
 - Transferencias entre cuentas y vínculos reversibles de tarjetas: `0014_card_links_account_transfers.sql`.
 - Personas, préstamos entregados y pagos recibidos: `0015_receivables.sql`.
+- Moneda en transacciones/presupuestos y cuentas incluidas en la meta: `0016_currencies_savings_goal.sql`.
 - RLS limita cada fila por `auth.uid()`; no confíes solo en filtros del cliente.
 
 ## Despliegue

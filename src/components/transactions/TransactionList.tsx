@@ -1,6 +1,6 @@
 import { CreditCard as CardIcon, Pencil, Trash2 } from 'lucide-react';
 import { CategoryIcon } from '@/components/CategoryIcon';
-import { formatCurrency } from '@/utils/format';
+import { formatMoney } from '@/utils/format';
 import { formatDate } from '@/utils/date';
 import { cn } from '@/lib/utils';
 import type { TransactionWithCategory } from '@/types/models';
@@ -89,7 +89,7 @@ export function TransactionList({ transactions, onEdit, onDelete }: TransactionL
               </p>
             </div>
             <span className={cn('shrink-0 font-semibold tabular-nums', d.amountClass)}>
-              {d.sign} {formatCurrency(t.amount)}
+              {d.sign} {formatMoney(t.amount, t.currency)}
             </span>
             {(onEdit || onDelete) && (
               <div className="flex shrink-0 items-center gap-1">

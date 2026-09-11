@@ -58,6 +58,7 @@ export async function createTransaction(
       user_id: userId,
       type: input.type,
       amount: input.amount,
+      currency: input.currency ?? 'HNL',
       category_id: input.category_id,
       credit_card_id: input.credit_card_id ?? null,
       savings_account_id: input.savings_account_id ?? null,
@@ -85,6 +86,7 @@ export async function updateTransaction(id: string, input: TransactionInput): Pr
     .update({
       type: input.type,
       amount: input.amount,
+      currency: input.currency ?? 'HNL',
       category_id: input.category_id,
       credit_card_id: input.credit_card_id ?? null,
       savings_account_id: input.savings_account_id ?? null,

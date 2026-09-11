@@ -78,6 +78,7 @@ export interface Database {
           loan_balance_after: number | null;
           type: TransactionType;
           amount: number;
+          currency: Currency;
           description: string;
           transaction_date: string;
           created_at: string;
@@ -99,6 +100,7 @@ export interface Database {
           loan_balance_after?: number | null;
           type: TransactionType;
           amount: number;
+          currency?: Currency;
           description?: string;
           transaction_date?: string;
         };
@@ -116,6 +118,7 @@ export interface Database {
           loan_balance_after?: number | null;
           type?: TransactionType;
           amount?: number;
+          currency?: Currency;
           description?: string;
           transaction_date?: string;
         };
@@ -201,6 +204,7 @@ export interface Database {
           category_id: string | null;
           kind: BudgetKind;
           amount: number;
+          currency: Currency;
           month: number;
           year: number;
           created_at: string;
@@ -212,6 +216,7 @@ export interface Database {
           category_id?: string | null;
           kind?: BudgetKind;
           amount: number;
+          currency?: Currency;
           month: number;
           year: number;
         };
@@ -219,6 +224,7 @@ export interface Database {
           category_id?: string | null;
           kind?: BudgetKind;
           amount?: number;
+          currency?: Currency;
           month?: number;
           year?: number;
         };
@@ -428,6 +434,7 @@ export interface Database {
           name: string;
           institution: string;
           opening_balance: number;
+          include_in_savings_goal: boolean;
           color: string;
           created_at: string;
           updated_at: string;
@@ -438,12 +445,14 @@ export interface Database {
           name: string;
           institution?: string;
           opening_balance?: number;
+          include_in_savings_goal?: boolean;
           color?: string;
         };
         Update: {
           name?: string;
           institution?: string;
           opening_balance?: number;
+          include_in_savings_goal?: boolean;
           color?: string;
         };
         Relationships: [];

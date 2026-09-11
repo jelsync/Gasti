@@ -122,6 +122,7 @@ export async function registerCardPayment(
   const transaction = await createTransaction(userId, {
     type: 'TRANSFER',
     amount: amountPaidHnl,
+    currency: 'HNL',
     category_id: null,
     credit_card_id: cardId,
     savings_account_id: accountId,
@@ -146,7 +147,7 @@ export async function registerCardPayment(
 
 /**
  * Registra una compra/cargo en la tarjeta (aumenta la deuda en la moneda dada).
- * Crea el gasto en HNL para dashboard y presupuesto; pagar después no lo duplica.
+ * Crea el gasto en la moneda de la compra; pagar después no lo duplica.
  */
 export async function registerCardCharge(
   userId: string,
@@ -154,10 +155,10 @@ export async function registerCardCharge(
   currency: Currency,
   input: CardChargeInput,
 ): Promise<void> {
-  const amountHnl = currency === 'USD' ? (input.amount_hnl ?? 0) : input.amount;
   const transaction = await createTransaction(userId, {
     type: 'EXPENSE',
-    amount: amountHnl,
+    amount: input.amount,
+    currency,
     category_id: input.category_id,
     credit_card_id: cardId,
     savings_account_id: null,
@@ -169,7 +170,7 @@ export async function registerCardCharge(
     user_id: userId,
     card_id: cardId,
     amount: input.amount,
-    amount_hnl: amountHnl,
+    amount_hnl: null,
     currency,
     description: input.description ?? '',
     charge_date: input.charge_date,
@@ -196,7 +197,6 @@ export type CardMovement =
       kind: 'CHARGE';
       id: string;
       amount: number;
-      amountHnl: number | null;
       currency: Currency;
       description: string;
       date: string;
@@ -217,7 +217,7 @@ export async function getCreditCardMovements(cardId: string): Promise<CardMoveme
   const [chargesRes, paymentsRes] = await Promise.all([
     supabase
       .from('card_charges')
-      .select('id, amount, amount_hnl, currency, description, charge_date, created_at')
+      .select('id, amount, currency, description, charge_date, created_at')
       .eq('card_id', cardId),
     supabase
       .from('card_payments')
@@ -233,7 +233,6 @@ export async function getCreditCardMovements(cardId: string): Promise<CardMoveme
       kind: 'CHARGE' as const,
       id: charge.id,
       amount: charge.amount,
-      amountHnl: charge.amount_hnl,
       currency: charge.currency,
       description: charge.description,
       date: charge.charge_date,

@@ -30,7 +30,7 @@ export function SavingsAccountForm({ open, onClose, onSubmit, initial }: Savings
     formState: { errors, isSubmitting },
   } = useForm<SavingsAccountInput>({
     resolver: zodResolver(savingsAccountSchema),
-    defaultValues: { color: COLOR_OPTIONS[7] },
+    defaultValues: { color: COLOR_OPTIONS[7], include_in_savings_goal: false },
   });
 
   const color = watch('color');
@@ -47,6 +47,7 @@ export function SavingsAccountForm({ open, onClose, onSubmit, initial }: Savings
       name: initial?.name ?? '',
       institution: initial?.institution ?? '',
       opening_balance: initial?.opening_balance ?? 0,
+      include_in_savings_goal: initial?.include_in_savings_goal ?? false,
       color: initial?.color ?? COLOR_OPTIONS[7],
     });
   }, [open, initial, reset]);
@@ -127,6 +128,20 @@ export function SavingsAccountForm({ open, onClose, onSubmit, initial }: Savings
             </p>
           </div>
         )}
+
+        <label className="flex cursor-pointer items-start gap-3 rounded-md border border-border p-3">
+          <input
+            type="checkbox"
+            className="mt-0.5 h-4 w-4 accent-primary"
+            {...register('include_in_savings_goal')}
+          />
+          <span>
+            <span className="block text-sm font-medium">Incluir en mi meta de ahorro</span>
+            <span className="mt-0.5 block text-xs text-muted-foreground">
+              Las entradas aumentan la meta y los débitos o transferencias salientes la reducen.
+            </span>
+          </span>
+        </label>
 
         <Field label="Color" error={errors.color?.message}>
           <div className="flex flex-wrap gap-2">

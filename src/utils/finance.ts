@@ -1,5 +1,6 @@
 import type {
   CategorySummary,
+  Currency,
   MonthlySummary,
   TransactionType,
   TransactionWithCategory,
@@ -13,6 +14,7 @@ export function round2(value: number): number {
 interface AmountTyped {
   type: TransactionType;
   amount: number;
+  currency?: Currency;
 }
 
 interface BudgetAmount {
@@ -22,8 +24,15 @@ interface BudgetAmount {
 }
 
 /** Suma los montos de las transacciones de un tipo dado. */
-export function sumByType(transactions: readonly AmountTyped[], type: TransactionType): number {
-  const total = transactions.reduce((acc, t) => (t.type === type ? acc + t.amount : acc), 0);
+export function sumByType(
+  transactions: readonly AmountTyped[],
+  type: TransactionType,
+  currency: Currency = 'HNL',
+): number {
+  const total = transactions.reduce(
+    (acc, t) => (t.type === type && (t.currency ?? 'HNL') === currency ? acc + t.amount : acc),
+    0,
+  );
   return round2(total);
 }
 
@@ -31,10 +40,13 @@ export function sumByType(transactions: readonly AmountTyped[], type: Transactio
  * Resumen del mes: ingresos, gastos, ahorro y disponible.
  * Disponible = ingresos − gastos. El ahorro es informativo (no afecta el disponible).
  */
-export function monthlySummary(transactions: readonly AmountTyped[]): MonthlySummary {
-  const income = sumByType(transactions, 'INCOME');
-  const expense = sumByType(transactions, 'EXPENSE');
-  const saving = sumByType(transactions, 'SAVING');
+export function monthlySummary(
+  transactions: readonly AmountTyped[],
+  currency: Currency = 'HNL',
+): MonthlySummary {
+  const income = sumByType(transactions, 'INCOME', currency);
+  const expense = sumByType(transactions, 'EXPENSE', currency);
+  const saving = sumByType(transactions, 'SAVING', currency);
   return { income, expense, saving, balance: round2(income - expense) };
 }
 
@@ -46,11 +58,12 @@ export function monthlySummary(transactions: readonly AmountTyped[]): MonthlySum
 export function groupByCategory(
   transactions: readonly TransactionWithCategory[],
   type: TransactionType,
+  currency: Currency = 'HNL',
 ): CategorySummary[] {
   const map = new Map<string, CategorySummary>();
 
   for (const t of transactions) {
-    if (t.type !== type) continue;
+    if (t.type !== type || (t.currency ?? 'HNL') !== currency) continue;
     const key = t.category?.id ?? '__none__';
     const existing = map.get(key);
     if (existing) {
@@ -137,4 +150,35 @@ export function accountMovementAmount(
     return role === 'DESTINATION' ? transaction.amount : -transaction.amount;
   }
   return transaction.type === 'EXPENSE' ? -transaction.amount : transaction.amount;
+}
+
+interface AccountLinkedAmount extends AmountTyped {
+  savings_account_id?: string | null;
+  destination_savings_account_id?: string | null;
+}
+
+/** Movimiento neto mensual de las cuentas marcadas para la meta de ahorro. */
+export function savingsGoalMovement(
+  transactions: readonly AccountLinkedAmount[],
+  includedAccountIds: ReadonlySet<string>,
+): number {
+  let total = 0;
+  for (const transaction of transactions) {
+    if ((transaction.currency ?? 'HNL') !== 'HNL') continue;
+    const sourceIncluded =
+      !!transaction.savings_account_id && includedAccountIds.has(transaction.savings_account_id);
+    const destinationIncluded =
+      !!transaction.destination_savings_account_id &&
+      includedAccountIds.has(transaction.destination_savings_account_id);
+
+    if (transaction.type === 'TRANSFER') {
+      if (sourceIncluded) total -= transaction.amount;
+      if (destinationIncluded) total += transaction.amount;
+    } else if (sourceIncluded) {
+      total += transaction.type === 'EXPENSE' ? -transaction.amount : transaction.amount;
+    } else if (transaction.type === 'SAVING' && !transaction.savings_account_id) {
+      total += transaction.amount;
+    }
+  }
+  return round2(total);
 }
