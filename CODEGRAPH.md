@@ -55,6 +55,7 @@ pages/auth/*
 - Formato monetario/fechas: `src/utils/format.ts`, `src/utils/date.ts`.
 - Reportes: `src/pages/ReportsPage.tsx`, `src/components/reports/Charts.tsx`.
 - El dashboard consume transacciones, presupuestos, préstamos, tarjetas y cuentas mediante sus hooks.
+- El desglose por categoría del dashboard abre `CategoryMovementDetail` con los movimientos del mes seleccionado.
 
 ### Transacciones e ingresos
 

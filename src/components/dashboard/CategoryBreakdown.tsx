@@ -1,3 +1,4 @@
+import { ChevronRight } from 'lucide-react';
 import { CategoryIcon } from '@/components/CategoryIcon';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { formatMoney, formatPercent } from '@/utils/format';
@@ -48,10 +49,12 @@ interface MultiCurrencyCategoryBreakdownProps {
   hnlTotal: number;
   usdTotal: number;
   limit?: number;
+  onSelectCategory?: (categoryId: string | null, categoryName: string) => void;
 }
 
 interface CombinedCategory {
   key: string;
+  categoryId: string | null;
   name: string;
   icon: string;
   color: string;
@@ -66,12 +69,14 @@ export function MultiCurrencyCategoryBreakdown({
   hnlTotal,
   usdTotal,
   limit,
+  onSelectCategory,
 }: MultiCurrencyCategoryBreakdownProps) {
   const categories = new Map<string, CombinedCategory>();
   const add = (item: CategorySummary, currency: Currency) => {
     const key = item.categoryId ?? `name:${item.name}`;
     const current = categories.get(key) ?? {
       key,
+      categoryId: item.categoryId,
       name: item.name,
       icon: item.icon,
       color: item.color,
@@ -111,30 +116,41 @@ export function MultiCurrencyCategoryBreakdown({
 
         return (
           <li key={item.key}>
-            <div className="mb-2 flex items-center gap-3">
-              <CategoryIcon icon={item.icon} color={item.color} size="sm" />
-              <span className="min-w-0 flex-1 truncate text-sm font-medium">{item.name}</span>
-              <div className="shrink-0 text-right">
+            <button
+              type="button"
+              onClick={() => onSelectCategory?.(item.categoryId, item.name)}
+              className="group w-full rounded-md p-2 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label={`Ver detalle de ${item.name}`}
+            >
+              <div className="mb-2 flex items-center gap-3">
+                <CategoryIcon icon={item.icon} color={item.color} size="sm" />
+                <span className="min-w-0 flex-1 truncate text-sm font-medium">{item.name}</span>
+                <div className="shrink-0 text-right">
+                  {currencies.map((entry) => (
+                    <p key={entry.currency} className="text-sm font-semibold tabular-nums">
+                      {formatMoney(entry.amount, entry.currency)}
+                      <span className="ml-2 text-xs font-normal text-muted-foreground">
+                        · {formatPercent(entry.share)} {entry.currency}
+                      </span>
+                    </p>
+                  ))}
+                </div>
+                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-foreground" />
+              </div>
+              <div className="space-y-1.5 pl-11">
                 {currencies.map((entry) => (
-                  <p key={entry.currency} className="text-sm font-semibold tabular-nums">
-                    {formatMoney(entry.amount, entry.currency)}
-                    <span className="ml-2 text-xs font-normal text-muted-foreground">
-                      · {formatPercent(entry.share)} {entry.currency}
+                  <div
+                    key={entry.currency}
+                    className="grid grid-cols-[2rem_1fr] items-center gap-2"
+                  >
+                    <span className="text-[10px] font-medium text-muted-foreground">
+                      {entry.currency}
                     </span>
-                  </p>
+                    <ProgressBar value={entry.share} color={item.color} />
+                  </div>
                 ))}
               </div>
-            </div>
-            <div className="space-y-1.5 pl-11">
-              {currencies.map((entry) => (
-                <div key={entry.currency} className="grid grid-cols-[2rem_1fr] items-center gap-2">
-                  <span className="text-[10px] font-medium text-muted-foreground">
-                    {entry.currency}
-                  </span>
-                  <ProgressBar value={entry.share} color={item.color} />
-                </div>
-              ))}
-            </div>
+            </button>
           </li>
         );
       })}

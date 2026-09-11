@@ -18,6 +18,10 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { MultiCurrencyCategoryBreakdown } from '@/components/dashboard/CategoryBreakdown';
+import {
+  CategoryMovementDetail,
+  type CategoryDetailTarget,
+} from '@/components/categories/CategoryMovementDetail';
 import { MovementList, type MovementItem } from '@/components/transactions/MovementList';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useBudgets } from '@/hooks/useBudgets';
@@ -38,6 +42,7 @@ import { ROUTES } from '@/constants/routes';
 
 export default function DashboardPage() {
   const [month, setMonth] = useState(getCurrentMonthYear);
+  const [detailCategory, setDetailCategory] = useState<CategoryDetailTarget | null>(null);
   const range = useMemo(() => monthRange(month.year, month.month), [month]);
   const filters = useMemo(() => ({ dateStart: range.start, dateEnd: range.end }), [range]);
 
@@ -269,7 +274,8 @@ export default function DashboardPage() {
               <CardHeader>
                 <CardTitle>Distribución de gastos por categoría</CardTitle>
                 <p className="text-xs text-muted-foreground">
-                  Cada porcentaje representa la proporción del gasto dentro de su propia moneda.
+                  Cada porcentaje representa la proporción del gasto en su moneda. Selecciona una
+                  categoría para ver sus movimientos.
                 </p>
               </CardHeader>
               <CardContent>
@@ -282,6 +288,7 @@ export default function DashboardPage() {
                     hnlTotal={summary.expense}
                     usdTotal={summaryUsd.expense}
                     limit={8}
+                    onSelectCategory={(id, name) => setDetailCategory({ id, name })}
                   />
                 )}
               </CardContent>
@@ -308,6 +315,14 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
+      <CategoryMovementDetail
+        open={!!detailCategory}
+        onClose={() => setDetailCategory(null)}
+        category={detailCategory}
+        month={month}
+        transactions={transactions}
+      />
     </>
   );
 }

@@ -4,13 +4,18 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { formatDate, formatMonthYear } from '@/utils/date';
 import { formatMoney } from '@/utils/format';
 import { round2 } from '@/utils/finance';
-import type { Category, Currency, TransactionWithCategory } from '@/types/models';
+import type { Currency, TransactionWithCategory } from '@/types/models';
 import type { MonthYear } from '@/utils/date';
+
+export interface CategoryDetailTarget {
+  id: string | null;
+  name: string;
+}
 
 interface CategoryMovementDetailProps {
   open: boolean;
   onClose: () => void;
-  category: Category | null;
+  category: CategoryDetailTarget | null;
   month: MonthYear;
   transactions: TransactionWithCategory[];
 }
@@ -29,7 +34,10 @@ export function CategoryMovementDetail({
 }: CategoryMovementDetailProps) {
   const categoryTransactions = category
     ? transactions
-        .filter((transaction) => transaction.category_id === category.id)
+        .filter(
+          (transaction) =>
+            transaction.type === 'EXPENSE' && transaction.category_id === category.id,
+        )
         .sort(
           (left, right) =>
             left.transaction_date.localeCompare(right.transaction_date) ||
