@@ -216,9 +216,16 @@ export default function BudgetsPage() {
                         <span className="text-muted-foreground">
                           Total presupuestado ({currency})
                         </span>
-                        <span className="font-semibold tabular-nums">
-                          {formatMoney(overview.totalUsed, currency)} /{' '}
-                          {formatMoney(overview.totalBudget, currency)}
+                        <span className="text-right font-semibold tabular-nums">
+                          <span className="block">
+                            {formatMoney(overview.totalUsed, currency)} /{' '}
+                            {formatMoney(overview.totalBudget, currency)}
+                          </span>
+                          {overview.totalBudget > 0 && (
+                            <span className="block text-xs text-muted-foreground">
+                              {formatPercent(overview.percentage)} utilizado
+                            </span>
+                          )}
                         </span>
                       </div>
                       <ProgressBar value={overview.percentage} />
@@ -287,8 +294,8 @@ export default function BudgetsPage() {
                   color="#0ea5e9"
                 />
 
-                <div className="mt-3 flex items-end justify-between">
-                  <div className="text-xs text-muted-foreground">
+                <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] items-end gap-4">
+                  <div className="min-w-0 text-xs text-muted-foreground">
                     <p>
                       Ahorrado{' '}
                       <span className="font-medium text-foreground">
@@ -304,7 +311,7 @@ export default function BudgetsPage() {
                       )}
                     </p>
                   </div>
-                  <div className="text-right">
+                  <div className="whitespace-nowrap text-right">
                     <p className="text-lg font-bold tabular-nums">
                       {formatPercent(
                         budgetProgress(savingsBudget.amount, savedThisMonth).percentage,
@@ -334,6 +341,9 @@ export default function BudgetsPage() {
                     <span className="flex-1 truncate font-medium">
                       {budget.category?.name ?? 'Sin categoría'}
                     </span>
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                      {budget.currency}
+                    </span>
                     <button
                       type="button"
                       onClick={() => {
@@ -357,8 +367,8 @@ export default function BudgetsPage() {
 
                   <ProgressBar value={progress.percentage} color={budget.category?.color} />
 
-                  <div className="mt-3 flex items-end justify-between">
-                    <div className="text-xs text-muted-foreground">
+                  <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] items-end gap-4">
+                    <div className="min-w-0 text-xs text-muted-foreground">
                       <p>
                         Gastado{' '}
                         <span className="font-medium text-foreground">
@@ -372,7 +382,7 @@ export default function BudgetsPage() {
                         </span>
                       </p>
                     </div>
-                    <div className="text-right">
+                    <div className="whitespace-nowrap text-right">
                       <p className="text-lg font-bold tabular-nums">
                         {formatPercent(progress.percentage)}
                       </p>
@@ -394,11 +404,13 @@ export default function BudgetsPage() {
                 <div className="mb-3 flex items-center gap-3">
                   <CategoryIcon icon={item.icon} color={item.color} size="sm" />
                   <span className="flex-1 truncate font-medium">{item.name}</span>
+                  <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                    {item.currency}
+                  </span>
                   <span className="rounded-full bg-expense-soft px-2 py-1 text-xs font-medium text-expense">
                     Sin presupuesto
                   </span>
                 </div>
-                <ProgressBar value={100} color="#f59e0b" />
                 <div className="mt-3 flex items-end justify-between gap-3">
                   <div className="text-xs text-muted-foreground">
                     Gastado{' '}

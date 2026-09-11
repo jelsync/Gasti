@@ -12,6 +12,8 @@ interface StatCardProps {
   icon: LucideIcon;
   tone?: Tone;
   currency?: Currency;
+  secondaryValue?: number;
+  secondaryCurrency?: Currency;
 }
 
 const toneStyles: Record<Tone, { text: string; badge: string }> = {
@@ -27,6 +29,8 @@ export function StatCard({
   icon: Icon,
   tone = 'neutral',
   currency = 'HNL',
+  secondaryValue,
+  secondaryCurrency = 'USD',
 }: StatCardProps) {
   const styles = toneStyles[tone];
   return (
@@ -37,9 +41,14 @@ export function StatCard({
           <Icon className="h-5 w-5" aria-hidden />
         </span>
       </div>
-      <p className={cn('mt-3 text-2xl font-bold tabular-nums', styles.text)}>
-        {formatMoney(value, currency)}
-      </p>
+      <div className={cn('mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1', styles.text)}>
+        <span className="text-2xl font-bold tabular-nums">{formatMoney(value, currency)}</span>
+        {secondaryValue !== undefined && secondaryValue !== 0 && (
+          <span className="text-lg font-bold tabular-nums">
+            {formatMoney(secondaryValue, secondaryCurrency)}
+          </span>
+        )}
+      </div>
     </Card>
   );
 }

@@ -17,7 +17,7 @@ import { Spinner } from '@/components/ui/Spinner';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { StatCard } from '@/components/dashboard/StatCard';
-import { CategoryBreakdown } from '@/components/dashboard/CategoryBreakdown';
+import { MultiCurrencyCategoryBreakdown } from '@/components/dashboard/CategoryBreakdown';
 import { MovementList, type MovementItem } from '@/components/transactions/MovementList';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useBudgets } from '@/hooks/useBudgets';
@@ -140,22 +140,17 @@ export default function DashboardPage() {
         <div className="space-y-6">
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             <StatCard label="Ingresos" value={summary.income} icon={TrendingUp} tone="income" />
-            <StatCard label="Gastos" value={summary.expense} icon={TrendingDown} tone="expense" />
+            <StatCard
+              label="Gastos"
+              value={summary.expense}
+              secondaryValue={summaryUsd.expense}
+              secondaryCurrency="USD"
+              icon={TrendingDown}
+              tone="expense"
+            />
             <StatCard label="Ahorro" value={savedThisMonth} icon={PiggyBank} tone="primary" />
             <StatCard label="Disponible" value={summary.balance} icon={Wallet} tone="neutral" />
           </div>
-
-          {summaryUsd.expense > 0 && (
-            <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-              <StatCard
-                label="Gastos en dólares"
-                value={summaryUsd.expense}
-                currency="USD"
-                icon={TrendingDown}
-                tone="expense"
-              />
-            </div>
-          )}
 
           {(cards.length > 0 || accounts.length > 0 || loans.length > 0 || totalReceivable > 0) && (
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -177,12 +172,12 @@ export default function DashboardPage() {
                   <Card className="flex items-center justify-between p-5 transition-colors hover:bg-muted">
                     <div>
                       <p className="text-sm text-muted-foreground">Deuda en tarjetas</p>
-                      <p className="mt-1 text-xl font-bold tabular-nums text-expense">
-                        {formatMoney(cardDebt.HNL, 'HNL')}
+                      <div className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1 font-bold tabular-nums text-expense">
+                        <span className="text-xl">{formatMoney(cardDebt.HNL, 'HNL')}</span>
                         {cardDebt.USD > 0 && (
-                          <span className="ml-3">{formatMoney(cardDebt.USD, 'USD')}</span>
+                          <span className="text-lg">{formatMoney(cardDebt.USD, 'USD')}</span>
                         )}
-                      </p>
+                      </div>
                     </div>
                     <CreditCard className="h-6 w-6 text-muted-foreground" />
                   </Card>
@@ -272,32 +267,25 @@ export default function DashboardPage() {
           <div className="grid gap-6 lg:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle>Gastos por categoría</CardTitle>
+                <CardTitle>Distribución de gastos por categoría</CardTitle>
+                <p className="text-xs text-muted-foreground">
+                  Cada porcentaje representa la proporción del gasto dentro de su propia moneda.
+                </p>
               </CardHeader>
               <CardContent>
-                {expenseByCategory.length === 0 ? (
+                {expenseByCategory.length === 0 && expenseByCategoryUsd.length === 0 ? (
                   <EmptyState icon={TrendingDown} title="Sin gastos este mes" />
                 ) : (
-                  <CategoryBreakdown items={expenseByCategory} total={summary.expense} limit={6} />
+                  <MultiCurrencyCategoryBreakdown
+                    hnlItems={expenseByCategory}
+                    usdItems={expenseByCategoryUsd}
+                    hnlTotal={summary.expense}
+                    usdTotal={summaryUsd.expense}
+                    limit={8}
+                  />
                 )}
               </CardContent>
             </Card>
-
-            {expenseByCategoryUsd.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Gastos por categoría (USD)</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CategoryBreakdown
-                    items={expenseByCategoryUsd}
-                    total={summaryUsd.expense}
-                    currency="USD"
-                    limit={6}
-                  />
-                </CardContent>
-              </Card>
-            )}
 
             <Card>
               <CardHeader className="flex-row items-center justify-between">
