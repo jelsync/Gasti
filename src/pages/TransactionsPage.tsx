@@ -48,7 +48,7 @@ export default function TransactionsPage() {
 
   const { categories } = useCategories();
   const { cards, addCharge, payCard, refresh: refreshCards } = useCreditCards();
-  const { accounts } = useSavingsAccounts();
+  const { accounts, refresh: refreshAccounts } = useSavingsAccounts();
 
   const range = useMemo(() => monthRange(month.year, month.month), [month]);
   const filters = useMemo(() => ({ dateStart: range.start, dateEnd: range.end }), [range]);
@@ -158,15 +158,17 @@ export default function TransactionsPage() {
     }
     if (payload.kind === 'cardPayment') {
       await payCard(payload.cardId, payload.cardName, payload.args);
-      await refreshTx();
+      await Promise.all([refreshTx(), refreshAccounts()]);
       toast.success('Pago de tarjeta registrado');
       return;
     }
     if (editing) {
       await update(editing.id, payload.input);
+      await refreshAccounts();
       toast.success('Transacción actualizada');
     } else {
       await create(payload.input);
+      await refreshAccounts();
       toast.success('Transacción agregada');
     }
   };
@@ -175,7 +177,7 @@ export default function TransactionsPage() {
     if (!deleting) return;
     try {
       await remove(deleting.id);
-      await Promise.all([refreshCards(), refreshCharges()]);
+      await Promise.all([refreshCards(), refreshCharges(), refreshAccounts()]);
       toast.success('Transacción eliminada');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'No se pudo eliminar');
@@ -186,7 +188,7 @@ export default function TransactionsPage() {
     if (!deletingCharge) return;
     try {
       await removeCharge(deletingCharge.id);
-      await Promise.all([refreshCards(), refreshTx()]);
+      await Promise.all([refreshCards(), refreshTx(), refreshAccounts()]);
       toast.success('Compra eliminada');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'No se pudo eliminar');

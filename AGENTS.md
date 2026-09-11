@@ -26,6 +26,7 @@
 - El historial de una tarjeta combina `card_charges` y `card_payments`, separado por tarjeta y moneda.
 - Borrar una transacción vinculada a una compra o pago debe revertir también el movimiento de tarjeta mediante cascada.
 - `TRANSFER` mueve saldo entre cuentas (o de una cuenta a una tarjeta) y no suma ingresos ni gastos. Sí puede cambiar el avance de la meta de ahorro por el movimiento neto de las cuentas con `include_in_savings_goal`.
+- El formulario de transferencias muestra saldos actuales y no permite transferir más que el disponible en la cuenta origen; al editar, restaura conceptualmente el monto anterior antes de validar.
 - Los totales, categorías y presupuestos HNL/USD se calculan por separado; nunca sumes importes de monedas distintas.
 - La meta mensual de ahorro usa el movimiento neto HNL de las cuentas marcadas: entradas suman, salidas restan y transferencias entre dos cuentas marcadas son neutras.
 - Prestar dinero a una persona es `TRANSFER` desde una cuenta hacia una cuenta por cobrar; recibir capital es `TRANSFER` hacia una cuenta. Ninguno es ingreso o gasto.

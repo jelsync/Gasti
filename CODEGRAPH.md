@@ -1,6 +1,6 @@
 # Codegraph de Gasti
 
-Última actualización: 2026-09-10.
+Última actualización: 2026-09-11.
 
 Este archivo es el índice de navegación del repositorio. Empieza aquí y abre solo los archivos relacionados con la tarea.
 
@@ -74,6 +74,7 @@ TransactionsPage
 - `INCOME` vinculado a una cuenta conserva su tipo, suma al dashboard y aumenta esa cuenta.
 - Un gasto normal exige cuenta: conserva `EXPENSE`, suma a gastos y reduce la cuenta elegida.
 - `TRANSFER` usa `savings_account_id` como origen y `destination_savings_account_id` como destino; no altera los totales del dashboard.
+- `TransactionForm` recibe cuentas con saldo, lo muestra al transferir y evita superar el disponible.
 
 ### Cuentas
 
@@ -96,6 +97,7 @@ SavingsPage
 ### Categorías
 
 - Página/formulario: `src/pages/CategoriesPage.tsx`, `src/components/categories/CategoryForm.tsx`.
+- Detalle mensual y acumulado de gastos: `src/components/categories/CategoryMovementDetail.tsx`; reutiliza `useTransactions` filtrado por mes.
 - Hook/servicio: `src/hooks/useCategories.ts`, `src/services/categories.service.ts`.
 - Las categorías de gasto son editables. Las cuatro categorías de ingreso son fijas.
 

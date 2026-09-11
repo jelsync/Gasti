@@ -17,11 +17,12 @@ import type {
   Category,
   CreditCardWithBalance,
   Currency,
-  SavingsAccount,
+  SavingsAccountWithBalance,
   TransactionType,
   TransactionWithCategory,
 } from '@/types/models';
 import { getIncomeCategories } from '@/constants/incomeCategories';
+import { formatCurrency } from '@/utils/format';
 
 type Kind = TransactionType | 'CARD_CHARGE' | 'CARD_PAYMENT';
 
@@ -36,7 +37,7 @@ interface TransactionFormProps {
   onSubmit: (submit: TransactionSubmit) => Promise<void>;
   categories: Category[];
   creditCards: CreditCardWithBalance[];
-  savingsAccounts: Pick<SavingsAccount, 'id' | 'name'>[];
+  savingsAccounts: Pick<SavingsAccountWithBalance, 'id' | 'name' | 'balance'>[];
   initial?: TransactionWithCategory | null;
   defaultType?: TransactionType;
 }
@@ -112,6 +113,14 @@ export function TransactionForm({
   const noRequiredAccounts =
     (accountRequired && savingsAccounts.length === 0) ||
     (kind === 'TRANSFER' && savingsAccounts.length < 2);
+  const sourceAccount = savingsAccounts.find((account) => account.id === savingsId);
+  const destinationAccount = savingsAccounts.find((account) => account.id === destinationSavingsId);
+  const sourceAvailableBalance = sourceAccount
+    ? sourceAccount.balance +
+      (initial?.type === 'TRANSFER' && initial.savings_account_id === sourceAccount.id
+        ? initial.amount
+        : 0)
+    : 0;
 
   const fail = (msg: string): null => {
     setError(msg);
@@ -161,6 +170,11 @@ export function TransactionForm({
     }
     if (kind === 'EXPENSE' && !savingsId) {
       return fail('Selecciona la cuenta de donde se debitará el gasto');
+    }
+    if (kind === 'TRANSFER' && sourceAccount && amt > sourceAvailableBalance) {
+      return fail(
+        `El monto supera el saldo disponible de ${formatCurrency(sourceAvailableBalance)}`,
+      );
     }
 
     const input = {
@@ -362,9 +376,15 @@ export function TransactionForm({
                   {savingsAccounts.map((a) => (
                     <option key={a.id} value={a.id}>
                       {a.name}
+                      {kind === 'TRANSFER' ? ` — ${formatCurrency(a.balance)}` : ''}
                     </option>
                   ))}
                 </Select>
+                {kind === 'TRANSFER' && sourceAccount && (
+                  <span className="mt-2 inline-flex rounded-full bg-accent px-2.5 py-1 text-xs font-medium text-primary">
+                    Disponible: {formatCurrency(sourceAvailableBalance)}
+                  </span>
+                )}
               </Field>
             )}
 
@@ -384,10 +404,15 @@ export function TransactionForm({
                     .filter((account) => account.id !== savingsId)
                     .map((account) => (
                       <option key={account.id} value={account.id}>
-                        {account.name}
+                        {account.name} — {formatCurrency(account.balance)}
                       </option>
                     ))}
                 </Select>
+                {destinationAccount && (
+                  <span className="mt-2 inline-flex rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
+                    Saldo actual: {formatCurrency(destinationAccount.balance)}
+                  </span>
+                )}
               </Field>
             )}
 
