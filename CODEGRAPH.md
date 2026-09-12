@@ -98,7 +98,7 @@ SavingsPage
 ### Categorías
 
 - Página/formulario: `src/pages/CategoriesPage.tsx`, `src/components/categories/CategoryForm.tsx`.
-- Detalle mensual y acumulado de gastos: `src/components/categories/CategoryMovementDetail.tsx`; reutiliza `useTransactions` filtrado por mes.
+- Detalle mensual y acumulado de ingresos/gastos: `src/components/categories/CategoryMovementDetail.tsx`; reutiliza `useTransactions` filtrado por mes y respeta el tipo de categoría.
 - Hook/servicio: `src/hooks/useCategories.ts`, `src/services/categories.service.ts`.
 - Las categorías de gasto son editables. Las cuatro categorías de ingreso son fijas.
 

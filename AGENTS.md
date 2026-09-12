@@ -18,6 +18,7 @@
 ## Reglas de dominio que no deben romperse
 
 - Un movimiento `INCOME` siempre suma a ingresos del dashboard.
+- Las categorías de ingreso muestran total y detalle mensual, pero no crean ni consumen presupuestos; los presupuestos de categoría corresponden solo a gastos.
 - Un `INCOME` puede vincularse opcionalmente a `savings_account_id`; en ese caso también aumenta el saldo y aparece en el historial de esa cuenta, sin crear otra transacción.
 - Saldo de cuenta = `opening_balance` + `INCOME`/`SAVING` vinculados − `EXPENSE` vinculados.
 - Un gasto normal (`EXPENSE`) debe seleccionar `savings_account_id` y debitar esa cuenta. Esta regla no se extiende automáticamente a cargos o pagos de tarjeta.

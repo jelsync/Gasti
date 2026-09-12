@@ -10,6 +10,7 @@ import type { MonthYear } from '@/utils/date';
 export interface CategoryDetailTarget {
   id: string | null;
   name: string;
+  type: 'INCOME' | 'EXPENSE';
 }
 
 interface CategoryMovementDetailProps {
@@ -32,11 +33,13 @@ export function CategoryMovementDetail({
   month,
   transactions,
 }: CategoryMovementDetailProps) {
+  const isIncome = category?.type === 'INCOME';
+  const movementLabel = isIncome ? 'Ingreso' : 'Gasto';
   const categoryTransactions = category
     ? transactions
         .filter(
           (transaction) =>
-            transaction.type === 'EXPENSE' && transaction.category_id === category.id,
+            transaction.type === category.type && transaction.category_id === category.id,
         )
         .sort(
           (left, right) =>
@@ -56,13 +59,13 @@ export function CategoryMovementDetail({
       open={open}
       onClose={onClose}
       title={`Detalle de ${category?.name ?? 'categoría'}`}
-      description={`Gastos de ${formatMonthYear(month.month, month.year)}`}
+      description={`${isIncome ? 'Ingresos' : 'Gastos'} de ${formatMonthYear(month.month, month.year)}`}
       className="sm:max-w-2xl"
     >
       {rows.length === 0 ? (
         <EmptyState
           icon={ReceiptText}
-          title="Sin gastos en esta categoría"
+          title={`Sin ${isIncome ? 'ingresos' : 'gastos'} en esta categoría`}
           description="Los movimientos del mes seleccionado aparecerán aquí."
         />
       ) : (
@@ -74,7 +77,10 @@ export function CategoryMovementDetail({
               return (
                 <span
                   key={currency}
-                  className="rounded-full bg-expense-soft px-3 py-1.5 text-sm font-semibold tabular-nums text-expense"
+                  className={
+                    'rounded-full px-3 py-1.5 text-sm font-semibold tabular-nums ' +
+                    (isIncome ? 'bg-income-soft text-income' : 'bg-expense-soft text-expense')
+                  }
                 >
                   Total {currency}: {formatMoney(total, currency)}
                 </span>
@@ -88,7 +94,7 @@ export function CategoryMovementDetail({
                 <tr>
                   <th className="pb-2 pr-3 font-medium">Fecha</th>
                   <th className="pb-2 pr-3 font-medium">Detalle</th>
-                  <th className="pb-2 pr-3 text-right font-medium">Gasto</th>
+                  <th className="pb-2 pr-3 text-right font-medium">{movementLabel}</th>
                   <th className="pb-2 text-right font-medium">Acumulado</th>
                 </tr>
               </thead>
@@ -100,7 +106,7 @@ export function CategoryMovementDetail({
                     </td>
                     <td className="max-w-56 py-3 pr-3">
                       <p className="truncate font-medium">
-                        {transaction.description || 'Gasto sin descripción'}
+                        {transaction.description || `${movementLabel} sin descripción`}
                       </p>
                       {(transaction.credit_card || transaction.savings_account) && (
                         <p className="truncate text-xs text-muted-foreground">
@@ -110,7 +116,12 @@ export function CategoryMovementDetail({
                         </p>
                       )}
                     </td>
-                    <td className="whitespace-nowrap py-3 pr-3 text-right font-medium tabular-nums text-expense">
+                    <td
+                      className={
+                        'whitespace-nowrap py-3 pr-3 text-right font-medium tabular-nums ' +
+                        (isIncome ? 'text-income' : 'text-expense')
+                      }
+                    >
                       {formatMoney(transaction.amount, transaction.currency)}
                     </td>
                     <td className="whitespace-nowrap py-3 text-right font-semibold tabular-nums">

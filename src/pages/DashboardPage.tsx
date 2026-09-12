@@ -288,7 +288,9 @@ export default function DashboardPage() {
                     hnlTotal={summary.expense}
                     usdTotal={summaryUsd.expense}
                     limit={8}
-                    onSelectCategory={(id, name) => setDetailCategory({ id, name })}
+                    onSelectCategory={(id, name) =>
+                      setDetailCategory({ id, name, type: 'EXPENSE' })
+                    }
                   />
                 )}
               </CardContent>

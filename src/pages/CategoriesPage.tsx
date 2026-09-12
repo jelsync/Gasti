@@ -9,7 +9,10 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { CategoryIcon } from '@/components/CategoryIcon';
 import { CategoryForm } from '@/components/categories/CategoryForm';
-import { CategoryMovementDetail } from '@/components/categories/CategoryMovementDetail';
+import {
+  CategoryMovementDetail,
+  type CategoryDetailTarget,
+} from '@/components/categories/CategoryMovementDetail';
 import { MonthSelector } from '@/components/MonthSelector';
 import { useCategories } from '@/hooks/useCategories';
 import { useTransactions } from '@/hooks/useTransactions';
@@ -28,7 +31,7 @@ export default function CategoriesPage() {
   const [month, setMonth] = useState(getCurrentMonthYear);
   const range = useMemo(() => monthRange(month.year, month.month), [month]);
   const transactionFilters = useMemo(
-    () => ({ dateStart: range.start, dateEnd: range.end, type: 'EXPENSE' as const }),
+    () => ({ dateStart: range.start, dateEnd: range.end }),
     [range],
   );
   const { transactions } = useTransactions(transactionFilters);
@@ -36,7 +39,7 @@ export default function CategoriesPage() {
   const [editing, setEditing] = useState<Category | null>(null);
   const [formType, setFormType] = useState<CategoryType>('EXPENSE');
   const [deleting, setDeleting] = useState<Category | null>(null);
-  const [detailCategory, setDetailCategory] = useState<Category | null>(null);
+  const [detailCategory, setDetailCategory] = useState<CategoryDetailTarget | null>(null);
 
   const grouped = useMemo(() => {
     const result = splitCategoriesByType(categories);
@@ -127,24 +130,22 @@ export default function CategoriesPage() {
                           <CategoryIcon icon={c.icon} color={c.color} size="sm" />
                           <div className="min-w-0 flex-1">
                             <p className="truncate font-medium">{c.name}</p>
-                            {type === 'EXPENSE' && (
-                              <div className="mt-0.5 flex flex-wrap gap-x-2 text-xs text-muted-foreground">
-                                <span>{formatMoney(totals.HNL, 'HNL')}</span>
-                                {totals.USD > 0 && <span>{formatMoney(totals.USD, 'USD')}</span>}
-                              </div>
-                            )}
+                            <div className="mt-0.5 flex flex-wrap gap-x-2 text-xs text-muted-foreground">
+                              <span>{formatMoney(totals.HNL, 'HNL')}</span>
+                              {totals.USD > 0 && <span>{formatMoney(totals.USD, 'USD')}</span>}
+                            </div>
                           </div>
+                          <button
+                            type="button"
+                            onClick={() => setDetailCategory({ id: c.id, name: c.name, type })}
+                            aria-label={`Ver detalle de ${c.name}`}
+                            title={`Ver ${type === 'INCOME' ? 'ingresos' : 'gastos'} del mes`}
+                            className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                          >
+                            <ListTree className="h-4 w-4" />
+                          </button>
                           {type === 'EXPENSE' && (
                             <>
-                              <button
-                                type="button"
-                                onClick={() => setDetailCategory(c)}
-                                aria-label={`Ver detalle de ${c.name}`}
-                                title="Ver gastos del mes"
-                                className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-                              >
-                                <ListTree className="h-4 w-4" />
-                              </button>
                               <button
                                 type="button"
                                 onClick={() => openEdit(c)}
