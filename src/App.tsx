@@ -27,6 +27,16 @@ import NotFoundPage from '@/pages/NotFoundPage';
 
 // Cargada de forma diferida: contiene la librería de gráficos (Recharts).
 const ReportsPage = lazy(() => import('@/pages/ReportsPage'));
+const FinancialGoalsPage = lazy(() => import('@/pages/FinancialGoalsPage'));
+const ReconciliationPage = lazy(() => import('@/pages/ReconciliationPage'));
+
+function PageLoading() {
+  return (
+    <div className="flex justify-center py-16">
+      <Spinner />
+    </div>
+  );
+}
 
 export default function App() {
   return (
@@ -48,6 +58,22 @@ export default function App() {
           <Route path={ROUTES.transactions} element={<TransactionsPage />} />
           <Route path={ROUTES.recurringTransactions} element={<RecurringTransactionsPage />} />
           <Route path={ROUTES.financialCalendar} element={<FinancialCalendarPage />} />
+          <Route
+            path={ROUTES.financialGoals}
+            element={
+              <Suspense fallback={<PageLoading />}>
+                <FinancialGoalsPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path={ROUTES.reconciliation}
+            element={
+              <Suspense fallback={<PageLoading />}>
+                <ReconciliationPage />
+              </Suspense>
+            }
+          />
           <Route path={ROUTES.budgets} element={<BudgetsPage />} />
           <Route path={ROUTES.loans} element={<LoansPage />} />
           <Route path={ROUTES.cards} element={<CardsPage />} />
@@ -57,13 +83,7 @@ export default function App() {
           <Route
             path={ROUTES.reports}
             element={
-              <Suspense
-                fallback={
-                  <div className="flex justify-center py-16">
-                    <Spinner />
-                  </div>
-                }
-              >
+              <Suspense fallback={<PageLoading />}>
                 <ReportsPage />
               </Suspense>
             }

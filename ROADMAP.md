@@ -16,13 +16,13 @@ Las fases se entregan y validan por separado. Una fase posterior no debe cambiar
 - Indicadores de próximos, vencidos y presupuestos cerca del límite.
 - Avisos dentro del dashboard y del calendario; las notificaciones externas quedan como mejora posterior.
 
-## Fase 3 — Conciliación y cierre mensual
+## Fase 3 — Conciliación y cierre mensual (implementada)
 
 - Comparar saldo calculado con saldo real de cada cuenta.
 - Registrar ajustes identificables y documentar diferencias.
 - Cerrar el mes conservando una fotografía histórica sin bloquear correcciones autorizadas.
 
-## Fase 4 — Metas y salud financiera
+## Fase 4 — Metas y salud financiera (implementada)
 
 - Metas independientes: emergencia, viaje, vehículo u otras.
 - Cuenta vinculada, monto objetivo, fecha y progreso.

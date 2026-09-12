@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { mapDbError } from '@/lib/errors';
 import { getSavingsAccountMovements } from '@/services/savings.service';
-import type { TransactionWithCategory } from '@/types/models';
+import type { SavingsAccountMovement } from '@/types/models';
 
 export function useSavingsAccountMovements(accountId: string | null) {
-  const [movements, setMovements] = useState<TransactionWithCategory[]>([]);
+  const [movements, setMovements] = useState<SavingsAccountMovement[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

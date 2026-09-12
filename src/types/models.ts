@@ -1,12 +1,23 @@
 import type {
   Currency,
   Database,
+  FinancialGoalMovementKind,
+  FinancialGoalStatus,
+  FinancialGoalType,
   ReceivableRelationship,
   RecurringOccurrenceStatus,
   TransactionType,
 } from '@/types/database.types';
 
-export type { TransactionType, Currency, ReceivableRelationship, RecurringOccurrenceStatus };
+export type {
+  TransactionType,
+  Currency,
+  ReceivableRelationship,
+  RecurringOccurrenceStatus,
+  FinancialGoalMovementKind,
+  FinancialGoalStatus,
+  FinancialGoalType,
+};
 
 export type Profile = Database['public']['Tables']['profiles']['Row'];
 export type Category = Database['public']['Tables']['categories']['Row'];
@@ -18,6 +29,10 @@ export type SavingsAccount = Database['public']['Tables']['savings_accounts']['R
 export type ReceivablePerson = Database['public']['Tables']['receivable_people']['Row'];
 export type RecurringTransaction = Database['public']['Tables']['recurring_transactions']['Row'];
 export type RecurringOccurrence = Database['public']['Tables']['recurring_occurrences']['Row'];
+export type AccountReconciliation = Database['public']['Tables']['account_reconciliations']['Row'];
+export type MonthClosure = Database['public']['Tables']['month_closures']['Row'];
+export type FinancialGoal = Database['public']['Tables']['financial_goals']['Row'];
+export type FinancialGoalMovement = Database['public']['Tables']['financial_goal_movements']['Row'];
 
 export interface RecurringTransactionWithRelations extends RecurringTransaction {
   category: Pick<Category, 'id' | 'name' | 'icon' | 'color' | 'type'> | null;
@@ -41,6 +56,33 @@ export interface SavingsAccountWithBalance extends SavingsAccount {
   balance: number;
   /** Suma firmada de movimientos: ingresos/aportes − gastos. */
   movementBalance: number;
+}
+
+export interface AccountReconciliationWithAccount extends AccountReconciliation {
+  savings_account: Pick<SavingsAccount, 'id' | 'name' | 'color'> | null;
+}
+
+export type SavingsAccountMovement =
+  | {
+      kind: 'TRANSACTION';
+      id: string;
+      date: string;
+      createdAt: string;
+      transaction: TransactionWithCategory;
+    }
+  | {
+      kind: 'RECONCILIATION';
+      id: string;
+      date: string;
+      createdAt: string;
+      reconciliation: AccountReconciliation;
+    };
+
+export interface FinancialGoalWithProgress extends FinancialGoal {
+  savings_account: Pick<SavingsAccount, 'id' | 'name' | 'color'> | null;
+  saved_amount: number;
+  remaining_amount: number;
+  percentage: number;
 }
 
 /** Transacción con su categoría (y tarjeta/ahorro) embebidas (resultado de un join). */

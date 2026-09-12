@@ -7,6 +7,10 @@ export type Currency = 'HNL' | 'USD';
 export type BudgetKind = 'CATEGORY' | 'SAVINGS';
 export type ReceivableRelationship = 'FAMILY' | 'FRIEND' | 'OTHER';
 export type RecurringOccurrenceStatus = 'COMPLETED' | 'SKIPPED';
+export type FinancialGoalType = 'EMERGENCY' | 'TRAVEL' | 'VEHICLE' | 'HOME' | 'EDUCATION' | 'OTHER';
+export type FinancialGoalStatus = 'ACTIVE' | 'PAUSED' | 'COMPLETED';
+export type FinancialGoalMovementKind = 'CONTRIBUTION' | 'WITHDRAWAL';
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export interface Database {
   public: {
@@ -510,6 +514,167 @@ export interface Database {
         };
         Relationships: [];
       };
+      account_reconciliations: {
+        Row: {
+          id: string;
+          user_id: string;
+          savings_account_id: string;
+          reconciliation_date: string;
+          calculated_balance: number;
+          actual_balance: number;
+          difference: number;
+          apply_adjustment: boolean;
+          notes: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          savings_account_id: string;
+          reconciliation_date?: string;
+          calculated_balance: number;
+          actual_balance: number;
+          apply_adjustment?: boolean;
+          notes?: string;
+          created_at?: string;
+        };
+        Update: {
+          savings_account_id?: string;
+          reconciliation_date?: string;
+          calculated_balance?: number;
+          actual_balance?: number;
+          apply_adjustment?: boolean;
+          notes?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'account_reconciliations_savings_account_id_fkey';
+            columns: ['savings_account_id'];
+            isOneToOne: false;
+            referencedRelation: 'savings_accounts';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      month_closures: {
+        Row: {
+          id: string;
+          user_id: string;
+          year: number;
+          month: number;
+          snapshot: Json;
+          notes: string;
+          closed_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          year: number;
+          month: number;
+          snapshot: Json;
+          notes?: string;
+          closed_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          snapshot?: Json;
+          notes?: string;
+          closed_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      financial_goals: {
+        Row: {
+          id: string;
+          user_id: string;
+          savings_account_id: string | null;
+          name: string;
+          goal_type: FinancialGoalType;
+          target_amount: number;
+          starting_amount: number;
+          target_date: string | null;
+          color: string;
+          status: FinancialGoalStatus;
+          notes: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          savings_account_id?: string | null;
+          name: string;
+          goal_type?: FinancialGoalType;
+          target_amount: number;
+          starting_amount?: number;
+          target_date?: string | null;
+          color?: string;
+          status?: FinancialGoalStatus;
+          notes?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          savings_account_id?: string | null;
+          name?: string;
+          goal_type?: FinancialGoalType;
+          target_amount?: number;
+          starting_amount?: number;
+          target_date?: string | null;
+          color?: string;
+          status?: FinancialGoalStatus;
+          notes?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'financial_goals_savings_account_id_fkey';
+            columns: ['savings_account_id'];
+            isOneToOne: false;
+            referencedRelation: 'savings_accounts';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      financial_goal_movements: {
+        Row: {
+          id: string;
+          user_id: string;
+          goal_id: string;
+          movement_kind: FinancialGoalMovementKind;
+          amount: number;
+          movement_date: string;
+          notes: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          goal_id: string;
+          movement_kind: FinancialGoalMovementKind;
+          amount: number;
+          movement_date?: string;
+          notes?: string;
+          created_at?: string;
+        };
+        Update: {
+          movement_kind?: FinancialGoalMovementKind;
+          amount?: number;
+          movement_date?: string;
+          notes?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'financial_goal_movements_goal_id_fkey';
+            columns: ['goal_id'];
+            isOneToOne: false;
+            referencedRelation: 'financial_goals';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       savings_accounts: {
         Row: {
           id: string;
@@ -550,6 +715,16 @@ export interface Database {
       skip_recurring_occurrence: {
         Args: { p_recurring_id: string; p_due_date: string };
         Returns: undefined;
+      };
+      create_financial_goal_movement: {
+        Args: {
+          p_goal_id: string;
+          p_movement_kind: FinancialGoalMovementKind;
+          p_amount: number;
+          p_movement_date: string;
+          p_notes?: string;
+        };
+        Returns: string;
       };
     };
     Enums: {

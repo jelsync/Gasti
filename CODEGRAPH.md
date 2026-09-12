@@ -165,6 +165,22 @@ SavingsPage
 - El resumen total común suma ambos tipos de presupuesto y sus respectivos avances mediante `utils/finance.ts::budgetOverview`.
 - Las categorías con gastos pero sin límite aparecen como “Sin presupuesto” y permiten abrir `BudgetForm` con la categoría preseleccionada.
 
+### Conciliación y cierre mensual
+
+- Ruta/menú: `ROUTES.reconciliation` (`/cierre-mensual`), página `src/pages/ReconciliationPage.tsx`.
+- Hook/servicio: `src/hooks/useReconciliation.ts`, `src/services/reconciliation.service.ts`.
+- `account_reconciliations` compara saldo calculado/real; una diferencia aplicada participa en el saldo de cuenta y aparece en su historial sin afectar ingresos, gastos o presupuestos.
+- `month_closures` conserva una fotografía JSON actualizable de cuentas, resumen mensual y deudas; no bloquea correcciones.
+
+### Metas y salud financiera
+
+- Ruta/menú: `ROUTES.financialGoals` (`/metas`), página `src/pages/FinancialGoalsPage.tsx`.
+- Formularios: `src/components/goals/FinancialGoalForm.tsx`, `FinancialGoalMovementForm.tsx`.
+- Hook/servicio: `src/hooks/useFinancialGoals.ts`, `src/services/financialGoals.service.ts`.
+- Tablas: `financial_goals`, `financial_goal_movements`; el progreso es monto inicial + aportes − retiros.
+- `src/utils/financialHealth.ts` calcula tasas HNL, comparación mensual, flujo y deuda; mantiene USD separado.
+- La cuenta vinculada indica dónde se conserva el dinero, pero los movimientos de meta no cambian saldos bancarios.
+
 ### Historial y ajustes
 
 - Historial: `src/pages/HistoryPage.tsx`.
@@ -188,6 +204,8 @@ SavingsPage
 - Ingresos genéricos y número de cuenta: `0017_generic_income_account_numbers.sql`.
 - Reglas y ocurrencias mensuales confirmables: `0018_recurring_transactions.sql`.
 - Días de pago para calendario en préstamos y tarjetas: `0019_financial_calendar.sql`.
+- Conciliaciones y fotografías mensuales: `0020_monthly_reconciliation.sql`.
+- Metas, aportes/retiros y progreso: `0021_financial_goals.sql`.
 - RLS limita cada fila por `auth.uid()`; no confíes solo en filtros del cliente.
 
 ## Despliegue
@@ -212,6 +230,8 @@ GitHub main
 | Ingresos/transacciones | `TransactionForm.tsx`, `TransactionsPage.tsx`, `transactions.service.ts` |
 | Transacciones recurrentes | `RecurringTransactionsPage.tsx`, `recurring.service.ts`, migración `0018` |
 | Calendario y avisos | `FinancialCalendarPage.tsx`, `utils/financialCalendar.ts`, migración `0019` |
+| Conciliación/cierre | `ReconciliationPage.tsx`, `reconciliation.service.ts`, migración `0020` |
+| Metas/salud financiera | `FinancialGoalsPage.tsx`, `financialGoals.service.ts`, `utils/financialHealth.ts`, migración `0021` |
 | Saldo o historial de cuenta | `SavingsPage.tsx`, `savings.service.ts` |
 | Resumen del dashboard | `DashboardPage.tsx`, `utils/finance.ts` |
 | Tarjetas/deuda/pagos | `cards.service.ts`, `CardsPage.tsx` |

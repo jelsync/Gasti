@@ -25,7 +25,9 @@ supabase/
 │   ├── 0016_currencies_savings_goal.sql # Monedas y cuentas incluidas en meta
 │   ├── 0017_generic_income_account_numbers.sql # Ingresos genéricos y número de cuenta
 │   ├── 0018_recurring_transactions.sql # Reglas mensuales confirmables
-│   └── 0019_financial_calendar.sql # Días de pago de préstamos y tarjetas
+│   ├── 0019_financial_calendar.sql # Días de pago de préstamos y tarjetas
+│   ├── 0020_monthly_reconciliation.sql # Conciliación y cierre mensual
+│   └── 0021_financial_goals.sql # Metas y progreso reservado
 ├── seed.sql                   # Seed opcional para usuarios preexistentes
 └── README.md
 ```
@@ -53,6 +55,8 @@ supabase/
    17. `migrations/0017_generic_income_account_numbers.sql`
    18. `migrations/0018_recurring_transactions.sql`
    19. `migrations/0019_financial_calendar.sql`
+   20. `migrations/0020_monthly_reconciliation.sql`
+   21. `migrations/0021_financial_goals.sql`
 3. (Opcional) Si ya tenías usuarios creados antes de aplicar el paso 3,
    ejecuta `seed.sql` para sembrarles las categorías predeterminadas.
 
@@ -80,6 +84,10 @@ supabase db push
 | `receivable_people` | Personas con dinero pendiente; el saldo se deriva de préstamos y pagos. |
 | `recurring_transactions` | Reglas mensuales que no mueven dinero hasta ser confirmadas. |
 | `recurring_occurrences` | Fechas confirmadas u omitidas; evita registrar el mismo movimiento dos veces. |
+| `account_reconciliations` | Comparaciones de saldo y ajustes identificables por cuenta. |
+| `month_closures` | Fotografías mensuales actualizables; no bloquean correcciones. |
+| `financial_goals` | Objetivos HNL independientes con cuenta de referencia opcional. |
+| `financial_goal_movements` | Aportes y retiros del progreso reservado; no mueven saldos bancarios. |
 
 ### Decisiones de diseño
 
@@ -97,6 +105,8 @@ supabase db push
 - **Monedas separadas**: los importes HNL y USD no se suman ni convierten automáticamente.
 - **Pagos de tarjeta**: son transferencias desde una cuenta y no duplican el gasto.
 - **Transferencias entre cuentas**: restan al origen, suman al destino y no alteran ingresos/gastos.
+- **Conciliaciones**: una diferencia aplicada ajusta únicamente el saldo de cuenta y se revierte al eliminarla.
+- **Metas independientes**: el progreso reservado no duplica movimientos de la cuenta vinculada.
 
 ## Seguridad (RLS)
 

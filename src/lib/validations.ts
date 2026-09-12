@@ -335,6 +335,60 @@ export const receivableCreateSchema = receivablePersonSchema.merge(
     .omit({ amount: true }),
 );
 
+// ---------------------------------------------------------------------------
+// Conciliación, cierres y metas financieras
+// ---------------------------------------------------------------------------
+export const accountReconciliationSchema = z.object({
+  savings_account_id: z.string().uuid('Selecciona una cuenta'),
+  reconciliation_date: dateStringSchema,
+  calculated_balance: z.coerce.number(),
+  actual_balance: z.coerce
+    .number({ invalid_type_error: 'Ingresa el saldo real' })
+    .min(-999_999_999, 'El saldo es demasiado bajo')
+    .max(999_999_999, 'El saldo es demasiado grande'),
+  apply_adjustment: z.boolean().default(true),
+  notes: z.string().trim().max(500, 'Máximo 500 caracteres').optional(),
+});
+
+export const monthClosureSchema = z.object({
+  year: z.number().int().min(2000).max(2100),
+  month: z.number().int().min(1).max(12),
+  notes: z.string().trim().max(500, 'Máximo 500 caracteres').optional(),
+});
+
+export const financialGoalSchema = z
+  .object({
+    name: z.string().trim().min(1, 'El nombre es obligatorio').max(80, 'Máximo 80 caracteres'),
+    goal_type: z.enum(['EMERGENCY', 'TRAVEL', 'VEHICLE', 'HOME', 'EDUCATION', 'OTHER']),
+    target_amount: z.coerce
+      .number({ invalid_type_error: 'Ingresa el monto objetivo' })
+      .positive('El objetivo debe ser mayor que cero')
+      .max(999_999_999, 'El monto es demasiado grande'),
+    starting_amount: z.coerce
+      .number({ invalid_type_error: 'Ingresa un monto válido' })
+      .min(0, 'El progreso inicial no puede ser negativo')
+      .max(999_999_999, 'El monto es demasiado grande'),
+    target_date: optionalDateSchema,
+    savings_account_id: z.string().uuid('Selecciona una cuenta').nullable(),
+    color: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Color inválido'),
+    status: z.enum(['ACTIVE', 'PAUSED', 'COMPLETED']).default('ACTIVE'),
+    notes: z.string().trim().max(500, 'Máximo 500 caracteres').optional(),
+  })
+  .refine((goal) => goal.starting_amount <= goal.target_amount, {
+    message: 'El progreso inicial no puede superar el objetivo',
+    path: ['starting_amount'],
+  });
+
+export const financialGoalMovementSchema = z.object({
+  movement_kind: z.enum(['CONTRIBUTION', 'WITHDRAWAL']),
+  amount: z.coerce
+    .number({ invalid_type_error: 'Ingresa un monto válido' })
+    .positive('El monto debe ser mayor que cero')
+    .max(999_999_999, 'El monto es demasiado grande'),
+  movement_date: dateStringSchema,
+  notes: z.string().trim().max(300, 'Máximo 300 caracteres').optional(),
+});
+
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
@@ -351,3 +405,7 @@ export type SavingsAccountInput = z.infer<typeof savingsAccountSchema>;
 export type ReceivablePersonInput = z.infer<typeof receivablePersonSchema>;
 export type ReceivableMovementInput = z.infer<typeof receivableMovementSchema>;
 export type ReceivableCreateInput = z.infer<typeof receivableCreateSchema>;
+export type AccountReconciliationInput = z.infer<typeof accountReconciliationSchema>;
+export type MonthClosureInput = z.infer<typeof monthClosureSchema>;
+export type FinancialGoalInput = z.infer<typeof financialGoalSchema>;
+export type FinancialGoalMovementInput = z.infer<typeof financialGoalMovementSchema>;

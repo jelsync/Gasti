@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
+  accountReconciliationSchema,
   budgetSchema,
   cardChargeSchema,
   creditCardSchema,
+  financialGoalMovementSchema,
+  financialGoalSchema,
   loginSchema,
   loanSchema,
   receivableCreateSchema,
@@ -288,5 +291,47 @@ describe('receivables schemas', () => {
 
   it('rechaza un pago sin cuenta de depósito', () => {
     expect(receivableMovementSchema.safeParse({ ...movement, account_id: '' }).success).toBe(false);
+  });
+});
+
+describe('conciliación y metas financieras', () => {
+  it('acepta una diferencia de conciliación positiva o negativa', () => {
+    expect(
+      accountReconciliationSchema.safeParse({
+        savings_account_id: '11111111-1111-1111-1111-111111111111',
+        reconciliation_date: '2026-09-12',
+        calculated_balance: 1000,
+        actual_balance: 950,
+        apply_adjustment: true,
+        notes: 'Comisión bancaria',
+      }).success,
+    ).toBe(true);
+  });
+
+  it('valida una meta con cuenta y fecha objetivo opcionales', () => {
+    expect(
+      financialGoalSchema.safeParse({
+        name: 'Fondo de emergencia',
+        goal_type: 'EMERGENCY',
+        target_amount: 50000,
+        starting_amount: 5000,
+        target_date: '2027-09-01',
+        savings_account_id: '11111111-1111-1111-1111-111111111111',
+        color: '#0ea5e9',
+        status: 'ACTIVE',
+        notes: '',
+      }).success,
+    ).toBe(true);
+  });
+
+  it('rechaza aportes o retiros sin monto positivo', () => {
+    const movement = {
+      movement_kind: 'CONTRIBUTION',
+      amount: 100,
+      movement_date: '2026-09-12',
+      notes: '',
+    };
+    expect(financialGoalMovementSchema.safeParse(movement).success).toBe(true);
+    expect(financialGoalMovementSchema.safeParse({ ...movement, amount: 0 }).success).toBe(false);
   });
 });

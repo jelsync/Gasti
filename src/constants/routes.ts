@@ -9,6 +9,8 @@ export const ROUTES = {
   transactions: '/transacciones',
   recurringTransactions: '/transacciones/recurrentes',
   financialCalendar: '/calendario',
+  reconciliation: '/cierre-mensual',
+  financialGoals: '/metas',
   budgets: '/presupuestos',
   loans: '/prestamos',
   cards: '/tarjetas',
