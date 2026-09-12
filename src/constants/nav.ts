@@ -1,5 +1,6 @@
 import {
   BarChart3,
+  CalendarDays,
   CalendarClock,
   CreditCard,
   Landmark,
@@ -24,6 +25,7 @@ export interface NavItem {
 export const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', to: ROUTES.dashboard, icon: LayoutDashboard, end: true },
   { label: 'Transacciones', to: ROUTES.transactions, icon: Receipt },
+  { label: 'Calendario', to: ROUTES.financialCalendar, icon: CalendarDays },
   { label: 'Presupuestos', to: ROUTES.budgets, icon: PiggyBank },
   { label: 'Préstamos', to: ROUTES.loans, icon: Landmark },
   { label: 'Tarjetas', to: ROUTES.cards, icon: CreditCard },

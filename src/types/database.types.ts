@@ -250,6 +250,7 @@ export interface Database {
           interest_rate: number;
           term_months: number;
           installment: number;
+          payment_day: number | null;
           current_balance: number;
           extra_payment: number | null;
           start_date: string;
@@ -267,6 +268,7 @@ export interface Database {
           interest_rate?: number;
           term_months: number;
           installment: number;
+          payment_day?: number | null;
           current_balance: number;
           extra_payment?: number | null;
           start_date?: string;
@@ -280,6 +282,7 @@ export interface Database {
           interest_rate?: number;
           term_months?: number;
           installment?: number;
+          payment_day?: number | null;
           current_balance?: number;
           extra_payment?: number | null;
           start_date?: string;
@@ -306,6 +309,7 @@ export interface Database {
           opening_balance_usd: number;
           credit_limit: number | null;
           credit_limit_usd: number | null;
+          payment_due_day: number | null;
           color: string;
           created_at: string;
           updated_at: string;
@@ -320,6 +324,7 @@ export interface Database {
           opening_balance_usd?: number;
           credit_limit?: number | null;
           credit_limit_usd?: number | null;
+          payment_due_day?: number | null;
           color?: string;
         };
         Update: {
@@ -329,6 +334,7 @@ export interface Database {
           opening_balance_usd?: number;
           credit_limit?: number | null;
           credit_limit_usd?: number | null;
+          payment_due_day?: number | null;
           color?: string;
         };
         Relationships: [];

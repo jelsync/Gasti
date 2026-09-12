@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
   budgetSchema,
   cardChargeSchema,
+  creditCardSchema,
   loginSchema,
+  loanSchema,
   receivableCreateSchema,
   receivableMovementSchema,
   recurringTransactionSchema,
@@ -219,6 +221,45 @@ describe('cardChargeSchema', () => {
         charge_date: '2026-09-10',
       }).success,
     ).toBe(true);
+  });
+});
+
+describe('fechas del calendario financiero', () => {
+  it('acepta días mensuales válidos y opcionales en préstamos', () => {
+    const loan = {
+      name: 'Préstamo personal',
+      loan_number: '',
+      original_amount: 10000,
+      interest_rate: 12,
+      term_months: 12,
+      installment: 900,
+      payment_day: 15,
+      current_balance: 10000,
+      extra_payment: '',
+      start_date: '2026-09-01',
+      end_date: '',
+      category_id: null,
+    };
+
+    expect(loanSchema.safeParse(loan).success).toBe(true);
+    expect(loanSchema.safeParse({ ...loan, payment_day: '' }).success).toBe(true);
+    expect(loanSchema.safeParse({ ...loan, payment_day: 32 }).success).toBe(false);
+  });
+
+  it('valida el día límite de una tarjeta', () => {
+    const card = {
+      name: 'Kash',
+      bank: '',
+      opening_balance: 0,
+      opening_balance_usd: 0,
+      credit_limit: '',
+      credit_limit_usd: '',
+      payment_due_day: 28,
+      color: '#8b5cf6',
+    };
+
+    expect(creditCardSchema.safeParse(card).success).toBe(true);
+    expect(creditCardSchema.safeParse({ ...card, payment_due_day: 0 }).success).toBe(false);
   });
 });
 

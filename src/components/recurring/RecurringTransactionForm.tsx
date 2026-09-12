@@ -197,14 +197,31 @@ export function RecurringTransactionForm({
               placeholder="0.00"
             />
           </Field>
-          <Field label="Moneda" htmlFor="recurring-currency">
+          <Field
+            label="Moneda"
+            htmlFor="recurring-currency"
+            hint={
+              currency === 'USD'
+                ? type === 'EXPENSE'
+                  ? 'USD se registra como cargo de tarjeta.'
+                  : 'El ingreso USD se registra sin depositarlo en una cuenta HNL.'
+                : undefined
+            }
+          >
             <Select
               id="recurring-currency"
               value={currency}
-              onChange={(event) => setCurrency(event.target.value as 'HNL' | 'USD')}
+              onChange={(event) => {
+                const nextCurrency = event.target.value as 'HNL' | 'USD';
+                setCurrency(nextCurrency);
+                if (nextCurrency === 'USD') {
+                  if (type === 'EXPENSE') setPaymentMethod('CARD');
+                  else setAccountId('');
+                }
+              }}
             >
               <option value="HNL">HNL</option>
-              {type === 'EXPENSE' && paymentMethod === 'CARD' && <option value="USD">USD</option>}
+              <option value="USD">USD</option>
             </Select>
           </Field>
         </div>
@@ -226,7 +243,8 @@ export function RecurringTransactionForm({
           </Field>
         )}
 
-        {(type === 'INCOME' || paymentMethod === 'ACCOUNT') && (
+        {((type === 'INCOME' && currency === 'HNL') ||
+          (type === 'EXPENSE' && paymentMethod === 'ACCOUNT')) && (
           <Field
             label={type === 'INCOME' ? 'Depositar en cuenta (opcional)' : 'Debitar de cuenta'}
             htmlFor="recurring-account"

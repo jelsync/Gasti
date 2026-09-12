@@ -202,6 +202,16 @@ const optionalDateSchema = z
   .optional()
   .or(z.literal(''));
 
+const optionalDayOfMonthSchema = z.preprocess(
+  (value) => (value === '' || value === null || value === undefined ? undefined : value),
+  z.coerce
+    .number({ invalid_type_error: 'Ingresa un día válido' })
+    .int('El día debe ser un número entero')
+    .min(1, 'El día mínimo es 1')
+    .max(31, 'El día máximo es 31')
+    .optional(),
+);
+
 export const loanSchema = z.object({
   name: z.string().trim().min(1, 'El nombre es obligatorio').max(60, 'Máximo 60 caracteres'),
   loan_number: z.string().trim().max(40, 'Máximo 40 caracteres').optional(),
@@ -222,6 +232,7 @@ export const loanSchema = z.object({
     .number({ invalid_type_error: 'Ingresa una cuota válida' })
     .positive('La cuota debe ser mayor que cero')
     .max(999_999_999, 'La cuota es demasiado grande'),
+  payment_day: optionalDayOfMonthSchema,
   current_balance: z.coerce
     .number({ invalid_type_error: 'Ingresa un saldo válido' })
     .min(0, 'El saldo no puede ser negativo')
@@ -263,6 +274,7 @@ export const creditCardSchema = z.object({
   opening_balance_usd: nonNegativeAmount, // deuda en Dólares
   credit_limit: optionalPositive, // límite en Lempiras
   credit_limit_usd: optionalPositive, // límite en Dólares
+  payment_due_day: optionalDayOfMonthSchema,
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Color inválido'),
 });
 

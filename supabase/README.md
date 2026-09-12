@@ -24,7 +24,8 @@ supabase/
 │   ├── 0015_receivables.sql # Personas que deben y pagos recibidos
 │   ├── 0016_currencies_savings_goal.sql # Monedas y cuentas incluidas en meta
 │   ├── 0017_generic_income_account_numbers.sql # Ingresos genéricos y número de cuenta
-│   └── 0018_recurring_transactions.sql # Reglas mensuales confirmables
+│   ├── 0018_recurring_transactions.sql # Reglas mensuales confirmables
+│   └── 0019_financial_calendar.sql # Días de pago de préstamos y tarjetas
 ├── seed.sql                   # Seed opcional para usuarios preexistentes
 └── README.md
 ```
@@ -51,6 +52,7 @@ supabase/
    16. `migrations/0016_currencies_savings_goal.sql`
    17. `migrations/0017_generic_income_account_numbers.sql`
    18. `migrations/0018_recurring_transactions.sql`
+   19. `migrations/0019_financial_calendar.sql`
 3. (Opcional) Si ya tenías usuarios creados antes de aplicar el paso 3,
    ejecuta `seed.sql` para sembrarles las categorías predeterminadas.
 
@@ -71,8 +73,8 @@ supabase db push
 | `categories`   | Categorías de ingreso/gasto propias de cada usuario.    |
 | `transactions` | Ingresos, gastos, ahorro y transferencias con moneda; también vincula tarjetas y préstamos. |
 | `budgets`      | Presupuesto mensual por categoría y moneda, o meta de ahorro HNL. |
-| `loans`        | Préstamos (saldo/pasivo). Las cuotas y abonos se registran como transacciones vinculadas. |
-| `credit_cards` | Tarjetas de crédito. Deuda = apertura + compras − pagos.       |
+| `loans`        | Préstamos (saldo/pasivo), con día mensual opcional para calendario. Las cuotas y abonos se registran como transacciones vinculadas. |
+| `credit_cards` | Tarjetas de crédito, con día límite opcional. Deuda = apertura + compras − pagos. |
 | `card_payments`| Pagos a tarjetas (reducen la deuda, no son gastos).            |
 | `savings_accounts` | Cuentas con número opcional copiable. Saldo = apertura + ingresos/aportes − gastos vinculados; pueden incluirse en la meta de ahorro. |
 | `receivable_people` | Personas con dinero pendiente; el saldo se deriva de préstamos y pagos. |

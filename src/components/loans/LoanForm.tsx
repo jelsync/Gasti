@@ -40,6 +40,7 @@ export function LoanForm({ open, onClose, onSubmit, expenseCategories, initial }
       interest_rate: initial?.interest_rate ?? 0,
       term_months: initial?.term_months,
       installment: initial?.installment,
+      payment_day: initial?.payment_day ?? undefined,
       current_balance: initial?.current_balance,
       extra_payment: initial?.extra_payment ?? undefined,
       start_date: initial?.start_date ?? todayISO(),
@@ -157,6 +158,25 @@ export function LoanForm({ open, onClose, onSubmit, expenseCategories, initial }
             />
           </Field>
         </div>
+
+        <Field
+          label="Día mensual de pago (opcional)"
+          htmlFor="payment_day"
+          error={errors.payment_day?.message}
+          hint="Se usará para mostrar la cuota en el calendario y generar avisos."
+        >
+          <Input
+            id="payment_day"
+            type="number"
+            min="1"
+            max="31"
+            step="1"
+            inputMode="numeric"
+            placeholder="Ej. 15"
+            aria-invalid={!!errors.payment_day}
+            {...register('payment_day')}
+          />
+        </Field>
 
         <Field
           label="Abono a capital habitual (opcional)"

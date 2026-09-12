@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
+  BellRing,
+  CalendarDays,
   CreditCard,
   HandCoins,
   Landmark,
@@ -32,6 +34,7 @@ import { useSavingsAccounts } from '@/hooks/useSavingsAccounts';
 import { useLoans } from '@/hooks/useLoans';
 import { useReceivables } from '@/hooks/useReceivables';
 import { useCardCharges } from '@/hooks/useCardCharges';
+import { useRecurringTransactions } from '@/hooks/useRecurringTransactions';
 import {
   budgetOverview,
   groupByCategory,
@@ -39,7 +42,14 @@ import {
   savingsGoalMovement,
 } from '@/utils/finance';
 import { formatCurrency, formatMoney, formatPercent } from '@/utils/format';
-import { getCurrentMonthYear, monthRange } from '@/utils/date';
+import {
+  compareMonthYear,
+  formatDate,
+  getCurrentMonthYear,
+  monthRange,
+  todayISO,
+} from '@/utils/date';
+import { buildFinancialBudgetAlerts, buildFinancialEvents } from '@/utils/financialCalendar';
 import { ROUTES } from '@/constants/routes';
 
 export default function DashboardPage() {
@@ -56,6 +66,8 @@ export default function DashboardPage() {
   const { loans } = useLoans();
   const { people: receivablePeople } = useReceivables();
   const { charges } = useCardCharges(range);
+  const { rules: recurringRules, occurrences: recurringOccurrences } =
+    useRecurringTransactions(month);
 
   const cardDebt = useMemo(() => {
     const acc = { HNL: 0, USD: 0 };
@@ -132,6 +144,25 @@ export default function DashboardPage() {
     return items.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0)).slice(0, 5);
   }, [transactions, charges]);
 
+  const showFinancialAlerts = compareMonthYear(month, getCurrentMonthYear()) === 0;
+  const financialEvents = useMemo(
+    () =>
+      buildFinancialEvents({
+        month,
+        today: todayISO(),
+        recurringRules,
+        occurrences: recurringOccurrences,
+        loans,
+        cards,
+        transactions,
+      }).filter((event) => event.status !== 'COMPLETED' && event.status !== 'SKIPPED'),
+    [month, recurringRules, recurringOccurrences, loans, cards, transactions],
+  );
+  const budgetAlerts = useMemo(
+    () => buildFinancialBudgetAlerts(budgets, transactions),
+    [budgets, transactions],
+  );
+
   return (
     <>
       <PageHeader
@@ -165,6 +196,68 @@ export default function DashboardPage() {
             <StatCard label="Ahorro" value={savedThisMonth} icon={PiggyBank} tone="primary" />
             <StatCard label="Disponible" value={summary.balance} icon={Wallet} tone="neutral" />
           </div>
+
+          {showFinancialAlerts && (financialEvents.length > 0 || budgetAlerts.length > 0) && (
+            <Card>
+              <CardHeader className="flex-row items-center justify-between gap-4">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <BellRing className="h-5 w-5 text-primary" />
+                    Avisos financieros
+                  </CardTitle>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Fechas pendientes y presupuestos que requieren atención.
+                  </p>
+                </div>
+                <Link
+                  to={ROUTES.financialCalendar}
+                  className="shrink-0 text-sm font-medium text-primary hover:underline"
+                >
+                  Ver calendario
+                </Link>
+              </CardHeader>
+              <CardContent className="grid gap-3 md:grid-cols-2">
+                {financialEvents.slice(0, 4).map((event) => (
+                  <Link
+                    key={event.id}
+                    to={ROUTES.financialCalendar}
+                    className="flex items-center gap-3 rounded-[var(--radius)] border border-border p-3 transition-colors hover:bg-muted"
+                  >
+                    <span
+                      className="h-3 w-3 shrink-0 rounded-full"
+                      style={{ backgroundColor: event.color }}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">{event.title}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {event.status === 'OVERDUE'
+                          ? `Venció el ${formatDate(event.date)}`
+                          : event.status === 'DUE'
+                            ? 'Programado para hoy'
+                            : `Próximo: ${formatDate(event.date)}`}
+                      </p>
+                    </div>
+                    <CalendarDays className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  </Link>
+                ))}
+                {budgetAlerts.slice(0, 4).map((alert) => (
+                  <Link
+                    key={alert.id}
+                    to={ROUTES.budgets}
+                    className="flex items-center gap-3 rounded-[var(--radius)] border border-border p-3 transition-colors hover:bg-muted"
+                  >
+                    <PiggyBank className="h-4 w-4 shrink-0 text-amber-500" />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">Presupuesto de {alert.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Has utilizado {formatPercent(alert.percentage)} en {alert.currency}
+                      </p>
+                    </div>
+                  </Link>
+                ))}
+              </CardContent>
+            </Card>
+          )}
 
           {(cards.length > 0 || accounts.length > 0 || loans.length > 0 || totalReceivable > 0) && (
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

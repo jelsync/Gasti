@@ -92,6 +92,13 @@ RecurringTransactionsPage
 - Las reglas son mensuales. Una fecha se confirma u omite explícitamente y la restricción única impide duplicados.
 - `confirm_recurring_transaction` crea atómicamente la transacción y, cuando corresponde, el cargo de tarjeta.
 
+### Calendario financiero y avisos
+
+- Ruta/menú: `ROUTES.financialCalendar` (`/calendario`), página `src/pages/FinancialCalendarPage.tsx`.
+- `src/utils/financialCalendar.ts` deriva eventos mensuales desde reglas recurrentes, cuotas de préstamos, fechas de pago de tarjetas y movimientos ya registrados.
+- El dashboard reutiliza el mismo cálculo para avisos del mes actual y muestra presupuestos desde 80 % de uso.
+- Las fechas se configuran con `loans.payment_day` y `credit_cards.payment_due_day`; el calendario es informativo y no mueve dinero.
+
 ### Cuentas
 
 ```text
@@ -180,6 +187,7 @@ SavingsPage
 - Moneda en transacciones/presupuestos y cuentas incluidas en la meta: `0016_currencies_savings_goal.sql`.
 - Ingresos genéricos y número de cuenta: `0017_generic_income_account_numbers.sql`.
 - Reglas y ocurrencias mensuales confirmables: `0018_recurring_transactions.sql`.
+- Días de pago para calendario en préstamos y tarjetas: `0019_financial_calendar.sql`.
 - RLS limita cada fila por `auth.uid()`; no confíes solo en filtros del cliente.
 
 ## Despliegue
@@ -203,6 +211,7 @@ GitHub main
 | Nueva ruta o menú | `constants/routes.ts`, `constants/nav.ts`, `App.tsx` |
 | Ingresos/transacciones | `TransactionForm.tsx`, `TransactionsPage.tsx`, `transactions.service.ts` |
 | Transacciones recurrentes | `RecurringTransactionsPage.tsx`, `recurring.service.ts`, migración `0018` |
+| Calendario y avisos | `FinancialCalendarPage.tsx`, `utils/financialCalendar.ts`, migración `0019` |
 | Saldo o historial de cuenta | `SavingsPage.tsx`, `savings.service.ts` |
 | Resumen del dashboard | `DashboardPage.tsx`, `utils/finance.ts` |
 | Tarjetas/deuda/pagos | `cards.service.ts`, `CardsPage.tsx` |

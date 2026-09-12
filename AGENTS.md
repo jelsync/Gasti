@@ -25,6 +25,9 @@
 - Las únicas categorías de ingreso son: `Salario`, `Transferencias recibidas`, `Bonos` y `Otros ingresos`.
 - Los montos privados se controlan con `PrivacyProvider`: usa `income`, `accounts-total` y `account:<id>` para mantener la preferencia por usuario en el navegador.
 - Una regla recurrente nunca mueve dinero por sí sola. Solo `confirm_recurring_transaction` crea la transacción real y su ocurrencia; `skip_recurring_occurrence` omite únicamente la fecha indicada.
+- El calendario financiero es una vista derivada: muestra reglas recurrentes y fechas configuradas, pero nunca crea pagos ni modifica saldos automáticamente.
+- `loans.payment_day` y `credit_cards.payment_due_day` son días mensuales opcionales (1–31); los meses cortos ajustan el aviso a su último día.
+- Los avisos de presupuesto aparecen desde 80 % de uso, respetan la moneda del presupuesto y no mezclan HNL con USD.
 - Confirmar un gasto recurrente con tarjeta crea tanto `transactions` como `card_charges`. La ocurrencia impide duplicados y se elimina en cascada si se borra la transacción generada, permitiendo volver a atenderla.
 - Las compras con tarjeta aumentan deuda y crean el gasto en la misma moneda que alimenta dashboard/presupuesto; una compra USD nunca exige una conversión HNL. El equivalente HNL se registra solo al pagar, como transferencia desde una cuenta y no como segundo gasto.
 - El historial de una tarjeta combina `card_charges` y `card_payments`, separado por tarjeta y moneda.

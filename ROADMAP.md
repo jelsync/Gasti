@@ -10,11 +10,11 @@ Las fases se entregan y validan por separado. Una fase posterior no debe cambiar
 - Confirmación manual antes de afectar saldos, deuda, presupuestos o reportes.
 - Opción de omitir/restaurar una ocurrencia, pausar la regla y evitar duplicados.
 
-## Fase 2 — Calendario financiero y avisos
+## Fase 2 — Calendario financiero y avisos (implementada)
 
 - Calendario de movimientos recurrentes, cuotas y fechas de pago.
 - Indicadores de próximos, vencidos y presupuestos cerca del límite.
-- Avisos dentro de la aplicación; notificaciones externas quedarían como mejora posterior.
+- Avisos dentro del dashboard y del calendario; las notificaciones externas quedan como mejora posterior.
 
 ## Fase 3 — Conciliación y cierre mensual
 

@@ -15,6 +15,7 @@ function normalize(input: LoanInput) {
     interest_rate: input.interest_rate,
     term_months: input.term_months,
     installment: input.installment,
+    payment_day: input.payment_day ?? null,
     current_balance: input.current_balance,
     extra_payment: input.extra_payment ?? null,
     start_date: input.start_date,

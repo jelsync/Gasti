@@ -16,16 +16,16 @@ import {
   updateRecurringTransaction,
 } from '@/services/recurring.service';
 
-export function useRecurringTransactions() {
+export function useRecurringTransactions(month = getCurrentMonthYear()) {
   const { user } = useAuth();
+  const { year, month: monthNumber } = month;
   const [rules, setRules] = useState<RecurringTransactionWithRelations[]>([]);
   const [occurrences, setOccurrences] = useState<RecurringOccurrence[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
-    const current = getCurrentMonthYear();
-    const range = monthRange(current.year, current.month);
+    const range = monthRange(year, monthNumber);
     try {
       setLoading(true);
       setError(null);
@@ -40,7 +40,7 @@ export function useRecurringTransactions() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [year, monthNumber]);
 
   useEffect(() => {
     void refresh();

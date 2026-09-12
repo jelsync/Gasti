@@ -42,6 +42,7 @@ export function CreditCardForm({ open, onClose, onSubmit, initial }: CreditCardF
       opening_balance_usd: initial?.opening_balance_usd ?? 0,
       credit_limit: initial?.credit_limit ?? undefined,
       credit_limit_usd: initial?.credit_limit_usd ?? undefined,
+      payment_due_day: initial?.payment_due_day ?? undefined,
       color: initial?.color ?? COLOR_OPTIONS[9],
     });
   }, [open, initial, reset]);
@@ -109,6 +110,25 @@ export function CreditCardForm({ open, onClose, onSubmit, initial }: CreditCardF
             {money('opening_balance_usd', '$')}
           </Field>
         </div>
+
+        <Field
+          label="Día límite de pago (opcional)"
+          htmlFor="payment_due_day"
+          error={errors.payment_due_day?.message}
+          hint="Permite mostrar el vencimiento y sus avisos en el calendario."
+        >
+          <Input
+            id="payment_due_day"
+            type="number"
+            min="1"
+            max="31"
+            step="1"
+            inputMode="numeric"
+            placeholder="Ej. 20"
+            aria-invalid={!!errors.payment_due_day}
+            {...register('payment_due_day')}
+          />
+        </Field>
 
         <div className="grid grid-cols-2 gap-3">
           <Field

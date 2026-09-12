@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle,
   Banknote,
+  CalendarDays,
   CheckCircle2,
   CirclePlus,
   Landmark,
@@ -230,6 +231,12 @@ export default function LoansPage() {
                       <p className="text-2xl font-bold tabular-nums">
                         {formatCurrency(loan.current_balance)}
                       </p>
+                      {loan.payment_day && (
+                        <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                          <CalendarDays className="h-3.5 w-3.5" />
+                          Pago mensual: día {loan.payment_day}
+                        </p>
+                      )}
                     </div>
 
                     <div>

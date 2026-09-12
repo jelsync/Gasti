@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CreditCard as CardIcon, Pencil, Plus, Trash2 } from 'lucide-react';
+import { CalendarDays, CreditCard as CardIcon, Pencil, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/PageHeader';
 import { Card, CardContent } from '@/components/ui/Card';
@@ -166,6 +166,12 @@ export default function CardsPage() {
                           <p className="truncate font-semibold">{card.name}</p>
                           {card.bank && (
                             <p className="truncate text-xs text-muted-foreground">{card.bank}</p>
+                          )}
+                          {card.payment_due_day && (
+                            <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+                              <CalendarDays className="h-3.5 w-3.5" />
+                              Pago: día {card.payment_due_day}
+                            </p>
                           )}
                         </div>
                       </div>

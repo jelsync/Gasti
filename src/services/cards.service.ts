@@ -62,6 +62,7 @@ export async function createCreditCard(
       opening_balance_usd: input.opening_balance_usd,
       credit_limit: input.credit_limit ?? null,
       credit_limit_usd: input.credit_limit_usd ?? null,
+      payment_due_day: input.payment_due_day ?? null,
       color: input.color,
     })
     .select('*')
@@ -81,6 +82,7 @@ export async function updateCreditCard(id: string, input: CreditCardInput): Prom
       opening_balance_usd: input.opening_balance_usd,
       credit_limit: input.credit_limit ?? null,
       credit_limit_usd: input.credit_limit_usd ?? null,
+      payment_due_day: input.payment_due_day ?? null,
       color: input.color,
     })
     .eq('id', id)
