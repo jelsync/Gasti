@@ -2,7 +2,7 @@ import type { Category } from '@/types/models';
 
 export const INCOME_CATEGORY_NAMES = [
   'Salario',
-  'Transferencia de papá',
+  'Transferencias recibidas',
   'Bonos',
   'Otros ingresos',
 ] as const;

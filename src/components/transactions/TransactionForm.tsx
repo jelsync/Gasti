@@ -23,6 +23,8 @@ import type {
 } from '@/types/models';
 import { getIncomeCategories } from '@/constants/incomeCategories';
 import { formatCurrency } from '@/utils/format';
+import { HIDDEN_AMOUNT } from '@/components/ui/PrivacyToggle';
+import { PRIVACY_KEYS, usePrivacy } from '@/contexts/privacy';
 
 type Kind = TransactionType | 'CARD_CHARGE' | 'CARD_PAYMENT';
 
@@ -61,6 +63,7 @@ export function TransactionForm({
   initial,
   defaultType = 'EXPENSE',
 }: TransactionFormProps) {
+  const { isHidden } = usePrivacy();
   const [kind, setKind] = useState<Kind>(defaultType);
   const [amount, setAmount] = useState('');
   const [amountHnl, setAmountHnl] = useState('');
@@ -376,13 +379,18 @@ export function TransactionForm({
                   {savingsAccounts.map((a) => (
                     <option key={a.id} value={a.id}>
                       {a.name}
-                      {kind === 'TRANSFER' ? ` — ${formatCurrency(a.balance)}` : ''}
+                      {kind === 'TRANSFER'
+                        ? ` — ${isHidden(PRIVACY_KEYS.account(a.id)) ? HIDDEN_AMOUNT : formatCurrency(a.balance)}`
+                        : ''}
                     </option>
                   ))}
                 </Select>
                 {kind === 'TRANSFER' && sourceAccount && (
                   <span className="mt-2 inline-flex rounded-full bg-accent px-2.5 py-1 text-xs font-medium text-primary">
-                    Disponible: {formatCurrency(sourceAvailableBalance)}
+                    Disponible:{' '}
+                    {isHidden(PRIVACY_KEYS.account(sourceAccount.id))
+                      ? HIDDEN_AMOUNT
+                      : formatCurrency(sourceAvailableBalance)}
                   </span>
                 )}
               </Field>
@@ -404,13 +412,19 @@ export function TransactionForm({
                     .filter((account) => account.id !== savingsId)
                     .map((account) => (
                       <option key={account.id} value={account.id}>
-                        {account.name} — {formatCurrency(account.balance)}
+                        {account.name} —{' '}
+                        {isHidden(PRIVACY_KEYS.account(account.id))
+                          ? HIDDEN_AMOUNT
+                          : formatCurrency(account.balance)}
                       </option>
                     ))}
                 </Select>
                 {destinationAccount && (
                   <span className="mt-2 inline-flex rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
-                    Saldo actual: {formatCurrency(destinationAccount.balance)}
+                    Saldo actual:{' '}
+                    {isHidden(PRIVACY_KEYS.account(destinationAccount.id))
+                      ? HIDDEN_AMOUNT
+                      : formatCurrency(destinationAccount.balance)}
                   </span>
                 )}
               </Field>

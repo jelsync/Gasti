@@ -91,7 +91,7 @@ export async function createSavingsAccount(
     .insert({
       user_id: userId,
       name: input.name,
-      institution: input.institution ?? '',
+      account_number: input.account_number ?? '',
       opening_balance: input.opening_balance,
       include_in_savings_goal: input.include_in_savings_goal,
       color: input.color,
@@ -111,7 +111,7 @@ export async function updateSavingsAccount(
     .from('savings_accounts')
     .update({
       name: input.name,
-      institution: input.institution ?? '',
+      account_number: input.account_number ?? '',
       opening_balance: input.opening_balance,
       include_in_savings_goal: input.include_in_savings_goal,
       color: input.color,

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { Plus, Receipt, Search, SlidersHorizontal, X } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { CalendarSync, Plus, Receipt, Search, SlidersHorizontal, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/PageHeader';
 import { MonthSelector } from '@/components/MonthSelector';
@@ -25,10 +25,14 @@ import { cn } from '@/lib/utils';
 import type { Currency, TransactionType, TransactionWithCategory } from '@/types/models';
 import type { CardChargeWithCard } from '@/services/cards.service';
 import { getIncomeCategories } from '@/constants/incomeCategories';
+import { HIDDEN_AMOUNT, PrivacyToggle } from '@/components/ui/PrivacyToggle';
+import { PRIVACY_KEYS, usePrivacy } from '@/contexts/privacy';
+import { ROUTES } from '@/constants/routes';
 
 type TypeFilter = 'ALL' | TransactionType;
 
 export default function TransactionsPage() {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const startsWithTransfer = searchParams.get('new') === 'transfer';
   const [month, setMonth] = useState(getCurrentMonthYear);
@@ -209,9 +213,14 @@ export default function TransactionsPage() {
         title="Transacciones"
         description="Registra y gestiona tus ingresos y gastos"
         actions={
-          <Button onClick={openCreate}>
-            <Plus className="h-4 w-4" /> Nueva
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={() => navigate(ROUTES.recurringTransactions)}>
+              <CalendarSync className="h-4 w-4" /> Recurrentes
+            </Button>
+            <Button onClick={openCreate}>
+              <Plus className="h-4 w-4" /> Nueva
+            </Button>
+          </div>
         }
       />
 
@@ -219,7 +228,12 @@ export default function TransactionsPage() {
         <MonthSelector value={month} onChange={setMonth} />
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <SummaryPill label="Ingresos" value={summary.income} tone="income" />
+          <SummaryPill
+            label="Ingresos"
+            value={summary.income}
+            tone="income"
+            privacyKey={PRIVACY_KEYS.income}
+          />
           <SummaryPill label="Gastos" value={summary.expense} tone="expense" />
           <SummaryPill label="Ahorro" value={savingsThisMonth} tone="saving" />
           <SummaryPill label="Disponible" value={summary.balance} tone="neutral" />
@@ -386,12 +400,16 @@ function SummaryPill({
   value,
   tone,
   currency = 'HNL',
+  privacyKey,
 }: {
   label: string;
   value: number;
   tone: 'income' | 'expense' | 'saving' | 'neutral';
   currency?: Currency;
+  privacyKey?: string;
 }) {
+  const { isHidden } = usePrivacy();
+  const hidden = privacyKey ? isHidden(privacyKey) : false;
   const toneClass =
     tone === 'income'
       ? 'text-income'
@@ -402,9 +420,12 @@ function SummaryPill({
           : 'text-foreground';
   return (
     <div className="rounded-[var(--radius)] border border-border bg-card px-4 py-3">
-      <p className="text-xs text-muted-foreground">{label}</p>
+      <div className="flex items-center justify-between gap-1">
+        <p className="text-xs text-muted-foreground">{label}</p>
+        {privacyKey && <PrivacyToggle privacyKey={privacyKey} className="-mr-2 -mt-1 h-7 w-7" />}
+      </div>
       <p className={cn('mt-0.5 text-lg font-semibold tabular-nums', toneClass)}>
-        {formatMoney(value, currency)}
+        {hidden ? HIDDEN_AMOUNT : formatMoney(value, currency)}
       </p>
     </div>
   );

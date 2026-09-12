@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   ArrowDownToLine,
   ArrowLeftRight,
+  Copy,
   Landmark,
   Pencil,
   Plus,
@@ -24,11 +25,14 @@ import { formatCurrency } from '@/utils/format';
 import { formatDate } from '@/utils/date';
 import { ROUTES } from '@/constants/routes';
 import { cn } from '@/lib/utils';
+import { HIDDEN_AMOUNT, PrivacyToggle } from '@/components/ui/PrivacyToggle';
+import { PRIVACY_KEYS, usePrivacy } from '@/contexts/privacy';
 import type { SavingsAccountWithBalance } from '@/types/models';
 import type { SavingsAccountInput } from '@/lib/validations';
 
 export default function SavingsPage() {
   const navigate = useNavigate();
+  const { isHidden } = usePrivacy();
   const { accounts, loading, create, update, remove } = useSavingsAccounts();
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<SavingsAccountWithBalance | null>(null);
@@ -71,6 +75,15 @@ export default function SavingsPage() {
       toast.success('Cuenta eliminada');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'No se pudo eliminar');
+    }
+  };
+
+  const copyAccountNumber = async (accountNumber: string) => {
+    try {
+      await navigator.clipboard.writeText(accountNumber);
+      toast.success('Número de cuenta copiado');
+    } catch {
+      toast.error('No se pudo copiar el número de cuenta');
     }
   };
 
@@ -118,10 +131,15 @@ export default function SavingsPage() {
       ) : (
         <div className="space-y-6">
           <Card className="p-5">
-            <p className="text-sm text-muted-foreground">Saldo total en cuentas</p>
-            <p className="mt-1 text-2xl font-bold tabular-nums text-primary">
-              {formatCurrency(total)}
-            </p>
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm text-muted-foreground">Saldo total en cuentas</p>
+                <p className="mt-1 text-2xl font-bold tabular-nums text-primary">
+                  {isHidden(PRIVACY_KEYS.accountsTotal) ? HIDDEN_AMOUNT : formatCurrency(total)}
+                </p>
+              </div>
+              <PrivacyToggle privacyKey={PRIVACY_KEYS.accountsTotal} />
+            </div>
           </Card>
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -133,6 +151,7 @@ export default function SavingsPage() {
                 aria-pressed={selectedAccountId === account.id}
                 onClick={() => setSelectedAccountId(account.id)}
                 onKeyDown={(event) => {
+                  if (event.target !== event.currentTarget) return;
                   if (event.key === 'Enter' || event.key === ' ') {
                     event.preventDefault();
                     setSelectedAccountId(account.id);
@@ -159,16 +178,33 @@ export default function SavingsPage() {
                         </span>
                       )}
                     </div>
-                    {account.institution && (
+                    {account.account_number && (
                       <p className="truncate text-xs text-muted-foreground">
-                        {account.institution}
+                        Cuenta: {account.account_number}
                       </p>
                     )}
                     <p className="mt-1 text-lg font-bold tabular-nums">
-                      {formatCurrency(account.balance)}
+                      {isHidden(PRIVACY_KEYS.account(account.id))
+                        ? HIDDEN_AMOUNT
+                        : formatCurrency(account.balance)}
                     </p>
                   </div>
                   <div className="flex shrink-0 items-center gap-1">
+                    <PrivacyToggle privacyKey={PRIVACY_KEYS.account(account.id)} />
+                    {account.account_number && (
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          void copyAccountNumber(account.account_number);
+                        }}
+                        aria-label={`Copiar número de ${account.name}`}
+                        title="Copiar número de cuenta"
+                        className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={(event) => {
@@ -207,9 +243,14 @@ export default function SavingsPage() {
                     Ingresos, gastos y transferencias de esta cuenta
                   </p>
                 </div>
-                <span className="shrink-0 font-bold tabular-nums text-primary">
-                  {formatCurrency(selectedAccount.balance)}
-                </span>
+                <div className="flex shrink-0 items-center gap-1">
+                  <span className="font-bold tabular-nums text-primary">
+                    {isHidden(PRIVACY_KEYS.account(selectedAccount.id))
+                      ? HIDDEN_AMOUNT
+                      : formatCurrency(selectedAccount.balance)}
+                  </span>
+                  <PrivacyToggle privacyKey={PRIVACY_KEYS.account(selectedAccount.id)} />
+                </div>
               </CardHeader>
               <CardContent>
                 {movementsLoading ? (
@@ -286,7 +327,9 @@ export default function SavingsPage() {
                               isOutgoing ? 'text-expense' : 'text-income',
                             )}
                           >
-                            {isOutgoing ? '−' : '+'} {formatCurrency(movement.amount)}
+                            {isHidden(PRIVACY_KEYS.account(selectedAccount.id))
+                              ? HIDDEN_AMOUNT
+                              : `${isOutgoing ? '−' : '+'} ${formatCurrency(movement.amount)}`}
                           </span>
                         </li>
                       );
@@ -306,7 +349,9 @@ export default function SavingsPage() {
                           </p>
                         </div>
                         <span className="shrink-0 font-semibold tabular-nums text-income">
-                          + {formatCurrency(selectedAccount.opening_balance)}
+                          {isHidden(PRIVACY_KEYS.account(selectedAccount.id))
+                            ? HIDDEN_AMOUNT
+                            : `+ ${formatCurrency(selectedAccount.opening_balance)}`}
                         </span>
                       </li>
                     )}

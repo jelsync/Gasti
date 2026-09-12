@@ -22,7 +22,10 @@
 - Un `INCOME` puede vincularse opcionalmente a `savings_account_id`; en ese caso también aumenta el saldo y aparece en el historial de esa cuenta, sin crear otra transacción.
 - Saldo de cuenta = `opening_balance` + `INCOME`/`SAVING` vinculados − `EXPENSE` vinculados.
 - Un gasto normal (`EXPENSE`) debe seleccionar `savings_account_id` y debitar esa cuenta. Esta regla no se extiende automáticamente a cargos o pagos de tarjeta.
-- Las únicas categorías de ingreso son: `Salario`, `Transferencia de papá`, `Bonos` y `Otros ingresos`.
+- Las únicas categorías de ingreso son: `Salario`, `Transferencias recibidas`, `Bonos` y `Otros ingresos`.
+- Los montos privados se controlan con `PrivacyProvider`: usa `income`, `accounts-total` y `account:<id>` para mantener la preferencia por usuario en el navegador.
+- Una regla recurrente nunca mueve dinero por sí sola. Solo `confirm_recurring_transaction` crea la transacción real y su ocurrencia; `skip_recurring_occurrence` omite únicamente la fecha indicada.
+- Confirmar un gasto recurrente con tarjeta crea tanto `transactions` como `card_charges`. La ocurrencia impide duplicados y se elimina en cascada si se borra la transacción generada, permitiendo volver a atenderla.
 - Las compras con tarjeta aumentan deuda y crean el gasto en la misma moneda que alimenta dashboard/presupuesto; una compra USD nunca exige una conversión HNL. El equivalente HNL se registra solo al pagar, como transferencia desde una cuenta y no como segundo gasto.
 - El historial de una tarjeta combina `card_charges` y `card_payments`, separado por tarjeta y moneda.
 - Borrar una transacción vinculada a una compra o pago debe revertir también el movimiento de tarjeta mediante cascada.

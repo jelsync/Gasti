@@ -22,7 +22,9 @@ supabase/
 │   ├── 0013_add_transfer_type.sql # Agrega TRANSFER al enum (ejecutar solo)
 │   ├── 0014_card_links_account_transfers.sql # Reversiones y transferencias
 │   ├── 0015_receivables.sql # Personas que deben y pagos recibidos
-│   └── 0016_currencies_savings_goal.sql # Monedas y cuentas incluidas en meta
+│   ├── 0016_currencies_savings_goal.sql # Monedas y cuentas incluidas en meta
+│   ├── 0017_generic_income_account_numbers.sql # Ingresos genéricos y número de cuenta
+│   └── 0018_recurring_transactions.sql # Reglas mensuales confirmables
 ├── seed.sql                   # Seed opcional para usuarios preexistentes
 └── README.md
 ```
@@ -47,6 +49,8 @@ supabase/
    14. `migrations/0014_card_links_account_transfers.sql`
    15. `migrations/0015_receivables.sql`
    16. `migrations/0016_currencies_savings_goal.sql`
+   17. `migrations/0017_generic_income_account_numbers.sql`
+   18. `migrations/0018_recurring_transactions.sql`
 3. (Opcional) Si ya tenías usuarios creados antes de aplicar el paso 3,
    ejecuta `seed.sql` para sembrarles las categorías predeterminadas.
 
@@ -70,8 +74,10 @@ supabase db push
 | `loans`        | Préstamos (saldo/pasivo). Las cuotas y abonos se registran como transacciones vinculadas. |
 | `credit_cards` | Tarjetas de crédito. Deuda = apertura + compras − pagos.       |
 | `card_payments`| Pagos a tarjetas (reducen la deuda, no son gastos).            |
-| `savings_accounts` | Cuentas. Saldo = apertura + ingresos/aportes − gastos vinculados; pueden incluirse en la meta de ahorro. |
+| `savings_accounts` | Cuentas con número opcional copiable. Saldo = apertura + ingresos/aportes − gastos vinculados; pueden incluirse en la meta de ahorro. |
 | `receivable_people` | Personas con dinero pendiente; el saldo se deriva de préstamos y pagos. |
+| `recurring_transactions` | Reglas mensuales que no mueven dinero hasta ser confirmadas. |
+| `recurring_occurrences` | Fechas confirmadas u omitidas; evita registrar el mismo movimiento dos veces. |
 
 ### Decisiones de diseño
 

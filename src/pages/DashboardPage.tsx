@@ -17,6 +17,8 @@ import { Spinner } from '@/components/ui/Spinner';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { StatCard } from '@/components/dashboard/StatCard';
+import { HIDDEN_AMOUNT, PrivacyToggle } from '@/components/ui/PrivacyToggle';
+import { PRIVACY_KEYS, usePrivacy } from '@/contexts/privacy';
 import { MultiCurrencyCategoryBreakdown } from '@/components/dashboard/CategoryBreakdown';
 import {
   CategoryMovementDetail,
@@ -41,6 +43,7 @@ import { getCurrentMonthYear, monthRange } from '@/utils/date';
 import { ROUTES } from '@/constants/routes';
 
 export default function DashboardPage() {
+  const { isHidden } = usePrivacy();
   const [month, setMonth] = useState(getCurrentMonthYear);
   const [detailCategory, setDetailCategory] = useState<CategoryDetailTarget | null>(null);
   const range = useMemo(() => monthRange(month.year, month.month), [month]);
@@ -144,7 +147,13 @@ export default function DashboardPage() {
       ) : (
         <div className="space-y-6">
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <StatCard label="Ingresos" value={summary.income} icon={TrendingUp} tone="income" />
+            <StatCard
+              label="Ingresos"
+              value={summary.income}
+              icon={TrendingUp}
+              tone="income"
+              privacyKey={PRIVACY_KEYS.income}
+            />
             <StatCard
               label="Gastos"
               value={summary.expense}
@@ -194,10 +203,15 @@ export default function DashboardPage() {
                     <div>
                       <p className="text-sm text-muted-foreground">Saldo en cuentas</p>
                       <p className="mt-1 text-xl font-bold tabular-nums text-primary">
-                        {formatCurrency(totalSavings)}
+                        {isHidden(PRIVACY_KEYS.accountsTotal)
+                          ? HIDDEN_AMOUNT
+                          : formatCurrency(totalSavings)}
                       </p>
                     </div>
-                    <Wallet className="h-6 w-6 text-muted-foreground" />
+                    <div className="flex items-center gap-1">
+                      <PrivacyToggle privacyKey={PRIVACY_KEYS.accountsTotal} />
+                      <Wallet className="h-6 w-6 text-muted-foreground" />
+                    </div>
                   </Card>
                 </Link>
               )}

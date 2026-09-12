@@ -76,6 +76,21 @@ TransactionsPage
 - Un gasto normal exige cuenta: conserva `EXPENSE`, suma a gastos y reduce la cuenta elegida.
 - `TRANSFER` usa `savings_account_id` como origen y `destination_savings_account_id` como destino; no altera los totales del dashboard.
 - `TransactionForm` recibe cuentas con saldo, lo muestra al transferir y evita superar el disponible.
+- La categoría genérica `Transferencias recibidas` evita nombres personales en las cuentas de otros usuarios.
+
+### Transacciones recurrentes
+
+```text
+RecurringTransactionsPage
+  -> RecurringTransactionForm
+  -> useRecurringTransactions
+  -> recurring.service
+  -> recurring_transactions / recurring_occurrences
+```
+
+- Ruta: `ROUTES.recurringTransactions` (`/transacciones/recurrentes`), accesible desde Transacciones.
+- Las reglas son mensuales. Una fecha se confirma u omite explícitamente y la restricción única impide duplicados.
+- `confirm_recurring_transaction` crea atómicamente la transacción y, cuando corresponde, el cargo de tarjeta.
 
 ### Cuentas
 
@@ -94,6 +109,8 @@ SavingsPage
 - Las transferencias restan a la cuenta origen y suman a la cuenta destino; los pagos de tarjeta solo restan a la cuenta origen.
 - `include_in_savings_goal` marca las cuentas cuyo movimiento neto HNL alimenta la meta mensual: entradas suman, salidas restan y una transferencia entre dos cuentas marcadas es neutra.
 - Editar una cuenta reemplaza el saldo inicial; el formulario muestra los movimientos netos y el saldo resultante para evitar duplicaciones conceptuales.
+- `account_number` guarda el número opcional antes llamado `institution`; `SavingsPage` permite copiarlo.
+- La privacidad usa `PrivacyProvider` y `PrivacyToggle`: el total tiene la clave `accounts-total` y cada cuenta `account:<id>`.
 
 ### Categorías
 
@@ -101,6 +118,7 @@ SavingsPage
 - Detalle mensual y acumulado de ingresos/gastos: `src/components/categories/CategoryMovementDetail.tsx`; reutiliza `useTransactions` filtrado por mes y respeta el tipo de categoría.
 - Hook/servicio: `src/hooks/useCategories.ts`, `src/services/categories.service.ts`.
 - Las categorías de gasto son editables. Las cuatro categorías de ingreso son fijas.
+- La clave privada `income` oculta importes de ingreso en dashboard, categorías, movimientos, historial y reportes.
 
 ### Tarjetas
 
@@ -160,6 +178,8 @@ SavingsPage
 - Transferencias entre cuentas y vínculos reversibles de tarjetas: `0014_card_links_account_transfers.sql`.
 - Personas, préstamos entregados y pagos recibidos: `0015_receivables.sql`.
 - Moneda en transacciones/presupuestos y cuentas incluidas en la meta: `0016_currencies_savings_goal.sql`.
+- Ingresos genéricos y número de cuenta: `0017_generic_income_account_numbers.sql`.
+- Reglas y ocurrencias mensuales confirmables: `0018_recurring_transactions.sql`.
 - RLS limita cada fila por `auth.uid()`; no confíes solo en filtros del cliente.
 
 ## Despliegue
@@ -182,6 +202,7 @@ GitHub main
 | --- | --- |
 | Nueva ruta o menú | `constants/routes.ts`, `constants/nav.ts`, `App.tsx` |
 | Ingresos/transacciones | `TransactionForm.tsx`, `TransactionsPage.tsx`, `transactions.service.ts` |
+| Transacciones recurrentes | `RecurringTransactionsPage.tsx`, `recurring.service.ts`, migración `0018` |
 | Saldo o historial de cuenta | `SavingsPage.tsx`, `savings.service.ts` |
 | Resumen del dashboard | `DashboardPage.tsx`, `utils/finance.ts` |
 | Tarjetas/deuda/pagos | `cards.service.ts`, `CardsPage.tsx` |

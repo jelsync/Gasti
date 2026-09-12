@@ -45,7 +45,7 @@ export function SavingsAccountForm({ open, onClose, onSubmit, initial }: Savings
     if (!open) return;
     reset({
       name: initial?.name ?? '',
-      institution: initial?.institution ?? '',
+      account_number: initial?.account_number ?? '',
       opening_balance: initial?.opening_balance ?? 0,
       include_in_savings_goal: initial?.include_in_savings_goal ?? false,
       color: initial?.color ?? COLOR_OPTIONS[7],
@@ -64,7 +64,7 @@ export function SavingsAccountForm({ open, onClose, onSubmit, initial }: Savings
   return (
     <Modal open={open} onClose={onClose} title={initial ? 'Editar cuenta' : 'Nueva cuenta'}>
       <form onSubmit={handleSubmit(submit)} className="space-y-4" noValidate>
-        <Field label="Nombre" htmlFor="name" error={errors.name?.message}>
+        <Field label="Nombre de la cuenta" htmlFor="name" error={errors.name?.message}>
           <Input
             id="name"
             placeholder="Ej. Cuenta principal"
@@ -74,14 +74,15 @@ export function SavingsAccountForm({ open, onClose, onSubmit, initial }: Savings
         </Field>
 
         <Field
-          label="Institución (opcional)"
-          htmlFor="institution"
-          error={errors.institution?.message}
+          label="Número de cuenta (opcional)"
+          htmlFor="account_number"
+          error={errors.account_number?.message}
         >
           <Input
-            id="institution"
-            placeholder="Ej. Cooperativa / Banco"
-            {...register('institution')}
+            id="account_number"
+            placeholder="Ej. 747430221"
+            autoComplete="off"
+            {...register('account_number')}
           />
         </Field>
 

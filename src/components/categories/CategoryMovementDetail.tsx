@@ -6,6 +6,8 @@ import { formatMoney } from '@/utils/format';
 import { round2 } from '@/utils/finance';
 import type { Currency, TransactionWithCategory } from '@/types/models';
 import type { MonthYear } from '@/utils/date';
+import { HIDDEN_AMOUNT, PrivacyToggle } from '@/components/ui/PrivacyToggle';
+import { PRIVACY_KEYS, usePrivacy } from '@/contexts/privacy';
 
 export interface CategoryDetailTarget {
   id: string | null;
@@ -33,7 +35,9 @@ export function CategoryMovementDetail({
   month,
   transactions,
 }: CategoryMovementDetailProps) {
+  const { isHidden } = usePrivacy();
   const isIncome = category?.type === 'INCOME';
+  const hidden = isIncome && isHidden(PRIVACY_KEYS.income);
   const movementLabel = isIncome ? 'Ingreso' : 'Gasto';
   const categoryTransactions = category
     ? transactions
@@ -70,7 +74,8 @@ export function CategoryMovementDetail({
         />
       ) : (
         <>
-          <div className="mb-4 flex flex-wrap gap-2">
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            {isIncome && <PrivacyToggle privacyKey={PRIVACY_KEYS.income} />}
             {(['HNL', 'USD'] as const).map((currency) => {
               const total = running[currency];
               if (total === 0) return null;
@@ -82,7 +87,7 @@ export function CategoryMovementDetail({
                     (isIncome ? 'bg-income-soft text-income' : 'bg-expense-soft text-expense')
                   }
                 >
-                  Total {currency}: {formatMoney(total, currency)}
+                  Total {currency}: {hidden ? HIDDEN_AMOUNT : formatMoney(total, currency)}
                 </span>
               );
             })}
@@ -122,10 +127,12 @@ export function CategoryMovementDetail({
                         (isIncome ? 'text-income' : 'text-expense')
                       }
                     >
-                      {formatMoney(transaction.amount, transaction.currency)}
+                      {hidden
+                        ? HIDDEN_AMOUNT
+                        : formatMoney(transaction.amount, transaction.currency)}
                     </td>
                     <td className="whitespace-nowrap py-3 text-right font-semibold tabular-nums">
-                      {formatMoney(accumulated, transaction.currency)}
+                      {hidden ? HIDDEN_AMOUNT : formatMoney(accumulated, transaction.currency)}
                     </td>
                   </tr>
                 ))}

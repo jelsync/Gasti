@@ -7,6 +7,7 @@ export const ROUTES = {
   // Privadas
   dashboard: '/',
   transactions: '/transacciones',
+  recurringTransactions: '/transacciones/recurrentes',
   budgets: '/presupuestos',
   loans: '/prestamos',
   cards: '/tarjetas',

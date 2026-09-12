@@ -106,6 +106,58 @@ export const transactionSchema = z
     }
   });
 
+export const recurringTransactionSchema = z
+  .object({
+    name: z.string().trim().min(1, 'El nombre es obligatorio').max(60, 'Máximo 60 caracteres'),
+    type: z.enum(['INCOME', 'EXPENSE']),
+    amount: z.coerce
+      .number({ invalid_type_error: 'Ingresa un monto válido' })
+      .positive('El monto debe ser mayor que cero')
+      .max(9_999_999_999, 'El monto es demasiado grande'),
+    currency: z.enum(['HNL', 'USD']).default('HNL'),
+    category_id: z.string().uuid('Selecciona una categoría'),
+    savings_account_id: z.string().uuid().nullable().optional(),
+    credit_card_id: z.string().uuid().nullable().optional(),
+    description: z.string().trim().max(200, 'Máximo 200 caracteres').optional(),
+    day_of_month: z.coerce.number().int().min(1, 'Día inválido').max(31, 'Día inválido'),
+    start_date: dateStringSchema,
+    end_date: dateStringSchema.optional().or(z.literal('')),
+    is_active: z.boolean().default(true),
+  })
+  .superRefine((rule, context) => {
+    if (rule.end_date && rule.end_date < rule.start_date) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['end_date'],
+        message: 'La fecha final debe ser posterior al inicio',
+      });
+    }
+    if (rule.type === 'INCOME' && rule.credit_card_id) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['credit_card_id'],
+        message: 'Un ingreso no puede depositarse en una tarjeta',
+      });
+    }
+    if (rule.savings_account_id && rule.currency !== 'HNL') {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['currency'],
+        message: 'Las cuentas se manejan en lempiras; usa HNL o no asignes una cuenta',
+      });
+    }
+    if (rule.type === 'EXPENSE') {
+      const destinations = Number(!!rule.savings_account_id) + Number(!!rule.credit_card_id);
+      if (destinations !== 1) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['savings_account_id'],
+          message: 'Selecciona una cuenta o una tarjeta para el gasto',
+        });
+      }
+    }
+  });
+
 // ---------------------------------------------------------------------------
 // Categorías
 // ---------------------------------------------------------------------------
@@ -234,7 +286,7 @@ export const cardPaymentSchema = z.object({
 
 export const savingsAccountSchema = z.object({
   name: z.string().trim().min(1, 'El nombre es obligatorio').max(40, 'Máximo 40 caracteres'),
-  institution: z.string().trim().max(40, 'Máximo 40 caracteres').optional(),
+  account_number: z.string().trim().max(40, 'Máximo 40 caracteres').optional(),
   opening_balance: z.coerce
     .number({ invalid_type_error: 'Ingresa un saldo válido' })
     .min(0, 'No puede ser negativo')
@@ -276,6 +328,7 @@ export type RegisterInput = z.infer<typeof registerSchema>;
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 export type UpdatePasswordInput = z.infer<typeof updatePasswordSchema>;
 export type TransactionInput = z.infer<typeof transactionSchema>;
+export type RecurringTransactionInput = z.infer<typeof recurringTransactionSchema>;
 export type CategoryInput = z.infer<typeof categorySchema>;
 export type BudgetInput = z.infer<typeof budgetSchema>;
 export type LoanInput = z.infer<typeof loanSchema>;

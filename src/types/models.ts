@@ -2,10 +2,11 @@ import type {
   Currency,
   Database,
   ReceivableRelationship,
+  RecurringOccurrenceStatus,
   TransactionType,
 } from '@/types/database.types';
 
-export type { TransactionType, Currency, ReceivableRelationship };
+export type { TransactionType, Currency, ReceivableRelationship, RecurringOccurrenceStatus };
 
 export type Profile = Database['public']['Tables']['profiles']['Row'];
 export type Category = Database['public']['Tables']['categories']['Row'];
@@ -15,6 +16,14 @@ export type Loan = Database['public']['Tables']['loans']['Row'];
 export type CreditCard = Database['public']['Tables']['credit_cards']['Row'];
 export type SavingsAccount = Database['public']['Tables']['savings_accounts']['Row'];
 export type ReceivablePerson = Database['public']['Tables']['receivable_people']['Row'];
+export type RecurringTransaction = Database['public']['Tables']['recurring_transactions']['Row'];
+export type RecurringOccurrence = Database['public']['Tables']['recurring_occurrences']['Row'];
+
+export interface RecurringTransactionWithRelations extends RecurringTransaction {
+  category: Pick<Category, 'id' | 'name' | 'icon' | 'color' | 'type'> | null;
+  savings_account: Pick<SavingsAccount, 'id' | 'name' | 'color'> | null;
+  credit_card: Pick<CreditCard, 'id' | 'name' | 'color'> | null;
+}
 
 /** Préstamo con su categoría de pago embebida. */
 export interface LoanWithCategory extends Loan {

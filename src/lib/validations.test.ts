@@ -5,9 +5,75 @@ import {
   loginSchema,
   receivableCreateSchema,
   receivableMovementSchema,
+  recurringTransactionSchema,
   registerSchema,
   transactionSchema,
 } from '@/lib/validations';
+
+describe('recurringTransactionSchema', () => {
+  const base = {
+    name: 'Spotify',
+    type: 'EXPENSE' as const,
+    amount: 12,
+    currency: 'USD' as const,
+    category_id: '11111111-1111-1111-1111-111111111111',
+    savings_account_id: null,
+    credit_card_id: '22222222-2222-2222-2222-222222222222',
+    day_of_month: 15,
+    start_date: '2026-09-01',
+    end_date: '',
+    is_active: true,
+  };
+
+  it('acepta un gasto mensual cargado a tarjeta', () => {
+    expect(recurringTransactionSchema.safeParse(base).success).toBe(true);
+  });
+
+  it('exige exactamente una cuenta o tarjeta para un gasto', () => {
+    expect(
+      recurringTransactionSchema.safeParse({
+        ...base,
+        savings_account_id: '33333333-3333-3333-3333-333333333333',
+      }).success,
+    ).toBe(false);
+    expect(
+      recurringTransactionSchema.safeParse({
+        ...base,
+        credit_card_id: null,
+      }).success,
+    ).toBe(false);
+  });
+
+  it('permite un ingreso depositado en una cuenta', () => {
+    expect(
+      recurringTransactionSchema.safeParse({
+        ...base,
+        name: 'Salario',
+        type: 'INCOME',
+        currency: 'HNL',
+        savings_account_id: '33333333-3333-3333-3333-333333333333',
+        credit_card_id: null,
+      }).success,
+    ).toBe(true);
+  });
+
+  it('no permite vincular una cuenta HNL a un movimiento en USD', () => {
+    expect(
+      recurringTransactionSchema.safeParse({
+        ...base,
+        currency: 'USD',
+        credit_card_id: null,
+        savings_account_id: '33333333-3333-3333-3333-333333333333',
+      }).success,
+    ).toBe(false);
+  });
+
+  it('rechaza una fecha final anterior al inicio', () => {
+    expect(recurringTransactionSchema.safeParse({ ...base, end_date: '2026-08-31' }).success).toBe(
+      false,
+    );
+  });
+});
 
 describe('registerSchema', () => {
   const base = {

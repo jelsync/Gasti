@@ -19,6 +19,8 @@ import {
 } from '@/utils/date';
 import { cn } from '@/lib/utils';
 import type { TransactionWithCategory } from '@/types/models';
+import { HIDDEN_AMOUNT, PrivacyToggle } from '@/components/ui/PrivacyToggle';
+import { PRIVACY_KEYS, usePrivacy } from '@/contexts/privacy';
 
 const MONTHS_TO_SHOW = 12;
 
@@ -131,6 +133,7 @@ export default function HistoryPage() {
                 value={selectedSummary.income}
                 icon={TrendingUp}
                 tone="income"
+                privacyKey={PRIVACY_KEYS.income}
               />
               <MiniStat
                 label="Gastos"
@@ -185,21 +188,30 @@ function MiniStat({
   value,
   icon: Icon,
   tone,
+  privacyKey,
 }: {
   label: string;
   value: number;
   icon: typeof Wallet;
   tone: 'income' | 'expense' | 'primary';
+  privacyKey?: string;
 }) {
+  const { isHidden } = usePrivacy();
+  const hidden = privacyKey ? isHidden(privacyKey) : false;
   const text =
     tone === 'income' ? 'text-income' : tone === 'expense' ? 'text-expense' : 'text-primary';
   return (
     <Card className="p-4">
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Icon className="h-4 w-4" />
-        {label}
+      <div className="flex items-center justify-between gap-2 text-sm text-muted-foreground">
+        <span className="flex items-center gap-2">
+          <Icon className="h-4 w-4" />
+          {label}
+        </span>
+        {privacyKey && <PrivacyToggle privacyKey={privacyKey} />}
       </div>
-      <p className={cn('mt-1 text-xl font-bold tabular-nums', text)}>{formatCurrency(value)}</p>
+      <p className={cn('mt-1 text-xl font-bold tabular-nums', text)}>
+        {hidden ? HIDDEN_AMOUNT : formatCurrency(value)}
+      </p>
     </Card>
   );
 }

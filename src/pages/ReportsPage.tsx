@@ -22,11 +22,15 @@ import {
   type MonthYear,
 } from '@/utils/date';
 import type { TransactionWithCategory } from '@/types/models';
+import { PrivacyToggle } from '@/components/ui/PrivacyToggle';
+import { PRIVACY_KEYS, usePrivacy } from '@/contexts/privacy';
 
 const MONTHS_WINDOW = 12;
 const CHART_MONTHS = 6;
 
 export default function ReportsPage() {
+  const { isHidden } = usePrivacy();
+  const hideIncome = isHidden(PRIVACY_KEYS.income);
   const [pieMonth, setPieMonth] = useState<MonthYear>(getCurrentMonthYear);
 
   const windowMonths = useMemo(() => getRecentMonths(MONTHS_WINDOW), []);
@@ -91,11 +95,18 @@ export default function ReportsPage() {
         <div className="space-y-6">
           <div className="grid gap-6 lg:grid-cols-2">
             <Card>
-              <CardHeader>
+              <CardHeader className="flex-row items-center justify-between">
                 <CardTitle>Ingresos vs Gastos</CardTitle>
+                <PrivacyToggle privacyKey={PRIVACY_KEYS.income} />
               </CardHeader>
               <CardContent>
-                <IncomeExpenseBarChart data={monthData} />
+                {hideIncome ? (
+                  <p className="flex min-h-64 items-center justify-center text-sm text-muted-foreground">
+                    Los ingresos están ocultos por privacidad.
+                  </p>
+                ) : (
+                  <IncomeExpenseBarChart data={monthData} />
+                )}
               </CardContent>
             </Card>
 
@@ -104,7 +115,13 @@ export default function ReportsPage() {
                 <CardTitle>Evolución del balance</CardTitle>
               </CardHeader>
               <CardContent>
-                <BalanceLineChart data={monthData} />
+                {hideIncome ? (
+                  <p className="flex min-h-64 items-center justify-center text-sm text-muted-foreground">
+                    El balance está oculto porque incluye tus ingresos.
+                  </p>
+                ) : (
+                  <BalanceLineChart data={monthData} />
+                )}
               </CardContent>
             </Card>
           </div>

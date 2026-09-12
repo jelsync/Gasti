@@ -23,10 +23,14 @@ import { getIncomeCategories } from '@/constants/incomeCategories';
 import { getCurrentMonthYear, monthRange } from '@/utils/date';
 import { formatMoney } from '@/utils/format';
 import { round2 } from '@/utils/finance';
+import { HIDDEN_AMOUNT, PrivacyToggle } from '@/components/ui/PrivacyToggle';
+import { PRIVACY_KEYS, usePrivacy } from '@/contexts/privacy';
 
 type CategoryType = 'INCOME' | 'EXPENSE';
 
 export default function CategoriesPage() {
+  const { isHidden } = usePrivacy();
+  const hideIncome = isHidden(PRIVACY_KEYS.income);
   const { categories, loading, create, update, remove } = useCategories();
   const [month, setMonth] = useState(getCurrentMonthYear);
   const range = useMemo(() => monthRange(month.year, month.month), [month]);
@@ -112,10 +116,12 @@ export default function CategoriesPage() {
             <Card key={type}>
               <CardHeader className="flex-row items-center justify-between">
                 <CardTitle>{title}</CardTitle>
-                {type === 'EXPENSE' && (
+                {type === 'EXPENSE' ? (
                   <Button size="sm" variant="outline" onClick={() => openCreate(type)}>
                     <Plus className="h-4 w-4" /> Nueva
                   </Button>
+                ) : (
+                  <PrivacyToggle privacyKey={PRIVACY_KEYS.income} />
                 )}
               </CardHeader>
               <CardContent>
@@ -131,8 +137,14 @@ export default function CategoriesPage() {
                           <div className="min-w-0 flex-1">
                             <p className="truncate font-medium">{c.name}</p>
                             <div className="mt-0.5 flex flex-wrap gap-x-2 text-xs text-muted-foreground">
-                              <span>{formatMoney(totals.HNL, 'HNL')}</span>
-                              {totals.USD > 0 && <span>{formatMoney(totals.USD, 'USD')}</span>}
+                              <span>
+                                {type === 'INCOME' && hideIncome
+                                  ? HIDDEN_AMOUNT
+                                  : formatMoney(totals.HNL, 'HNL')}
+                              </span>
+                              {(type !== 'INCOME' || !hideIncome) && totals.USD > 0 && (
+                                <span>{formatMoney(totals.USD, 'USD')}</span>
+                              )}
                             </div>
                           </div>
                           <button

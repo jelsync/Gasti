@@ -9,6 +9,8 @@ import { receivableMovementSchema, type ReceivableMovementInput } from '@/lib/va
 import { todayISO } from '@/utils/date';
 import { formatCurrency } from '@/utils/format';
 import type { ReceivablePersonWithBalance, SavingsAccountWithBalance } from '@/types/models';
+import { HIDDEN_AMOUNT } from '@/components/ui/PrivacyToggle';
+import { PRIVACY_KEYS, usePrivacy } from '@/contexts/privacy';
 
 interface ReceivableMovementModalProps {
   open: boolean;
@@ -27,6 +29,7 @@ export function ReceivableMovementModal({
   onClose,
   onSubmit,
 }: ReceivableMovementModalProps) {
+  const { isHidden } = usePrivacy();
   const [amount, setAmount] = useState('');
   const [accountId, setAccountId] = useState('');
   const [date, setDate] = useState(todayISO());
@@ -107,7 +110,15 @@ export function ReceivableMovementModal({
         <Field
           label={isRepayment ? 'Depositar en cuenta' : 'Entregar desde cuenta'}
           htmlFor="movement-account"
-          hint={selectedAccount ? `Saldo actual: ${formatCurrency(selectedAccount.balance)}` : ''}
+          hint={
+            selectedAccount
+              ? `Saldo actual: ${
+                  isHidden(PRIVACY_KEYS.account(selectedAccount.id))
+                    ? HIDDEN_AMOUNT
+                    : formatCurrency(selectedAccount.balance)
+                }`
+              : ''
+          }
         >
           <Select
             id="movement-account"

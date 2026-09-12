@@ -5,6 +5,8 @@ import { formatDate } from '@/utils/date';
 import { cn } from '@/lib/utils';
 import type { TransactionWithCategory } from '@/types/models';
 import type { CardChargeWithCard } from '@/services/cards.service';
+import { HIDDEN_AMOUNT } from '@/components/ui/PrivacyToggle';
+import { PRIVACY_KEYS, usePrivacy } from '@/contexts/privacy';
 
 export type MovementItem =
   | { type: 'tx'; date: string; tx: TransactionWithCategory }
@@ -58,6 +60,8 @@ function txDisplay(t: TransactionWithCategory) {
 }
 
 export function MovementList({ items, onEditTx, onDeleteTx, onDeleteCharge }: MovementListProps) {
+  const { isHidden } = usePrivacy();
+  const hideIncome = isHidden(PRIVACY_KEYS.income);
   return (
     <ul className="divide-y divide-border">
       {items.map((item) => {
@@ -126,7 +130,9 @@ export function MovementList({ items, onEditTx, onDeleteTx, onDeleteCharge }: Mo
               </p>
             </div>
             <span className={cn('shrink-0 font-semibold tabular-nums', d.amountClass)}>
-              {d.sign} {formatMoney(t.amount, t.currency)}
+              {hideIncome && t.type === 'INCOME'
+                ? HIDDEN_AMOUNT
+                : `${d.sign} ${formatMoney(t.amount, t.currency)}`}
             </span>
             {(onEditTx || onDeleteTx) && (
               <div className="flex shrink-0 items-center gap-1">

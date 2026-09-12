@@ -4,6 +4,8 @@ import { formatMoney } from '@/utils/format';
 import { formatDate } from '@/utils/date';
 import { cn } from '@/lib/utils';
 import type { TransactionWithCategory } from '@/types/models';
+import { HIDDEN_AMOUNT } from '@/components/ui/PrivacyToggle';
+import { PRIVACY_KEYS, usePrivacy } from '@/contexts/privacy';
 
 interface TransactionListProps {
   transactions: TransactionWithCategory[];
@@ -52,6 +54,8 @@ function display(t: TransactionWithCategory) {
 }
 
 export function TransactionList({ transactions, onEdit, onDelete }: TransactionListProps) {
+  const { isHidden } = usePrivacy();
+  const hideIncome = isHidden(PRIVACY_KEYS.income);
   return (
     <ul className="divide-y divide-border">
       {transactions.map((t) => {
@@ -89,7 +93,9 @@ export function TransactionList({ transactions, onEdit, onDelete }: TransactionL
               </p>
             </div>
             <span className={cn('shrink-0 font-semibold tabular-nums', d.amountClass)}>
-              {d.sign} {formatMoney(t.amount, t.currency)}
+              {hideIncome && t.type === 'INCOME'
+                ? HIDDEN_AMOUNT
+                : `${d.sign} ${formatMoney(t.amount, t.currency)}`}
             </span>
             {(onEdit || onDelete) && (
               <div className="flex shrink-0 items-center gap-1">

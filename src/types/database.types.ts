@@ -6,6 +6,7 @@ export type TransactionType = 'INCOME' | 'EXPENSE' | 'SAVING' | 'TRANSFER';
 export type Currency = 'HNL' | 'USD';
 export type BudgetKind = 'CATEGORY' | 'SAVINGS';
 export type ReceivableRelationship = 'FAMILY' | 'FRIEND' | 'OTHER';
+export type RecurringOccurrenceStatus = 'COMPLETED' | 'SKIPPED';
 
 export interface Database {
   public: {
@@ -427,12 +428,88 @@ export interface Database {
           },
         ];
       };
+      recurring_transactions: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          type: TransactionType;
+          amount: number;
+          currency: Currency;
+          category_id: string | null;
+          savings_account_id: string | null;
+          credit_card_id: string | null;
+          description: string;
+          day_of_month: number;
+          start_date: string;
+          end_date: string | null;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          name: string;
+          type: TransactionType;
+          amount: number;
+          currency?: Currency;
+          category_id?: string | null;
+          savings_account_id?: string | null;
+          credit_card_id?: string | null;
+          description?: string;
+          day_of_month: number;
+          start_date?: string;
+          end_date?: string | null;
+          is_active?: boolean;
+        };
+        Update: {
+          name?: string;
+          type?: TransactionType;
+          amount?: number;
+          currency?: Currency;
+          category_id?: string | null;
+          savings_account_id?: string | null;
+          credit_card_id?: string | null;
+          description?: string;
+          day_of_month?: number;
+          start_date?: string;
+          end_date?: string | null;
+          is_active?: boolean;
+        };
+        Relationships: [];
+      };
+      recurring_occurrences: {
+        Row: {
+          id: string;
+          user_id: string;
+          recurring_transaction_id: string;
+          due_date: string;
+          period_start: string;
+          status: RecurringOccurrenceStatus;
+          transaction_id: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          recurring_transaction_id: string;
+          due_date: string;
+          status: RecurringOccurrenceStatus;
+          transaction_id?: string | null;
+        };
+        Update: {
+          status?: RecurringOccurrenceStatus;
+          transaction_id?: string | null;
+        };
+        Relationships: [];
+      };
       savings_accounts: {
         Row: {
           id: string;
           user_id: string;
           name: string;
-          institution: string;
+          account_number: string;
           opening_balance: number;
           include_in_savings_goal: boolean;
           color: string;
@@ -443,14 +520,14 @@ export interface Database {
           id?: string;
           user_id: string;
           name: string;
-          institution?: string;
+          account_number?: string;
           opening_balance?: number;
           include_in_savings_goal?: boolean;
           color?: string;
         };
         Update: {
           name?: string;
-          institution?: string;
+          account_number?: string;
           opening_balance?: number;
           include_in_savings_goal?: boolean;
           color?: string;
@@ -459,7 +536,16 @@ export interface Database {
       };
     };
     Views: Record<never, never>;
-    Functions: Record<never, never>;
+    Functions: {
+      confirm_recurring_transaction: {
+        Args: { p_recurring_id: string; p_due_date: string };
+        Returns: string;
+      };
+      skip_recurring_occurrence: {
+        Args: { p_recurring_id: string; p_due_date: string };
+        Returns: undefined;
+      };
+    };
     Enums: {
       transaction_type: TransactionType;
     };
