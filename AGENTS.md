@@ -25,8 +25,11 @@
 - Las únicas categorías de ingreso son: `Salario`, `Transferencias recibidas`, `Bonos` y `Otros ingresos`.
 - Los montos privados se controlan con `PrivacyProvider`: usa `income`, `accounts-total` y `account:<id>` para mantener la preferencia por usuario en el navegador.
 - Una regla recurrente nunca mueve dinero por sí sola. Solo `confirm_recurring_transaction` crea la transacción real y su ocurrencia; `skip_recurring_occurrence` omite únicamente la fecha indicada.
+- Confirmar una recurrencia puede crear el movimiento con su fecha real o vincular explícitamente uno compatible ya registrado. Nunca autoasocies por descripción; categoría, tipo, moneda y cuenta/tarjeta deben coincidir, y una transacción solo puede atender una recurrencia.
+- Antes de guardar manualmente un ingreso, gasto o compra que coincida con una recurrencia, exige decidir entre atenderla o registrar una operación independiente. Los pagos de tarjeta (`TRANSFER`) nunca son candidatos de una compra recurrente.
 - El calendario financiero es una vista derivada: muestra reglas recurrentes y fechas configuradas, pero nunca crea pagos ni modifica saldos automáticamente.
 - `loans.payment_day` y `credit_cards.payment_due_day` son días mensuales opcionales (1–31); los meses cortos ajustan el aviso a su último día.
+- `credit_cards.statement_day` es el día mensual opcional de corte. El corte siempre se confirma manualmente el mismo día o después, incluye compras/pagos fechados hasta ese día y guarda una fotografía actualizable en `card_statements`; nunca crea movimientos ni modifica deuda o presupuesto.
 - Los avisos de presupuesto aparecen desde 80 % de uso, respetan la moneda del presupuesto y no mezclan HNL con USD.
 - Una conciliación aplicada modifica únicamente el saldo calculado de la cuenta mediante `account_reconciliations.difference`; no crea ingresos, gastos ni consumo de presupuesto. Eliminarla revierte el ajuste.
 - El cierre mensual es una fotografía actualizable en `month_closures`; nunca bloquea transacciones o correcciones posteriores.

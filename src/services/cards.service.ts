@@ -13,7 +13,7 @@ function accumulate(map: Map<string, number>, key: string | null, amount: number
 /**
  * Tarjetas con sus deudas (Lempiras y Dólares):
  *   Deuda = apertura + compras (card_charges) − pagos (card_payments), por moneda.
- * Las compras suben la deuda; el gasto (en L) se reconoce al pagar.
+ * Las compras reconocen el gasto en su moneda; pagar solo reduce la deuda.
  */
 export async function getCreditCards(): Promise<CreditCardWithBalance[]> {
   const [cardsRes, chargesRes, paymentsRes] = await Promise.all([
@@ -63,6 +63,7 @@ export async function createCreditCard(
       credit_limit: input.credit_limit ?? null,
       credit_limit_usd: input.credit_limit_usd ?? null,
       payment_due_day: input.payment_due_day ?? null,
+      statement_day: input.statement_day ?? null,
       color: input.color,
     })
     .select('*')
@@ -83,6 +84,7 @@ export async function updateCreditCard(id: string, input: CreditCardInput): Prom
       credit_limit: input.credit_limit ?? null,
       credit_limit_usd: input.credit_limit_usd ?? null,
       payment_due_day: input.payment_due_day ?? null,
+      statement_day: input.statement_day ?? null,
       color: input.color,
     })
     .eq('id', id)

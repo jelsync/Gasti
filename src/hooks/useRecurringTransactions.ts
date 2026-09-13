@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/contexts/auth';
 import { mapDbError } from '@/lib/errors';
 import type { RecurringOccurrence, RecurringTransactionWithRelations } from '@/types/models';
@@ -14,6 +14,7 @@ import {
   setRecurringTransactionActive,
   skipRecurringOccurrence,
   updateRecurringTransaction,
+  type RecurringConfirmationInput,
 } from '@/services/recurring.service';
 
 export function useRecurringTransactions(month = getCurrentMonthYear()) {
@@ -23,8 +24,10 @@ export function useRecurringTransactions(month = getCurrentMonthYear()) {
   const [occurrences, setOccurrences] = useState<RecurringOccurrence[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const requestRef = useRef(0);
 
   const refresh = useCallback(async () => {
+    const request = ++requestRef.current;
     const range = monthRange(year, monthNumber);
     try {
       setLoading(true);
@@ -33,17 +36,23 @@ export function useRecurringTransactions(month = getCurrentMonthYear()) {
         getRecurringTransactions(),
         getRecurringOccurrences(range.start, range.end),
       ]);
+      if (request !== requestRef.current) return;
       setRules(nextRules);
       setOccurrences(nextOccurrences);
     } catch (cause) {
-      setError(mapDbError(cause, 'No se pudieron cargar las transacciones recurrentes.'));
+      if (request === requestRef.current) {
+        setError(mapDbError(cause, 'No se pudieron cargar las transacciones recurrentes.'));
+      }
     } finally {
-      setLoading(false);
+      if (request === requestRef.current) setLoading(false);
     }
   }, [year, monthNumber]);
 
   useEffect(() => {
     void refresh();
+    return () => {
+      requestRef.current += 1;
+    };
   }, [refresh]);
 
   const create = useCallback(
@@ -80,8 +89,8 @@ export function useRecurringTransactions(month = getCurrentMonthYear()) {
   );
 
   const confirm = useCallback(
-    async (id: string, dueDate: string) => {
-      await confirmRecurringTransaction(id, dueDate);
+    async (id: string, dueDate: string, input: RecurringConfirmationInput) => {
+      await confirmRecurringTransaction(id, dueDate, input);
       await refresh();
     },
     [refresh],

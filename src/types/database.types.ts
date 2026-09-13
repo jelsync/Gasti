@@ -314,6 +314,7 @@ export interface Database {
           credit_limit: number | null;
           credit_limit_usd: number | null;
           payment_due_day: number | null;
+          statement_day: number | null;
           color: string;
           created_at: string;
           updated_at: string;
@@ -329,6 +330,7 @@ export interface Database {
           credit_limit?: number | null;
           credit_limit_usd?: number | null;
           payment_due_day?: number | null;
+          statement_day?: number | null;
           color?: string;
         };
         Update: {
@@ -339,9 +341,68 @@ export interface Database {
           credit_limit?: number | null;
           credit_limit_usd?: number | null;
           payment_due_day?: number | null;
+          statement_day?: number | null;
           color?: string;
         };
         Relationships: [];
+      };
+      card_statements: {
+        Row: {
+          id: string;
+          user_id: string;
+          card_id: string;
+          statement_date: string;
+          period_start: string;
+          statement_day: number;
+          opening_hnl: number;
+          opening_usd: number;
+          charges_hnl: number;
+          charges_usd: number;
+          payments_hnl: number;
+          payments_usd: number;
+          balance_hnl: number;
+          balance_usd: number;
+          confirmed_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          card_id: string;
+          statement_date: string;
+          period_start: string;
+          statement_day: number;
+          opening_hnl: number;
+          opening_usd: number;
+          charges_hnl: number;
+          charges_usd: number;
+          payments_hnl: number;
+          payments_usd: number;
+          balance_hnl: number;
+          balance_usd: number;
+          confirmed_at?: string;
+        };
+        Update: {
+          period_start?: string;
+          statement_day?: number;
+          opening_hnl?: number;
+          opening_usd?: number;
+          charges_hnl?: number;
+          charges_usd?: number;
+          payments_hnl?: number;
+          payments_usd?: number;
+          balance_hnl?: number;
+          balance_usd?: number;
+          confirmed_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'card_statements_card_id_fkey';
+            columns: ['card_id'];
+            isOneToOne: false;
+            referencedRelation: 'credit_cards';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       card_payments: {
         Row: {
@@ -717,8 +778,28 @@ export interface Database {
         Returns: Json;
       };
       confirm_recurring_transaction: {
-        Args: { p_recurring_id: string; p_due_date: string };
+        Args: {
+          p_recurring_id: string;
+          p_due_date: string;
+          p_transaction_date?: string;
+          p_existing_transaction_id?: string;
+          p_amount?: number;
+          p_allow_duplicate?: boolean;
+          p_description?: string;
+        };
         Returns: string;
+      };
+      get_recurring_candidates: {
+        Args: { p_recurring_id: string; p_due_date: string };
+        Returns: Database['public']['Tables']['transactions']['Row'][];
+      };
+      preview_card_statement: {
+        Args: { p_card_id: string; p_statement_date: string };
+        Returns: Json;
+      };
+      confirm_card_statement: {
+        Args: { p_card_id: string; p_statement_date: string; p_expected_snapshot: Json };
+        Returns: Database['public']['Tables']['card_statements']['Row'];
       };
       skip_recurring_occurrence: {
         Args: { p_recurring_id: string; p_due_date: string };

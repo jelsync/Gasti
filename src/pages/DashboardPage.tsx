@@ -35,6 +35,7 @@ import { useLoans } from '@/hooks/useLoans';
 import { useReceivables } from '@/hooks/useReceivables';
 import { useCardCharges } from '@/hooks/useCardCharges';
 import { useRecurringTransactions } from '@/hooks/useRecurringTransactions';
+import { useMonthlyCardStatements } from '@/hooks/useMonthlyCardStatements';
 import {
   budgetOverview,
   groupByCategory,
@@ -68,6 +69,7 @@ export default function DashboardPage() {
   const { charges } = useCardCharges(range);
   const { rules: recurringRules, occurrences: recurringOccurrences } =
     useRecurringTransactions(month);
+  const { statements: cardStatements } = useMonthlyCardStatements(month);
 
   const cardDebt = useMemo(() => {
     const acc = { HNL: 0, USD: 0 };
@@ -155,8 +157,9 @@ export default function DashboardPage() {
         loans,
         cards,
         transactions,
+        cardStatements,
       }).filter((event) => event.status !== 'COMPLETED' && event.status !== 'SKIPPED'),
-    [month, recurringRules, recurringOccurrences, loans, cards, transactions],
+    [month, recurringRules, recurringOccurrences, loans, cards, transactions, cardStatements],
   );
   const budgetAlerts = useMemo(
     () => buildFinancialBudgetAlerts(budgets, transactions),

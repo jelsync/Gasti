@@ -43,6 +43,7 @@ export function CreditCardForm({ open, onClose, onSubmit, initial }: CreditCardF
       credit_limit: initial?.credit_limit ?? undefined,
       credit_limit_usd: initial?.credit_limit_usd ?? undefined,
       payment_due_day: initial?.payment_due_day ?? undefined,
+      statement_day: initial?.statement_day ?? undefined,
       color: initial?.color ?? COLOR_OPTIONS[9],
     });
   }, [open, initial, reset]);
@@ -110,6 +111,25 @@ export function CreditCardForm({ open, onClose, onSubmit, initial }: CreditCardF
             {money('opening_balance_usd', '$')}
           </Field>
         </div>
+
+        <Field
+          label="Día de corte (opcional)"
+          htmlFor="statement_day"
+          error={errors.statement_day?.message}
+          hint="El calendario te recordará revisar y confirmar el corte manualmente. En meses cortos, se usa el último día."
+        >
+          <Input
+            id="statement_day"
+            type="number"
+            min="1"
+            max="31"
+            step="1"
+            inputMode="numeric"
+            placeholder="Ej. 9"
+            aria-invalid={!!errors.statement_day}
+            {...register('statement_day')}
+          />
+        </Field>
 
         <Field
           label="Día límite de pago (opcional)"

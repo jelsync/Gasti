@@ -1,5 +1,6 @@
 import type {
   Budget,
+  CardStatement,
   Category,
   CreditCardWithBalance,
   Currency,
@@ -13,7 +14,8 @@ import { monthRange } from '@/utils/date';
 import { recurringDueDate, ruleDueDateForMonth } from '@/utils/recurring';
 
 export type FinancialEventStatus = 'UPCOMING' | 'DUE' | 'OVERDUE' | 'COMPLETED' | 'SKIPPED';
-export type FinancialEventKind = 'RECURRING_INCOME' | 'RECURRING_EXPENSE' | 'LOAN' | 'CARD';
+export type FinancialEventKind =
+  'RECURRING_INCOME' | 'RECURRING_EXPENSE' | 'LOAN' | 'CARD' | 'CARD_STATEMENT';
 
 export interface FinancialCalendarEvent {
   id: string;
@@ -25,6 +27,7 @@ export interface FinancialCalendarEvent {
   color: string;
   amounts: Array<{ amount: number; currency: Currency }>;
   target: 'RECURRING' | 'LOANS' | 'CARDS';
+  entityId?: string;
 }
 
 export interface FinancialBudgetAlert {
@@ -109,6 +112,7 @@ export function buildFinancialEvents({
   loans,
   cards,
   transactions,
+  cardStatements = [],
 }: {
   month: MonthYear;
   today: string;
@@ -117,6 +121,7 @@ export function buildFinancialEvents({
   loans: LoanWithCategory[];
   cards: CreditCardWithBalance[];
   transactions: TransactionWithCategory[];
+  cardStatements?: CardStatement[];
 }): FinancialCalendarEvent[] {
   const events: FinancialCalendarEvent[] = [];
   const occurrenceByRule = new Map(
@@ -165,6 +170,35 @@ export function buildFinancialEvents({
   }
 
   for (const card of cards) {
+    if (card.statement_day) {
+      const date = monthlyDueDate(month, card.statement_day);
+      const statement = cardStatements.find(
+        (item) => item.card_id === card.id && item.statement_date === date,
+      );
+      events.push({
+        id: `card-statement:${card.id}`,
+        date,
+        kind: 'CARD_STATEMENT',
+        title: `Revisar corte de ${card.name}`,
+        subtitle: statement
+          ? 'Corte confirmado; puedes actualizarlo si agregaste compras del día'
+          : 'Confirma cuando termines de registrar las compras del día',
+        status: financialEventStatus(date, today, statement ? 'COMPLETED' : null),
+        color: card.color,
+        amounts: statement
+          ? [
+              ...(statement.balance_hnl > 0
+                ? [{ amount: statement.balance_hnl, currency: 'HNL' as const }]
+                : []),
+              ...(statement.balance_usd > 0
+                ? [{ amount: statement.balance_usd, currency: 'USD' as const }]
+                : []),
+            ]
+          : [],
+        target: 'CARDS',
+        entityId: card.id,
+      });
+    }
     if (!card.payment_due_day) continue;
     const completed = transactions.some(
       (transaction) => transaction.type === 'TRANSFER' && transaction.credit_card_id === card.id,
@@ -184,6 +218,7 @@ export function buildFinancialEvents({
       color: card.color,
       amounts,
       target: 'CARDS',
+      entityId: card.id,
     });
   }
 

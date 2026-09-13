@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { CalendarDays, CreditCard as CardIcon, Pencil, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/PageHeader';
@@ -11,6 +11,7 @@ import { ProgressBar } from '@/components/ui/ProgressBar';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { CreditCardForm } from '@/components/cards/CreditCardForm';
 import { CardMovementHistory } from '@/components/cards/CardMovementHistory';
+import { CardStatementsPanel } from '@/components/cards/CardStatementsPanel';
 import { useCreditCards } from '@/hooks/useCreditCards';
 import { formatMoney, formatPercent } from '@/utils/format';
 import { ROUTES } from '@/constants/routes';
@@ -19,11 +20,18 @@ import type { CreditCardWithBalance } from '@/types/models';
 import type { CreditCardInput } from '@/lib/validations';
 
 export default function CardsPage() {
+  const [searchParams] = useSearchParams();
+  const requestedCardId = searchParams.get('card');
+  const requestedStatementDate = searchParams.get('statement_date');
   const { cards, loading, create, update, remove, refresh } = useCreditCards();
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<CreditCardWithBalance | null>(null);
   const [deleting, setDeleting] = useState<CreditCardWithBalance | null>(null);
-  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+  const [selectedCardId, setSelectedCardId] = useState<string | null>(requestedCardId);
+
+  useEffect(() => {
+    if (requestedCardId) setSelectedCardId(requestedCardId);
+  }, [requestedCardId]);
 
   const selectedCard = useMemo(
     () => cards.find((card) => card.id === selectedCardId) ?? null,
@@ -31,12 +39,13 @@ export default function CardsPage() {
   );
 
   useEffect(() => {
+    if (loading) return;
     if (cards.length === 0) {
       setSelectedCardId(null);
     } else if (!cards.some((card) => card.id === selectedCardId)) {
       setSelectedCardId(cards[0].id);
     }
-  }, [cards, selectedCardId]);
+  }, [cards, selectedCardId, loading]);
 
   const totals = useMemo(() => {
     const acc = { hnl: 0, usd: 0 };
@@ -173,6 +182,11 @@ export default function CardsPage() {
                               Pago: día {card.payment_due_day}
                             </p>
                           )}
+                          {card.statement_day && (
+                            <p className="mt-0.5 text-xs text-muted-foreground">
+                              Corte manual: día {card.statement_day}
+                            </p>
+                          )}
                         </div>
                       </div>
                       <div className="flex shrink-0 items-center gap-1">
@@ -242,7 +256,20 @@ export default function CardsPage() {
             })}
           </div>
 
-          {selectedCard && <CardMovementHistory card={selectedCard} onChanged={refresh} />}
+          {selectedCard && (
+            <>
+              <CardStatementsPanel
+                key={`${selectedCard.id}-${requestedStatementDate ?? ''}`}
+                card={selectedCard}
+                requestedDate={selectedCard.id === requestedCardId ? requestedStatementDate : null}
+                onConfigure={() => {
+                  setEditing(selectedCard);
+                  setFormOpen(true);
+                }}
+              />
+              <CardMovementHistory card={selectedCard} onChanged={refresh} />
+            </>
+          )}
         </div>
       )}
 

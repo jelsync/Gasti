@@ -307,6 +307,7 @@ export const creditCardSchema = z.object({
   credit_limit: optionalPositive, // límite en Lempiras
   credit_limit_usd: optionalPositive, // límite en Dólares
   payment_due_day: optionalDayOfMonthSchema,
+  statement_day: optionalDayOfMonthSchema,
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Color inválido'),
 });
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { Modal } from '@/components/ui/Modal';
 import { Field } from '@/components/ui/Field';
@@ -12,7 +12,7 @@ import {
   type TransactionInput,
 } from '@/lib/validations';
 import type { CardPaymentArgs } from '@/services/cards.service';
-import { todayISO } from '@/utils/date';
+import { formatDate, todayISO } from '@/utils/date';
 import type {
   Category,
   CreditCardWithBalance,
@@ -22,7 +22,9 @@ import type {
   TransactionWithCategory,
 } from '@/types/models';
 import { getIncomeCategories } from '@/constants/incomeCategories';
-import { formatCurrency } from '@/utils/format';
+import { formatCurrency, formatMoney } from '@/utils/format';
+import type { ManualRecurringMatch } from '@/utils/manualRecurringGuard';
+import { mapDbError } from '@/lib/errors';
 import { HIDDEN_AMOUNT } from '@/components/ui/PrivacyToggle';
 import { PRIVACY_KEYS, usePrivacy } from '@/contexts/privacy';
 
@@ -37,6 +39,8 @@ interface TransactionFormProps {
   open: boolean;
   onClose: () => void;
   onSubmit: (submit: TransactionSubmit) => Promise<void>;
+  checkRecurring: (submit: TransactionSubmit) => Promise<ManualRecurringMatch[]>;
+  onSubmitRecurring: (submit: TransactionSubmit, match: ManualRecurringMatch) => Promise<void>;
   categories: Category[];
   creditCards: CreditCardWithBalance[];
   savingsAccounts: Pick<SavingsAccountWithBalance, 'id' | 'name' | 'balance'>[];
@@ -57,6 +61,8 @@ export function TransactionForm({
   open,
   onClose,
   onSubmit,
+  checkRecurring,
+  onSubmitRecurring,
   categories,
   creditCards,
   savingsAccounts,
@@ -76,12 +82,18 @@ export function TransactionForm({
   const [date, setDate] = useState(todayISO());
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const busy = useRef(false);
+  const [recurringReview, setRecurringReview] = useState<{
+    payload: TransactionSubmit;
+    matches: ManualRecurringMatch[];
+  } | null>(null);
 
   const isEditing = !!initial;
 
   useEffect(() => {
     if (!open) return;
     setError(null);
+    setRecurringReview(null);
     setKind(initial?.type ?? defaultType);
     setAmount(initial?.amount != null ? String(initial.amount) : '');
     setAmountHnl('');
@@ -196,23 +208,144 @@ export function TransactionForm({
   };
 
   const submit = async () => {
+    if (busy.current) return;
     const payload = buildSubmit();
     if (!payload) return;
     try {
+      busy.current = true;
       setLoading(true);
+      if (!isEditing) {
+        const matches = await checkRecurring(payload);
+        if (matches.length) {
+          setRecurringReview({ payload, matches });
+          return;
+        }
+      }
       await onSubmit(payload);
       onClose();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'No se pudo guardar');
+      const message = mapDbError(e, 'No se pudo verificar o guardar el movimiento');
+      setError(message);
+      toast.error(message);
     } finally {
+      busy.current = false;
       setLoading(false);
     }
   };
 
+  const resolveRecurring = async (match?: ManualRecurringMatch) => {
+    if (!recurringReview || busy.current) return;
+    busy.current = true;
+    setLoading(true);
+    setError(null);
+    try {
+      if (match) await onSubmitRecurring(recurringReview.payload, match);
+      else await onSubmit(recurringReview.payload);
+      onClose();
+    } catch (e) {
+      const message = mapDbError(e, 'No se pudo guardar el movimiento');
+      setError(message);
+      toast.error(message);
+    } finally {
+      busy.current = false;
+      setLoading(false);
+    }
+  };
+
+  if (recurringReview) {
+    return (
+      <Modal
+        open={open}
+        onClose={loading ? () => {} : onClose}
+        title="Revisar posible movimiento recurrente"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Encontramos coincidencias de categoría, monto, moneda y cuenta o tarjeta. Revisa si este
+            movimiento corresponde a una de ellas antes de guardarlo.
+          </p>
+          {recurringReview.matches.map((match) => (
+            <div
+              key={`${match.rule.id}:${match.dueDate}`}
+              className="space-y-2 rounded-[var(--radius)] border border-border p-3"
+            >
+              <p className="font-medium">{match.rule.name}</p>
+              <p className="text-sm">
+                {match.transaction ? 'Ya registrado' : 'Pendiente'} ·{' '}
+                {(match.transaction?.type ?? match.rule.type) === 'INCOME' &&
+                isHidden(PRIVACY_KEYS.income)
+                  ? HIDDEN_AMOUNT
+                  : formatMoney(
+                      match.transaction?.amount ?? match.rule.amount,
+                      match.transaction?.currency ?? match.rule.currency,
+                    )}
+                {' · '}
+                {formatDate(match.transaction?.transaction_date ?? match.dueDate)}
+              </p>
+              {match.transaction ? (
+                <p className="text-sm text-muted-foreground">
+                  Este movimiento ya atendió la recurrencia del {formatDate(match.dueDate)}. Si es
+                  el mismo, cancela para evitar contabilizarlo dos veces.
+                </p>
+              ) : (
+                <>
+                  <p className="text-sm text-muted-foreground">
+                    Se guardará una sola vez con la fecha y el monto que ingresaste; también quedará
+                    registrado en el calendario.
+                  </p>
+                  <Button
+                    type="button"
+                    loading={loading}
+                    onClick={() => void resolveRecurring(match)}
+                  >
+                    Registrar y atender esta recurrencia
+                  </Button>
+                </>
+              )}
+            </div>
+          ))}
+          <p className="text-sm text-muted-foreground">
+            Si se trata de otra operación, puedes guardarla como movimiento independiente. Esto
+            agregará otro ingreso o gasto y no atenderá ninguna recurrencia pendiente.
+          </p>
+          {error && (
+            <p role="alert" className="text-sm text-danger">
+              {error}
+            </p>
+          )}
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button type="button" variant="outline" disabled={loading} onClick={onClose}>
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={loading}
+              onClick={() => {
+                setRecurringReview(null);
+                setError(null);
+              }}
+            >
+              Volver al formulario
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              loading={loading}
+              onClick={() => void resolveRecurring()}
+            >
+              Es otro movimiento: guardar independiente
+            </Button>
+          </div>
+        </div>
+      </Modal>
+    );
+  }
+
   return (
     <Modal
       open={open}
-      onClose={onClose}
+      onClose={loading ? () => {} : onClose}
       title={isEditing ? 'Editar transacción' : 'Nueva transacción'}
     >
       <form
@@ -448,7 +581,7 @@ export function TransactionForm({
         {error && <p className="text-sm text-danger">{error}</p>}
 
         <div className="flex justify-end gap-3 pt-2">
-          <Button type="button" variant="outline" onClick={onClose}>
+          <Button type="button" variant="outline" disabled={loading} onClick={onClose}>
             Cancelar
           </Button>
           <Button type="submit" loading={loading} disabled={noCards || noRequiredAccounts}>

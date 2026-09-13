@@ -21,6 +21,8 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { CategoryIcon } from '@/components/CategoryIcon';
 import { HIDDEN_AMOUNT, PrivacyToggle } from '@/components/ui/PrivacyToggle';
 import { RecurringTransactionForm } from '@/components/recurring/RecurringTransactionForm';
+import { RecurringConfirmationModal } from '@/components/recurring/RecurringConfirmationModal';
+import { MonthSelector } from '@/components/MonthSelector';
 import { useRecurringTransactions } from '@/hooks/useRecurringTransactions';
 import { useCategories } from '@/hooks/useCategories';
 import { useSavingsAccounts } from '@/hooks/useSavingsAccounts';
@@ -39,6 +41,7 @@ interface ScheduledRule {
 }
 
 export default function RecurringTransactionsPage() {
+  const [currentMonth, setCurrentMonth] = useState(getCurrentMonthYear);
   const {
     rules,
     occurrences,
@@ -51,7 +54,7 @@ export default function RecurringTransactionsPage() {
     confirm,
     skip,
     restoreSkipped,
-  } = useRecurringTransactions();
+  } = useRecurringTransactions(currentMonth);
   const { categories } = useCategories();
   const { accounts, refresh: refreshAccounts } = useSavingsAccounts();
   const { cards, refresh: refreshCards } = useCreditCards();
@@ -60,9 +63,9 @@ export default function RecurringTransactionsPage() {
   const [editing, setEditing] = useState<RecurringTransactionWithRelations | null>(null);
   const [deleting, setDeleting] = useState<RecurringTransactionWithRelations | null>(null);
   const [actionId, setActionId] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState<ScheduledRule | null>(null);
 
   const todayIso = todayISO();
-  const currentMonth = useMemo(getCurrentMonthYear, []);
 
   const scheduled = useMemo<ScheduledRule[]>(() => {
     const handled = new Set(occurrences.map((occurrence) => occurrence.recurring_transaction_id));
@@ -108,16 +111,6 @@ export default function RecurringTransactionsPage() {
     }
   };
 
-  const confirmItem = (item: ScheduledRule) =>
-    runAction(
-      `confirm:${item.rule.id}`,
-      async () => {
-        await confirm(item.rule.id, item.dueDate);
-        await Promise.all([refreshAccounts(), refreshCards()]);
-      },
-      item.rule.type === 'INCOME' ? 'Ingreso registrado' : 'Gasto registrado',
-    );
-
   const deleteRule = async () => {
     if (!deleting) return;
     try {
@@ -145,6 +138,10 @@ export default function RecurringTransactionsPage() {
         }
       />
 
+      <div className="mb-5">
+        <MonthSelector value={currentMonth} onChange={setCurrentMonth} />
+      </div>
+
       {loading ? (
         <div className="flex justify-center py-16">
           <Spinner />
@@ -158,7 +155,7 @@ export default function RecurringTransactionsPage() {
               <div>
                 <CardTitle>Pendientes de confirmar</CardTitle>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Solo aparecen cuando llega su fecha. Puedes registrarlos u omitirlos este mes.
+                  Revisa si ya registraste el movimiento antes de confirmarlo u omitirlo.
                 </p>
               </div>
               <span className="rounded-full bg-accent px-2.5 py-1 text-sm font-semibold text-primary">
@@ -180,7 +177,7 @@ export default function RecurringTransactionsPage() {
                       item={item}
                       hidden={item.rule.type === 'INCOME' && isHidden(PRIVACY_KEYS.income)}
                       busy={actionId?.endsWith(item.rule.id) ?? false}
-                      onConfirm={() => void confirmItem(item)}
+                      onConfirm={() => setConfirming(item)}
                       onSkip={() =>
                         void runAction(
                           `skip:${item.rule.id}`,
@@ -203,28 +200,20 @@ export default function RecurringTransactionsPage() {
               <CardContent>
                 <ul className="divide-y divide-border">
                   {upcoming.map((item) => (
-                    <li key={item.rule.id} className="flex items-center gap-3 py-3">
-                      <CategoryIcon
-                        icon={item.rule.category?.icon ?? 'repeat-2'}
-                        color={item.rule.category?.color ?? '#0ea5e9'}
-                      />
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate font-medium">{item.rule.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          Programado para {formatDate(item.dueDate)}
-                        </p>
-                      </div>
-                      <span
-                        className={cn(
-                          'font-semibold tabular-nums',
-                          item.rule.type === 'INCOME' ? 'text-income' : 'text-expense',
-                        )}
-                      >
-                        {item.rule.type === 'INCOME' && isHidden(PRIVACY_KEYS.income)
-                          ? HIDDEN_AMOUNT
-                          : formatMoney(item.rule.amount, item.rule.currency)}
-                      </span>
-                    </li>
+                    <ScheduledRow
+                      key={item.rule.id}
+                      item={item}
+                      hidden={item.rule.type === 'INCOME' && isHidden(PRIVACY_KEYS.income)}
+                      busy={actionId?.endsWith(item.rule.id) ?? false}
+                      onConfirm={() => setConfirming(item)}
+                      onSkip={() =>
+                        void runAction(
+                          `skip:${item.rule.id}`,
+                          () => skip(item.rule.id, item.dueDate),
+                          'Movimiento omitido este mes',
+                        )
+                      }
+                    />
                   ))}
                 </ul>
               </CardContent>
@@ -266,6 +255,35 @@ export default function RecurringTransactionsPage() {
                       </Button>
                     </li>
                   ))}
+                </ul>
+              </CardContent>
+            </Card>
+          )}
+
+          {occurrences.some((occurrence) => occurrence.status === 'COMPLETED') && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Confirmados este mes</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="divide-y divide-border">
+                  {occurrences
+                    .filter((occurrence) => occurrence.status === 'COMPLETED')
+                    .map((occurrence) => (
+                      <li key={occurrence.id} className="flex items-center gap-3 py-3">
+                        <Check className="h-4 w-4 shrink-0 text-income" />
+                        <div>
+                          <p className="font-medium">
+                            {rules.find((rule) => rule.id === occurrence.recurring_transaction_id)
+                              ?.name ?? 'Movimiento recurrente'}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Recordatorio del {formatDate(occurrence.due_date)} atendido con una
+                            transacción registrada.
+                          </p>
+                        </div>
+                      </li>
+                    ))}
                 </ul>
               </CardContent>
             </Card>
@@ -399,6 +417,24 @@ export default function RecurringTransactionsPage() {
         initial={editing}
       />
 
+      {confirming && (
+        <RecurringConfirmationModal
+          key={`${confirming.rule.id}:${confirming.dueDate}`}
+          rule={confirming.rule}
+          dueDate={confirming.dueDate}
+          onClose={() => setConfirming(null)}
+          onConfirm={async (input) => {
+            await confirm(confirming.rule.id, confirming.dueDate, input);
+            await Promise.all([refreshAccounts(), refreshCards()]);
+            toast.success(
+              input.existingTransactionId
+                ? 'Movimiento vinculado; recordatorio atendido'
+                : 'Movimiento registrado; recordatorio atendido',
+            );
+          }}
+        />
+      )}
+
       <ConfirmDialog
         open={!!deleting}
         title="Eliminar movimiento recurrente"
@@ -461,7 +497,7 @@ function ScheduledRow({
           <SkipForward className="h-4 w-4" /> Omitir
         </Button>
         <Button size="sm" onClick={onConfirm} loading={busy} disabled={invalid}>
-          <Check className="h-4 w-4" /> Registrar
+          <Check className="h-4 w-4" /> Confirmar
         </Button>
       </div>
       {invalid && (

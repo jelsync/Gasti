@@ -90,14 +90,17 @@ RecurringTransactionsPage
 
 - Ruta: `ROUTES.recurringTransactions` (`/transacciones/recurrentes`), accesible desde Transacciones.
 - Las reglas son mensuales. Una fecha se confirma u omite explícitamente y la restricción única impide duplicados.
-- `confirm_recurring_transaction` crea atómicamente la transacción y, cuando corresponde, el cargo de tarjeta.
+- La confirmación puede anticiparse, usar una fecha/monto real o vincular un movimiento compatible ya guardado; revisa candidatos por datos contables y nunca asocia por descripción.
+- El formulario manual usa `manualRecurringGuard.service.ts` para detectar coincidencias antes de guardar y exige atender la recurrencia o confirmar que es otra operación. Los pagos de tarjeta no se confunden con compras.
+- `confirm_recurring_transaction` crea atómicamente la transacción y, cuando corresponde, el cargo de tarjeta; una transacción solo puede atender una recurrencia.
 
 ### Calendario financiero y avisos
 
 - Ruta/menú: `ROUTES.financialCalendar` (`/calendario`), página `src/pages/FinancialCalendarPage.tsx`.
 - `src/utils/financialCalendar.ts` deriva eventos mensuales desde reglas recurrentes, cuotas de préstamos, fechas de pago de tarjetas y movimientos ya registrados.
 - El dashboard reutiliza el mismo cálculo para avisos del mes actual y muestra presupuestos desde 80 % de uso.
-- Las fechas se configuran con `loans.payment_day` y `credit_cards.payment_due_day`; el calendario es informativo y no mueve dinero.
+- Las fechas se configuran con `loans.payment_day`, `credit_cards.payment_due_day` y `credit_cards.statement_day`; el calendario es informativo y no mueve dinero.
+- El corte de tarjeta es un recordatorio manual: se confirma el mismo día o después de registrar todas las compras fechadas hasta el corte inclusive.
 
 ### Cuentas
 
@@ -130,6 +133,7 @@ SavingsPage
 ### Tarjetas
 
 - Página/formulario: `src/pages/CardsPage.tsx`, `src/components/cards/CreditCardForm.tsx`.
+- Cortes: `src/components/cards/CardStatementsPanel.tsx`, `src/hooks/useMonthlyCardStatements.ts`, `src/services/cardStatements.service.ts`.
 - Historial por tarjeta: `src/components/cards/CardMovementHistory.tsx`.
 - Hooks: `src/hooks/useCreditCards.ts`, `useCardCharges.ts`, `useCreditCardMovements.ts`.
 - Servicio: `src/services/cards.service.ts`.
@@ -137,6 +141,7 @@ SavingsPage
 - El historial combina compras (+ deuda), pagos (− deuda) y deuda inicial de la tarjeta seleccionada, y permite eliminar movimientos huérfanos.
 - Compra = `EXPENSE` vinculada a `card_charges`; pago = `TRANSFER` vinculada a `card_payments`. Las FK con cascada mantienen la reversión al borrar.
 - Soporta deuda HNL y USD. Una compra reconoce el gasto en su moneda; el equivalente HNL solo se solicita al pagar una deuda USD.
+- `card_statements` conserva fotografías HNL/USD actualizables de cada ciclo. Confirmar o actualizar un corte no cambia saldos, deuda, gastos ni presupuestos.
 
 ### Préstamos
 
@@ -187,7 +192,7 @@ SavingsPage
 - Panel en Ajustes: `src/components/settings/PortabilityPanel.tsx` → `src/services/portability.service.ts`.
 - `src/utils/portability.ts` interpreta CSV con formatos explícitos, marca posibles duplicados y genera CSV/Excel con carga diferida de ExcelJS.
 - Exporta movimientos por mes o completos y reporte mensual con resumen/categorías HNL y USD separados.
-- `export_user_backup` devuelve una fotografía JSON versionada de las 16 tablas del usuario, bajo RLS y sin truncar a 1000 filas; no incluye credenciales ni preferencias locales.
+- `export_user_backup` devuelve una fotografía JSON versionada de las 17 tablas del usuario, bajo RLS y sin truncar a 1000 filas; no incluye credenciales ni preferencias locales.
 - `import_bank_transactions` confirma un lote atómico de ingresos/gastos HNL de una cuenta; valida propiedad/categorías, serializa importaciones por cuenta y conserva UUID para reintentos.
 - Duplicados posibles: cuenta, fecha, monto y sentido, incluyendo transferencias existentes. Se omiten salvo selección explícita. Transferencias, préstamos y tarjetas usan sus formularios propios.
 - Pruebas de CSV/Excel en `utils/portability.test.ts`; RPC, atomicidad y RLS en `services/portability.database.test.ts` con PostgreSQL embebido (PGlite).
@@ -218,6 +223,8 @@ SavingsPage
 - Conciliaciones y fotografías mensuales: `0020_monthly_reconciliation.sql`.
 - Metas, aportes/retiros y progreso: `0021_financial_goals.sql`.
 - Respaldo por usuario e importación bancaria atómica: `0022_portability.sql`.
+- Confirmación anticipada, candidatos y vínculo reversible de recurrencias: `0023_recurring_confirmation.sql`.
+- Fechas y fotografías manuales de cortes de tarjeta: `0024_card_statements.sql`.
 - RLS limita cada fila por `auth.uid()`; no confíes solo en filtros del cliente.
 
 ## Despliegue

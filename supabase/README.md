@@ -27,7 +27,10 @@ supabase/
 │   ├── 0018_recurring_transactions.sql # Reglas mensuales confirmables
 │   ├── 0019_financial_calendar.sql # Días de pago de préstamos y tarjetas
 │   ├── 0020_monthly_reconciliation.sql # Conciliación y cierre mensual
-│   └── 0021_financial_goals.sql # Metas y progreso reservado
+│   ├── 0021_financial_goals.sql # Metas y progreso reservado
+│   ├── 0022_portability.sql # Respaldo e importación bancaria
+│   ├── 0023_recurring_confirmation.sql # Vínculo seguro de recurrencias
+│   └── 0024_card_statements.sql # Cortes manuales de tarjeta
 ├── seed.sql                   # Seed opcional para usuarios preexistentes
 └── README.md
 ```
@@ -57,6 +60,9 @@ supabase/
    19. `migrations/0019_financial_calendar.sql`
    20. `migrations/0020_monthly_reconciliation.sql`
    21. `migrations/0021_financial_goals.sql`
+   22. `migrations/0022_portability.sql`
+   23. `migrations/0023_recurring_confirmation.sql`
+   24. `migrations/0024_card_statements.sql`
 3. (Opcional) Si ya tenías usuarios creados antes de aplicar el paso 3,
    ejecuta `seed.sql` para sembrarles las categorías predeterminadas.
 
@@ -78,7 +84,8 @@ supabase db push
 | `transactions` | Ingresos, gastos, ahorro y transferencias con moneda; también vincula tarjetas y préstamos. |
 | `budgets`      | Presupuesto mensual por categoría y moneda, o meta de ahorro HNL. |
 | `loans`        | Préstamos (saldo/pasivo), con día mensual opcional para calendario. Las cuotas y abonos se registran como transacciones vinculadas. |
-| `credit_cards` | Tarjetas de crédito, con día límite opcional. Deuda = apertura + compras − pagos. |
+| `credit_cards` | Tarjetas de crédito, con días opcionales de corte y pago. Deuda = apertura + compras − pagos. |
+| `card_statements` | Fotografías manuales y actualizables del ciclo de cada tarjeta, separadas por moneda. |
 | `card_payments`| Pagos a tarjetas (reducen la deuda, no son gastos).            |
 | `savings_accounts` | Cuentas con número opcional copiable. Saldo = apertura + ingresos/aportes − gastos vinculados; pueden incluirse en la meta de ahorro. |
 | `receivable_people` | Personas con dinero pendiente; el saldo se deriva de préstamos y pagos. |
@@ -118,6 +125,12 @@ paginación; la importación guarda el lote completo o revierte todo ante un err
 Cada fila importada conserva su UUID para que repetir una petición no duplique dinero.
 La comprobación de posibles duplicados se repite al confirmar y las importaciones
 de una misma cuenta se serializan. La restauración automática de respaldos no está incluida.
+
+Las mejoras posteriores requieren aplicar `0023_recurring_confirmation.sql` y
+`0024_card_statements.sql`, en ese orden. La primera permite confirmar recurrencias
+anticipadamente o vincularlas a movimientos compatibles ya registrados, manteniendo
+una sola transacción por ocurrencia. La segunda agrega el día de corte y fotografías
+manuales HNL/USD; confirmar un corte no registra dinero ni bloquea correcciones.
 
 Todas las tablas tienen **Row Level Security activado**. Las policies garantizan
 que cada usuario solo pueda ver y modificar filas donde `auth.uid() = user_id`

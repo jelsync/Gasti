@@ -25,6 +25,7 @@ export type Transaction = Database['public']['Tables']['transactions']['Row'];
 export type Budget = Database['public']['Tables']['budgets']['Row'];
 export type Loan = Database['public']['Tables']['loans']['Row'];
 export type CreditCard = Database['public']['Tables']['credit_cards']['Row'];
+export type CardStatement = Database['public']['Tables']['card_statements']['Row'];
 export type SavingsAccount = Database['public']['Tables']['savings_accounts']['Row'];
 export type ReceivablePerson = Database['public']['Tables']['receivable_people']['Row'];
 export type RecurringTransaction = Database['public']['Tables']['recurring_transactions']['Row'];

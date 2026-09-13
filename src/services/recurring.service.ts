@@ -3,6 +3,7 @@ import type {
   RecurringOccurrence,
   RecurringTransaction,
   RecurringTransactionWithRelations,
+  Transaction,
 } from '@/types/models';
 import type { RecurringTransactionInput } from '@/lib/validations';
 
@@ -96,10 +97,36 @@ export async function deleteRecurringTransaction(id: string): Promise<void> {
   if (error) throw error;
 }
 
-export async function confirmRecurringTransaction(id: string, dueDate: string): Promise<void> {
+export interface RecurringConfirmationInput {
+  transactionDate: string;
+  existingTransactionId?: string;
+  amount?: number;
+  allowDuplicate?: boolean;
+  description?: string;
+}
+
+export async function getRecurringCandidates(id: string, dueDate: string): Promise<Transaction[]> {
+  const { data, error } = await supabase.rpc('get_recurring_candidates', {
+    p_recurring_id: id,
+    p_due_date: dueDate,
+  });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function confirmRecurringTransaction(
+  id: string,
+  dueDate: string,
+  input: RecurringConfirmationInput,
+): Promise<void> {
   const { error } = await supabase.rpc('confirm_recurring_transaction', {
     p_recurring_id: id,
     p_due_date: dueDate,
+    p_transaction_date: input.transactionDate,
+    p_existing_transaction_id: input.existingTransactionId,
+    p_amount: input.amount,
+    p_allow_duplicate: input.allowDuplicate ?? false,
+    p_description: input.description,
   });
   if (error) throw error;
 }

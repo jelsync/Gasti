@@ -20,6 +20,7 @@ import { useTransactions } from '@/hooks/useTransactions';
 import { useBudgets } from '@/hooks/useBudgets';
 import { useLoans } from '@/hooks/useLoans';
 import { useCreditCards } from '@/hooks/useCreditCards';
+import { useMonthlyCardStatements } from '@/hooks/useMonthlyCardStatements';
 import { PRIVACY_KEYS, usePrivacy } from '@/contexts/privacy';
 import {
   buildFinancialBudgetAlerts,
@@ -62,6 +63,8 @@ export default function FinancialCalendarPage() {
   const { budgets, loading: budgetsLoading } = useBudgets(month);
   const { loans, loading: loansLoading } = useLoans();
   const { cards, loading: cardsLoading } = useCreditCards();
+  const { statements: cardStatements, loading: statementsLoading } =
+    useMonthlyCardStatements(month);
   const today = todayISO();
 
   useEffect(() => {
@@ -79,8 +82,9 @@ export default function FinancialCalendarPage() {
         loans,
         cards,
         transactions,
+        cardStatements,
       }),
-    [month, today, rules, occurrences, loans, cards, transactions],
+    [month, today, rules, occurrences, loans, cards, transactions, cardStatements],
   );
 
   const cells = useMemo(() => calendarMonthCells(month), [month]);
@@ -110,8 +114,14 @@ export default function FinancialCalendarPage() {
   const missingCardDates = cards.filter(
     (card) => (card.balanceHnl > 0 || card.balanceUsd > 0) && !card.payment_due_day,
   );
+  const missingStatementDates = cards.filter((card) => !card.statement_day);
   const loading =
-    recurringLoading || transactionsLoading || budgetsLoading || loansLoading || cardsLoading;
+    recurringLoading ||
+    transactionsLoading ||
+    budgetsLoading ||
+    loansLoading ||
+    cardsLoading ||
+    statementsLoading;
 
   const goToEvent = (event: FinancialCalendarEvent) => {
     navigate(
@@ -119,7 +129,9 @@ export default function FinancialCalendarPage() {
         ? ROUTES.recurringTransactions
         : event.target === 'LOANS'
           ? ROUTES.loans
-          : ROUTES.cards,
+          : event.kind === 'CARD_STATEMENT' && event.entityId
+            ? `${ROUTES.cards}?card=${event.entityId}&statement_date=${event.date}`
+            : ROUTES.cards,
     );
   };
 
@@ -127,7 +139,7 @@ export default function FinancialCalendarPage() {
     <>
       <PageHeader
         title="Calendario financiero"
-        description="Consulta vencimientos, movimientos recurrentes y avisos importantes"
+        description="Consulta vencimientos, cortes, movimientos recurrentes y avisos importantes"
         actions={<MonthSelector value={month} onChange={setMonth} />}
       />
 
@@ -240,7 +252,9 @@ export default function FinancialCalendarPage() {
                 </CardContent>
               </Card>
 
-              {(missingLoanDates.length > 0 || missingCardDates.length > 0) && (
+              {(missingLoanDates.length > 0 ||
+                missingCardDates.length > 0 ||
+                missingStatementDates.length > 0) && (
                 <Card>
                   <CardHeader>
                     <CardTitle>Completa tus fechas</CardTitle>
@@ -264,6 +278,16 @@ export default function FinancialCalendarPage() {
                       >
                         <Settings2 className="h-4 w-4" />
                         {missingCardDates.length} tarjeta(s) sin día límite
+                      </button>
+                    )}
+                    {missingStatementDates.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => navigate(ROUTES.cards)}
+                        className="flex w-full items-center gap-2 rounded-md bg-muted px-3 py-2 text-left hover:bg-muted/70"
+                      >
+                        <Settings2 className="h-4 w-4" />
+                        {missingStatementDates.length} tarjeta(s) sin día de corte
                       </button>
                     )}
                   </CardContent>

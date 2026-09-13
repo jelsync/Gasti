@@ -28,6 +28,10 @@ import { getIncomeCategories } from '@/constants/incomeCategories';
 import { HIDDEN_AMOUNT, PrivacyToggle } from '@/components/ui/PrivacyToggle';
 import { PRIVACY_KEYS, usePrivacy } from '@/contexts/privacy';
 import { ROUTES } from '@/constants/routes';
+import { mapDbError } from '@/lib/errors';
+import { getManualRecurringMatches } from '@/services/manualRecurringGuard.service';
+import { confirmRecurringTransaction } from '@/services/recurring.service';
+import { manualRecurringMovement, type ManualRecurringMatch } from '@/utils/manualRecurringGuard';
 
 type TypeFilter = 'ALL' | TransactionType;
 
@@ -186,6 +190,25 @@ export default function TransactionsPage() {
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'No se pudo eliminar');
     }
+  };
+
+  const handleSubmitRecurring = async (payload: TransactionSubmit, match: ManualRecurringMatch) => {
+    const movement = manualRecurringMovement(payload);
+    if (!movement || match.transaction) throw new Error('Esta recurrencia ya está atendida');
+    try {
+      await confirmRecurringTransaction(match.rule.id, match.dueDate, {
+        transactionDate: movement.transaction_date,
+        amount: movement.amount,
+        description: movement.description,
+      });
+    } catch (error) {
+      const message = mapDbError(error, 'No se pudo atender la recurrencia');
+      throw new Error(
+        `${message}. Si ya registraste el movimiento, abre Recurrentes para vincularlo sin duplicarlo.`,
+      );
+    }
+    await Promise.all([refreshTx(), refreshCards(), refreshCharges(), refreshAccounts()]);
+    toast.success('Movimiento registrado y recurrencia atendida');
   };
 
   const handleDeleteCharge = async () => {
@@ -367,6 +390,8 @@ export default function TransactionsPage() {
         open={formOpen}
         onClose={() => setFormOpen(false)}
         onSubmit={handleSubmit}
+        checkRecurring={getManualRecurringMatches}
+        onSubmitRecurring={handleSubmitRecurring}
         categories={categories}
         creditCards={cards}
         savingsAccounts={accounts}
