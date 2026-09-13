@@ -137,9 +137,9 @@ export function SavingsAccountForm({ open, onClose, onSubmit, initial }: Savings
             {...register('include_in_savings_goal')}
           />
           <span>
-            <span className="block text-sm font-medium">Incluir en mi meta de ahorro</span>
+            <span className="block text-sm font-medium">Incluir en mi ahorro mensual</span>
             <span className="mt-0.5 block text-xs text-muted-foreground">
-              Las entradas aumentan la meta y los débitos o transferencias salientes la reducen.
+              Mide las entradas menos las salidas del mes. No asigna dinero a tus metas financieras.
             </span>
           </span>
         </label>

@@ -1,6 +1,6 @@
 # Codegraph de Gasti
 
-Última actualización: 2026-09-11.
+Última actualización: 2026-09-12.
 
 Este archivo es el índice de navegación del repositorio. Empieza aquí y abre solo los archivos relacionados con la tarea.
 
@@ -180,6 +180,17 @@ SavingsPage
 - Tablas: `financial_goals`, `financial_goal_movements`; el progreso es monto inicial + aportes − retiros.
 - `src/utils/financialHealth.ts` calcula tasas HNL, comparación mensual, flujo y deuda; mantiene USD separado.
 - La cuenta vinculada indica dónde se conserva el dinero, pero los movimientos de meta no cambian saldos bancarios.
+- «Ahorro mensual» es el objetivo opcional de flujo neto en Presupuestos; Metas reserva dinero para objetivos independientes.
+
+### Portabilidad y respaldo
+
+- Panel en Ajustes: `src/components/settings/PortabilityPanel.tsx` → `src/services/portability.service.ts`.
+- `src/utils/portability.ts` interpreta CSV con formatos explícitos, marca posibles duplicados y genera CSV/Excel con carga diferida de ExcelJS.
+- Exporta movimientos por mes o completos y reporte mensual con resumen/categorías HNL y USD separados.
+- `export_user_backup` devuelve una fotografía JSON versionada de las 16 tablas del usuario, bajo RLS y sin truncar a 1000 filas; no incluye credenciales ni preferencias locales.
+- `import_bank_transactions` confirma un lote atómico de ingresos/gastos HNL de una cuenta; valida propiedad/categorías, serializa importaciones por cuenta y conserva UUID para reintentos.
+- Duplicados posibles: cuenta, fecha, monto y sentido, incluyendo transferencias existentes. Se omiten salvo selección explícita. Transferencias, préstamos y tarjetas usan sus formularios propios.
+- Pruebas de CSV/Excel en `utils/portability.test.ts`; RPC, atomicidad y RLS en `services/portability.database.test.ts` con PostgreSQL embebido (PGlite).
 
 ### Historial y ajustes
 
@@ -206,6 +217,7 @@ SavingsPage
 - Días de pago para calendario en préstamos y tarjetas: `0019_financial_calendar.sql`.
 - Conciliaciones y fotografías mensuales: `0020_monthly_reconciliation.sql`.
 - Metas, aportes/retiros y progreso: `0021_financial_goals.sql`.
+- Respaldo por usuario e importación bancaria atómica: `0022_portability.sql`.
 - RLS limita cada fila por `auth.uid()`; no confíes solo en filtros del cliente.
 
 ## Despliegue

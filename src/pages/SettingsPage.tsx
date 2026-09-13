@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/auth';
 import { useTheme } from '@/contexts/theme';
 import { cn } from '@/lib/utils';
 import { ROUTES } from '@/constants/routes';
+import { PortabilityPanel } from '@/components/settings/PortabilityPanel';
 
 export default function SettingsPage() {
   const { user, signOut } = useAuth();
@@ -30,6 +31,7 @@ export default function SettingsPage() {
       <PageHeader title="Ajustes" description="Tu cuenta y preferencias" />
 
       <div className="grid gap-6">
+        <PortabilityPanel />
         <Card>
           <CardHeader>
             <CardTitle>Cuenta</CardTitle>

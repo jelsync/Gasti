@@ -110,6 +110,15 @@ supabase db push
 
 ## Seguridad (RLS)
 
+La fase 5 requiere aplicar `migrations/0022_portability.sql` después de `0021`.
+Agrega `export_user_backup()` e `import_bank_transactions(uuid, jsonb)`, ambas con
+permisos del usuario (`SECURITY INVOKER`), RLS y ejecución solo para usuarios autenticados.
+El respaldo incluye todas las tablas de aplicación en una misma fotografía JSON sin
+paginación; la importación guarda el lote completo o revierte todo ante un error.
+Cada fila importada conserva su UUID para que repetir una petición no duplique dinero.
+La comprobación de posibles duplicados se repite al confirmar y las importaciones
+de una misma cuenta se serializan. La restauración automática de respaldos no está incluida.
+
 Todas las tablas tienen **Row Level Security activado**. Las policies garantizan
 que cada usuario solo pueda ver y modificar filas donde `auth.uid() = user_id`
 (en `profiles`, `auth.uid() = id`), para `SELECT`, `INSERT`, `UPDATE` y `DELETE`.

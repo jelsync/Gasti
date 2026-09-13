@@ -1,5 +1,37 @@
 import { z } from 'zod';
 
+export const bankImportSchema = z.object({
+  account_id: z.string().uuid('Selecciona una cuenta'),
+  rows: z
+    .array(
+      z.object({
+        id: z.string().uuid(),
+        type: z.enum(['INCOME', 'EXPENSE']),
+        amount: z
+          .number()
+          .finite()
+          .positive()
+          .max(9_999_999_999)
+          .refine(
+            (value) => Math.abs(value * 100 - Math.round(value * 100)) < 0.0001,
+            'Usa como máximo dos decimales',
+          ),
+        transaction_date: z
+          .string()
+          .regex(/^\d{4}-\d{2}-\d{2}$/)
+          .refine((value) => {
+            const date = new Date(`${value}T00:00:00Z`);
+            return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+          }, 'Fecha inválida'),
+        description: z.string().max(200),
+        category_id: z.string().uuid('Asigna una categoría a cada fila seleccionada'),
+        allow_duplicate: z.boolean(),
+      }),
+    )
+    .min(1, 'Selecciona al menos un movimiento')
+    .max(1000),
+});
+
 // ---------------------------------------------------------------------------
 // Autenticación
 // ---------------------------------------------------------------------------

@@ -28,11 +28,14 @@ Las fases se entregan y validan por separado. Una fase posterior no debe cambiar
 - Cuenta vinculada, monto objetivo, fecha y progreso.
 - Indicadores explicables de ahorro, gasto, deuda y comparación mensual.
 
-## Fase 5 — Portabilidad y respaldo
+## Fase 5 — Portabilidad y respaldo (implementada)
 
-- Exportación CSV/Excel y reporte mensual.
-- Respaldo completo por usuario.
-- Importación bancaria con vista previa y detección de posibles duplicados.
+- Ajustes: exportación CSV/Excel de movimientos del mes o de todo el historial.
+- Reporte mensual Excel con resumen HNL/USD, categorías y movimientos.
+- Respaldo JSON completo por usuario, versionado y consistente; incluye las 16 tablas de aplicación. La restauración automática queda fuera de esta fase.
+- Importación bancaria CSV UTF-8 para cuentas HNL: columnas y formatos configurables, vista previa, categorías y selección por fila.
+- Posibles duplicados por cuenta, fecha, monto y sentido; confirmación explícita, lote atómico y reintentos sin duplicar.
+- Requiere aplicar `0022_portability.sql`. Los pagos de tarjeta, préstamos y transferencias se registran desde sus formularios específicos.
 
 ## Fase 6 — Seguridad y adopción
 

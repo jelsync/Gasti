@@ -141,7 +141,7 @@ export function BudgetForm({
                   : 'border-border text-muted-foreground hover:bg-muted',
               )}
             >
-              Meta de ahorro
+              Ahorro mensual
             </button>
           </div>
         )}
@@ -188,7 +188,8 @@ export function BudgetForm({
 
         {kind === 'SAVINGS' && (
           <p className="rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground">
-            Meta mensual basada en el movimiento neto de las cuentas que marques para ahorro.
+            Objetivo opcional del mes: mide las entradas menos las salidas de las cuentas marcadas.
+            Las metas de viaje, emergencia u otros objetivos se administran en Metas.
           </p>
         )}
 

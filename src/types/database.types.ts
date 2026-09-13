@@ -708,6 +708,14 @@ export interface Database {
     };
     Views: Record<never, never>;
     Functions: {
+      export_user_backup: {
+        Args: Record<string, never>;
+        Returns: Json;
+      };
+      import_bank_transactions: {
+        Args: { p_account_id: string; p_rows: Json };
+        Returns: Json;
+      };
       confirm_recurring_transaction: {
         Args: { p_recurring_id: string; p_due_date: string };
         Returns: string;

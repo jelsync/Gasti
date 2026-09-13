@@ -124,3 +124,28 @@ export interface MonthlySummary {
   saving: number;
   balance: number;
 }
+/** Respaldo versionado de todas las tablas de aplicación del usuario. */
+export interface UserBackup {
+  format: 'gasti-backup';
+  version: 1;
+  exported_at: string;
+  user_id: string;
+  tables: {
+    [
+      K in keyof import('@/types/database.types').Database['public']['Tables']
+    ]: import('@/types/database.types').Database['public']['Tables'][K]['Row'][];
+  };
+}
+
+export interface BankImportRow {
+  id: string;
+  line: number;
+  transaction_date: string;
+  description: string;
+  amount: number;
+  type: 'INCOME' | 'EXPENSE';
+  category_id: string;
+  selected: boolean;
+  duplicate: boolean;
+  error: string;
+}

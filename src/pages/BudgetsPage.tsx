@@ -267,7 +267,7 @@ export default function BudgetsPage() {
                   <span className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-primary">
                     <PiggyBank className="h-4 w-4" />
                   </span>
-                  <span className="flex-1 truncate font-medium">Meta de ahorro</span>
+                  <span className="flex-1 truncate font-medium">Ahorro mensual</span>
                   <button
                     type="button"
                     onClick={() => {
@@ -289,6 +289,10 @@ export default function BudgetsPage() {
                   </button>
                 </div>
 
+                <p className="mb-3 text-xs text-muted-foreground">
+                  Movimiento neto del mes en tus cuentas marcadas. Es opcional e independiente del
+                  dinero reservado en Metas.
+                </p>
                 <ProgressBar
                   value={budgetProgress(savingsBudget.amount, savedThisMonth).percentage}
                   color="#0ea5e9"
