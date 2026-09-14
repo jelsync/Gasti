@@ -8,7 +8,9 @@ const service = vi.hoisted(() => ({
   previewCardStatement: vi.fn(),
   confirmCardStatement: vi.fn(),
 }));
+const cardsService = vi.hoisted(() => ({ getCreditCardMovements: vi.fn() }));
 vi.mock('@/services/cardStatements.service', () => service);
+vi.mock('@/services/cards.service', () => cardsService);
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 vi.mock('@/utils/date', async (original) => ({
   ...(await original<typeof import('@/utils/date')>()),
@@ -52,6 +54,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   service.getCardStatements.mockResolvedValue([]);
   service.previewCardStatement.mockResolvedValue(snapshot);
+  cardsService.getCreditCardMovements.mockResolvedValue([]);
   service.confirmCardStatement.mockResolvedValue({
     ...snapshot,
     id: 'statement-1',
@@ -87,5 +90,43 @@ describe('Revisión manual del corte', () => {
     expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
     expect(service.previewCardStatement).toHaveBeenCalledWith(card.id, '2026-10-09');
     expect(service.confirmCardStatement).not.toHaveBeenCalled();
+  });
+
+  it('muestra cuánto del corte se pagó y separa el nuevo ciclo', async () => {
+    service.getCardStatements.mockResolvedValue([
+      {
+        ...snapshot,
+        id: 'statement-1',
+        user_id: 'user-1',
+        confirmed_at: '2026-09-09T18:00:00Z',
+      },
+    ]);
+    cardsService.getCreditCardMovements.mockResolvedValue([
+      {
+        kind: 'PAYMENT',
+        id: 'payment-1',
+        amount: 5,
+        amountHnl: 140,
+        currency: 'USD',
+        date: '2026-09-12',
+        createdAt: '2026-09-12T12:00:00Z',
+      },
+      {
+        kind: 'CHARGE',
+        id: 'charge-1',
+        amount: 3,
+        currency: 'USD',
+        description: 'Nueva compra',
+        date: '2026-09-13',
+        createdAt: '2026-09-13T12:00:00Z',
+      },
+    ]);
+
+    render(<CardStatementsPanel card={{ ...card, balanceUsd: 9.49 }} onConfigure={vi.fn()} />);
+
+    expect(await screen.findByText('Pago del último corte')).toBeInTheDocument();
+    expect(screen.getByText('Pendiente del corte')).toBeInTheDocument();
+    expect(screen.getByText('Nuevo ciclo')).toBeInTheDocument();
+    expect(screen.getByText('Movimientos posteriores al corte.')).toBeInTheDocument();
   });
 });

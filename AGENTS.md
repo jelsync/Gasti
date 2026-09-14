@@ -69,6 +69,7 @@
 - Para cambios normales ejecuta, como mínimo: `npm.cmd run typecheck`, `npm.cmd test` y `npm.cmd run build`.
 - Para cambios de UI/TS ejecuta además ESLint y Prettier sobre los archivos modificados.
 - No corrijas ni descartes cambios ajenos al objetivo.
+- Si se conoce el siguiente paso que debe ejecutar el usuario y se le da una indicación para hacerlo, incluye en esa misma respuesta el modelo y nivel de razonamiento recomendados para la siguiente ejecución, junto con una razón breve.
 
 ## Mantener el mapa
 

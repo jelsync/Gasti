@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, ClipboardCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { Field } from '@/components/ui/Field';
 import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
+import { ProgressBar } from '@/components/ui/ProgressBar';
 import { Spinner } from '@/components/ui/Spinner';
 import { mapDbError } from '@/lib/errors';
 import {
@@ -15,7 +16,12 @@ import {
   type CardStatementPreview,
 } from '@/services/cardStatements.service';
 import type { CardStatement, CreditCardWithBalance } from '@/types/models';
+import { getCreditCardMovements, type CardMovement } from '@/services/cards.service';
 import { cardStatementDate } from '@/utils/cardStatements';
+import {
+  cardStatementProgress,
+  type StatementCurrencyProgress,
+} from '@/utils/cardStatementProgress';
 import { formatDate, todayISO } from '@/utils/date';
 import { formatMoney } from '@/utils/format';
 
@@ -28,6 +34,7 @@ interface Props {
 export function CardStatementsPanel({ card, requestedDate, onConfigure }: Props) {
   const [month, setMonth] = useState(requestedDate?.slice(0, 7) || todayISO().slice(0, 7));
   const [statements, setStatements] = useState<CardStatement[]>([]);
+  const [movements, setMovements] = useState<CardMovement[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<CardStatementPreview | null>(null);
@@ -36,13 +43,21 @@ export function CardStatementsPanel({ card, requestedDate, onConfigure }: Props)
   const [checked, setChecked] = useState(false);
   const date = card.statement_day && month ? cardStatementDate(month, card.statement_day) : null;
   const savedPreview = statements.find((item) => item.statement_date === preview?.statement_date);
+  const latestStatement = statements[0];
+  const progress = useMemo(
+    () => (latestStatement ? cardStatementProgress(latestStatement, card, movements) : null),
+    [card, latestStatement, movements],
+  );
 
   useEffect(() => {
     let cancelled = false;
-    getCardStatements(card.id).then(
-      (rows) => {
+    setLoading(true);
+    setError(null);
+    Promise.all([getCardStatements(card.id), getCreditCardMovements(card.id)]).then(
+      ([nextStatements, nextMovements]) => {
         if (!cancelled) {
-          setStatements(rows);
+          setStatements(nextStatements);
+          setMovements(nextMovements);
           setLoading(false);
         }
       },
@@ -56,7 +71,7 @@ export function CardStatementsPanel({ card, requestedDate, onConfigure }: Props)
     return () => {
       cancelled = true;
     };
-  }, [card.id]);
+  }, [card.id, card.balanceHnl, card.balanceUsd]);
 
   useEffect(() => {
     if (!requestedDate) return;
@@ -161,6 +176,7 @@ export function CardStatementsPanel({ card, requestedDate, onConfigure }: Props)
           la deuda o el presupuesto. Las compras con fecha posterior pertenecen al siguiente
           período.
         </p>
+        {progress && <StatementPaymentProgress progress={progress} />}
         {error && (
           <p role="alert" className="text-sm text-danger">
             {error}
@@ -283,5 +299,108 @@ export function CardStatementsPanel({ card, requestedDate, onConfigure }: Props)
         )}
       </Modal>
     </Card>
+  );
+}
+
+function StatementPaymentProgress({
+  progress,
+}: {
+  progress: ReturnType<typeof cardStatementProgress>;
+}) {
+  const currencies = (['HNL', 'USD'] as const).filter((currency) => {
+    const item = progress[currency];
+    return item.cutoffBalance > 0 || item.newCycleCharges > 0 || item.newCycleBalance !== 0;
+  });
+  if (!currencies.length) return null;
+
+  return (
+    <section className="space-y-3 rounded-lg border border-border bg-muted/30 p-4">
+      <div>
+        <p className="font-medium">Pago del último corte</p>
+        <p className="text-xs text-muted-foreground">
+          Corte del {formatDate(progress.statement.statement_date)}. Los pagos posteriores se
+          aplican primero a este saldo.
+        </p>
+      </div>
+      <div className="grid gap-3 lg:grid-cols-2">
+        {currencies.map((currency) => (
+          <StatementCurrencyCard key={currency} currency={currency} progress={progress[currency]} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function StatementCurrencyCard({
+  currency,
+  progress,
+}: {
+  currency: 'HNL' | 'USD';
+  progress: StatementCurrencyProgress;
+}) {
+  const percentage =
+    progress.cutoffBalance > 0 ? (progress.paidTowardCutoff / progress.cutoffBalance) * 100 : 100;
+
+  return (
+    <div className="space-y-3 rounded-md border border-border bg-card p-3 text-sm">
+      <p className="font-semibold">{currency}</p>
+      {progress.cutoffBalance > 0 ? (
+        <>
+          <div className="flex items-baseline justify-between gap-3 tabular-nums">
+            <span className="text-muted-foreground">Pagado del corte</span>
+            <span className="font-medium text-income">
+              {formatMoney(progress.paidTowardCutoff, currency)} /{' '}
+              {formatMoney(progress.cutoffBalance, currency)}
+            </span>
+          </div>
+          <ProgressBar value={percentage} color="var(--income)" />
+          <div className="flex justify-between gap-3 tabular-nums">
+            <span className="text-muted-foreground">Pendiente del corte</span>
+            <span className="font-semibold text-expense">
+              {formatMoney(progress.cutoffRemaining, currency)}
+            </span>
+          </div>
+        </>
+      ) : (
+        <p className="text-muted-foreground">No hubo saldo pendiente en este corte.</p>
+      )}
+      <div className="border-t border-border pt-3">
+        <p className="font-medium">Nuevo ciclo</p>
+        <p className="mt-1 text-xs text-muted-foreground">Movimientos posteriores al corte.</p>
+        <dl className="mt-2 space-y-1.5 tabular-nums">
+          <ProgressLine label="Compras" value={progress.newCycleCharges} currency={currency} />
+          <ProgressLine
+            label="Pagos aplicados"
+            value={progress.paymentsTowardNewCycle}
+            currency={currency}
+          />
+          <ProgressLine
+            label="Saldo actual del ciclo"
+            value={progress.newCycleBalance}
+            currency={currency}
+            strong
+          />
+        </dl>
+      </div>
+    </div>
+  );
+}
+
+function ProgressLine({
+  label,
+  value,
+  currency,
+  strong = false,
+}: {
+  label: string;
+  value: number;
+  currency: 'HNL' | 'USD';
+  strong?: boolean;
+}) {
+  return (
+    <div className="flex justify-between gap-3">
+      <dt className={strong ? 'font-semibold' : 'text-muted-foreground'}>{label}</dt>
+      <dd className={strong ? 'font-semibold' : ''}>{formatMoney(value, currency)}</dd>
+    </div>
   );
 }

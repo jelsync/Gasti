@@ -133,7 +133,7 @@ SavingsPage
 ### Tarjetas
 
 - Página/formulario: `src/pages/CardsPage.tsx`, `src/components/cards/CreditCardForm.tsx`.
-- Cortes: `src/components/cards/CardStatementsPanel.tsx`, `src/hooks/useMonthlyCardStatements.ts`, `src/services/cardStatements.service.ts`.
+- Cortes: `src/components/cards/CardStatementsPanel.tsx`, `src/hooks/useMonthlyCardStatements.ts`, `src/services/cardStatements.service.ts` y `src/utils/cardStatementProgress.ts`.
 - Historial por tarjeta: `src/components/cards/CardMovementHistory.tsx`.
 - Hooks: `src/hooks/useCreditCards.ts`, `useCardCharges.ts`, `useCreditCardMovements.ts`.
 - Servicio: `src/services/cards.service.ts`.
@@ -141,7 +141,7 @@ SavingsPage
 - El historial combina compras (+ deuda), pagos (− deuda) y deuda inicial de la tarjeta seleccionada, y permite eliminar movimientos huérfanos.
 - Compra = `EXPENSE` vinculada a `card_charges`; pago = `TRANSFER` vinculada a `card_payments`. Las FK con cascada mantienen la reversión al borrar.
 - Soporta deuda HNL y USD. Una compra reconoce el gasto en su moneda; el equivalente HNL solo se solicita al pagar una deuda USD.
-- `card_statements` conserva fotografías HNL/USD actualizables de cada ciclo. Confirmar o actualizar un corte no cambia saldos, deuda, gastos ni presupuestos.
+- `card_statements` conserva fotografías HNL/USD actualizables de cada ciclo. El panel asigna informativamente los pagos posteriores primero al último corte y separa las compras/pagos del nuevo ciclo; confirmar o actualizar no cambia saldos, deuda, gastos ni presupuestos.
 
 ### Préstamos
 
