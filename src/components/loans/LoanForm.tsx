@@ -10,17 +10,25 @@ import { Button } from '@/components/ui/Button';
 import { loanSchema, type LoanInput } from '@/lib/validations';
 import { CURRENCY_SYMBOL } from '@/utils/format';
 import { todayISO } from '@/utils/date';
-import type { Category, LoanWithCategory } from '@/types/models';
+import type { Category, LoanWithCategory, SavingsAccountWithBalance } from '@/types/models';
 
 interface LoanFormProps {
   open: boolean;
   onClose: () => void;
   onSubmit: (input: LoanInput) => Promise<void>;
   expenseCategories: Category[];
+  savingsAccounts: Pick<SavingsAccountWithBalance, 'id' | 'name' | 'balance'>[];
   initial?: LoanWithCategory | null;
 }
 
-export function LoanForm({ open, onClose, onSubmit, expenseCategories, initial }: LoanFormProps) {
+export function LoanForm({
+  open,
+  onClose,
+  onSubmit,
+  expenseCategories,
+  savingsAccounts,
+  initial,
+}: LoanFormProps) {
   const {
     register,
     handleSubmit,
@@ -46,6 +54,7 @@ export function LoanForm({ open, onClose, onSubmit, expenseCategories, initial }
       start_date: initial?.start_date ?? todayISO(),
       end_date: initial?.end_date ?? '',
       category_id: initial?.category_id ?? null,
+      savings_account_id: initial?.savings_account_id ?? null,
     });
   }, [open, initial, reset]);
 
@@ -202,6 +211,26 @@ export function LoanForm({ open, onClose, onSubmit, expenseCategories, initial }
             {expenseCategories.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
+              </option>
+            ))}
+          </Select>
+        </Field>
+
+        <Field
+          label="Cuenta de débito"
+          htmlFor="savings_account_id"
+          error={errors.savings_account_id?.message}
+          hint="Los pagos y abonos reducirán el saldo de esta cuenta."
+        >
+          <Select
+            id="savings_account_id"
+            aria-invalid={!!errors.savings_account_id}
+            {...register('savings_account_id', { setValueAs: (v) => (v === '' ? null : v) })}
+          >
+            <option value="">Sin cuenta asignada</option>
+            {savingsAccounts.map((account) => (
+              <option key={account.id} value={account.id}>
+                {account.name} — {CURRENCY_SYMBOL} {account.balance.toFixed(2)}
               </option>
             ))}
           </Select>

@@ -280,6 +280,7 @@ export const loanSchema = z.object({
   start_date: dateStringSchema,
   end_date: optionalDateSchema,
   category_id: z.string().uuid('Selecciona una categoría').nullable(),
+  savings_account_id: z.string().uuid('Selecciona una cuenta').nullable().optional(),
 });
 
 // ---------------------------------------------------------------------------

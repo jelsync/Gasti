@@ -248,6 +248,7 @@ export interface Database {
           id: string;
           user_id: string;
           category_id: string | null;
+          savings_account_id: string | null;
           name: string;
           loan_number: string;
           original_amount: number;
@@ -266,6 +267,7 @@ export interface Database {
           id?: string;
           user_id: string;
           category_id?: string | null;
+          savings_account_id?: string | null;
           name: string;
           loan_number?: string;
           original_amount: number;
@@ -280,6 +282,7 @@ export interface Database {
         };
         Update: {
           category_id?: string | null;
+          savings_account_id?: string | null;
           name?: string;
           loan_number?: string;
           original_amount?: number;

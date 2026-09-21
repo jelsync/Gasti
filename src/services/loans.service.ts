@@ -21,6 +21,7 @@ function normalize(input: LoanInput) {
     start_date: input.start_date,
     end_date: input.end_date ? input.end_date : null,
     category_id: input.category_id,
+    savings_account_id: input.savings_account_id,
   };
 }
 
@@ -55,6 +56,17 @@ export async function updateLoan(id: string, input: LoanInput): Promise<Loan> {
     .single();
 
   if (error) throw error;
+
+  if (input.savings_account_id) {
+    const { error: transactionError } = await supabase
+      .from('transactions')
+      .update({ savings_account_id: input.savings_account_id })
+      .eq('loan_id', id)
+      .is('savings_account_id', null);
+
+    if (transactionError) throw transactionError;
+  }
+
   return data;
 }
 
@@ -115,6 +127,10 @@ export async function registerPayment(
   loan: Loan,
   dateISO: string = todayISO(),
 ): Promise<PaymentResult> {
+  if (!loan.savings_account_id) {
+    throw new Error('Edita el préstamo y selecciona la cuenta de donde se debitará el pago.');
+  }
+
   const { interest, principal, newBalance } = nextPaymentBreakdown(
     loan.current_balance,
     loan.interest_rate,
@@ -125,6 +141,7 @@ export async function registerPayment(
     type: 'EXPENSE',
     amount: loan.installment,
     category_id: loan.category_id,
+    savings_account_id: loan.savings_account_id,
     loan_id: loan.id,
     loan_payment_kind: 'INSTALLMENT',
     loan_principal_amount: principal,
@@ -160,12 +177,17 @@ export async function registerExtraPrincipal(
   amount: number,
   dateISO: string = todayISO(),
 ): Promise<ExtraPaymentResult> {
+  if (!loan.savings_account_id) {
+    throw new Error('Edita el préstamo y selecciona la cuenta de donde se debitará el abono.');
+  }
+
   const newBalance = applyExtraPrincipal(loan.current_balance, amount);
 
   await createTransaction(userId, {
     type: 'EXPENSE',
     amount,
     category_id: loan.category_id,
+    savings_account_id: loan.savings_account_id,
     loan_id: loan.id,
     loan_payment_kind: 'EXTRA',
     loan_principal_amount: amount,

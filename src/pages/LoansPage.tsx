@@ -23,6 +23,7 @@ import { ExtraPaymentModal } from '@/components/loans/ExtraPaymentModal';
 import { LoanMovementHistory } from '@/components/loans/LoanMovementHistory';
 import { useLoans } from '@/hooks/useLoans';
 import { useCategories } from '@/hooks/useCategories';
+import { useSavingsAccounts } from '@/hooks/useSavingsAccounts';
 import { nextPaymentBreakdown, percentPaid, projectLoan } from '@/utils/loan';
 import { formatCurrency, formatPercent } from '@/utils/format';
 import { formatDate } from '@/utils/date';
@@ -33,6 +34,7 @@ import type { LoanInput } from '@/lib/validations';
 export default function LoansPage() {
   const { loans, loading, create, update, remove, pay, payExtra } = useLoans();
   const { categories } = useCategories();
+  const { accounts: savingsAccounts } = useSavingsAccounts();
 
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<LoanWithCategory | null>(null);
@@ -331,6 +333,7 @@ export default function LoansPage() {
         onClose={() => setFormOpen(false)}
         onSubmit={handleSubmit}
         expenseCategories={expenseCategories}
+        savingsAccounts={savingsAccounts}
         initial={editing}
       />
 
