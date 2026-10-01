@@ -186,9 +186,9 @@ describe('budgetOverview', () => {
 });
 
 describe('accountMovementAmount', () => {
-  it('suma ingresos y aportes, y resta gastos', () => {
+  it('suma ingresos y resta gastos y ahorros', () => {
     expect(accountMovementAmount({ type: 'INCOME', amount: 1000 })).toBe(1000);
-    expect(accountMovementAmount({ type: 'SAVING', amount: 250 })).toBe(250);
+    expect(accountMovementAmount({ type: 'SAVING', amount: 250 })).toBe(-250);
     expect(accountMovementAmount({ type: 'EXPENSE', amount: 300 })).toBe(-300);
     expect(accountMovementAmount({ type: 'TRANSFER', amount: 300 }, 'SOURCE')).toBe(-300);
     expect(accountMovementAmount({ type: 'TRANSFER', amount: 300 }, 'DESTINATION')).toBe(300);

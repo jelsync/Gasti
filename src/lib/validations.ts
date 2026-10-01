@@ -107,11 +107,17 @@ export const transactionSchema = z
     transaction_date: dateStringSchema,
   })
   .superRefine((transaction, context) => {
-    if (transaction.type === 'EXPENSE' && !transaction.savings_account_id) {
+    if (
+      (transaction.type === 'EXPENSE' || transaction.type === 'SAVING') &&
+      !transaction.savings_account_id
+    ) {
       context.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['savings_account_id'],
-        message: 'Selecciona la cuenta de donde se debitará el gasto',
+        message:
+          transaction.type === 'SAVING'
+            ? 'Selecciona la cuenta de donde se debitará el ahorro'
+            : 'Selecciona la cuenta de donde se debitará el gasto',
       });
     }
     if (transaction.type === 'TRANSFER') {

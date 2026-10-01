@@ -124,7 +124,8 @@ export function TransactionForm({
     kind === 'SAVING' ||
     kind === 'TRANSFER' ||
     kind === 'CARD_PAYMENT';
-  const accountRequired = kind === 'EXPENSE' || kind === 'TRANSFER' || kind === 'CARD_PAYMENT';
+  const accountRequired =
+    kind === 'EXPENSE' || kind === 'SAVING' || kind === 'TRANSFER' || kind === 'CARD_PAYMENT';
   const noRequiredAccounts =
     (accountRequired && savingsAccounts.length === 0) ||
     (kind === 'TRANSFER' && savingsAccounts.length < 2);
@@ -183,8 +184,12 @@ export function TransactionForm({
     if (kind === 'INCOME' && !categoryId) {
       return fail('Selecciona una categoría de ingreso');
     }
-    if (kind === 'EXPENSE' && !savingsId) {
-      return fail('Selecciona la cuenta de donde se debitará el gasto');
+    if ((kind === 'EXPENSE' || kind === 'SAVING') && !savingsId) {
+      return fail(
+        kind === 'SAVING'
+          ? 'Selecciona la cuenta de donde se debitará el ahorro'
+          : 'Selecciona la cuenta de donde se debitará el gasto',
+      );
     }
     if (kind === 'TRANSFER' && sourceAccount && amt > sourceAvailableBalance) {
       return fail(
@@ -478,13 +483,15 @@ export function TransactionForm({
                 label={
                   kind === 'EXPENSE'
                     ? 'Debitar de cuenta'
-                    : kind === 'CARD_PAYMENT'
-                      ? 'Pagar desde cuenta'
-                      : kind === 'TRANSFER'
-                        ? 'Cuenta de origen'
-                        : kind === 'INCOME'
-                          ? 'Depositar en cuenta (opcional)'
-                          : 'Cuenta'
+                    : kind === 'SAVING'
+                      ? 'Debitar ahorro de cuenta'
+                      : kind === 'CARD_PAYMENT'
+                        ? 'Pagar desde cuenta'
+                        : kind === 'TRANSFER'
+                          ? 'Cuenta de origen'
+                          : kind === 'INCOME'
+                            ? 'Depositar en cuenta (opcional)'
+                            : 'Cuenta'
                 }
                 htmlFor="savings"
                 hint={
@@ -492,13 +499,15 @@ export function TransactionForm({
                     ? 'Crea una cuenta primero en la sección Cuentas.'
                     : kind === 'EXPENSE'
                       ? 'El gasto reducirá el saldo de la cuenta seleccionada.'
-                      : kind === 'CARD_PAYMENT'
-                        ? 'El pago reducirá esta cuenta y también la deuda de la tarjeta.'
-                        : kind === 'TRANSFER'
-                          ? 'El dinero saldrá de esta cuenta sin contarse como gasto.'
-                          : kind === 'INCOME'
-                            ? 'El ingreso seguirá sumando al dashboard y también aumentará el saldo de la cuenta.'
-                            : undefined
+                      : kind === 'SAVING'
+                        ? 'El aporte reducirá el saldo de la cuenta y contará en el presupuesto de ahorro.'
+                        : kind === 'CARD_PAYMENT'
+                          ? 'El pago reducirá esta cuenta y también la deuda de la tarjeta.'
+                          : kind === 'TRANSFER'
+                            ? 'El dinero saldrá de esta cuenta sin contarse como gasto.'
+                            : kind === 'INCOME'
+                              ? 'El ingreso seguirá sumando al dashboard y también aumentará el saldo de la cuenta.'
+                              : undefined
                 }
               >
                 <Select

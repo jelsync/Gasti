@@ -152,6 +152,17 @@ describe('transactionSchema', () => {
     expect(transactionSchema.safeParse({ ...base, savings_account_id: null }).success).toBe(false);
   });
 
+  it('requiere una cuenta para debitar un ahorro', () => {
+    expect(
+      transactionSchema.safeParse({
+        ...base,
+        type: 'SAVING',
+        category_id: null,
+        savings_account_id: null,
+      }).success,
+    ).toBe(false);
+  });
+
   it('acepta transferencias entre dos cuentas diferentes', () => {
     const result = transactionSchema.safeParse({
       ...base,

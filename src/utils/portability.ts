@@ -145,7 +145,9 @@ export function markBankDuplicates(
         key(
           tx.transaction_date,
           tx.amount,
-          tx.type === 'EXPENSE' || tx.type === 'TRANSFER' ? 'EXPENSE' : 'INCOME',
+          tx.type === 'EXPENSE' || tx.type === 'SAVING' || tx.type === 'TRANSFER'
+            ? 'EXPENSE'
+            : 'INCOME',
         ),
       );
     if (tx.destination_savings_account_id === accountId)

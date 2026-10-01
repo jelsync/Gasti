@@ -149,7 +149,9 @@ export function accountMovementAmount(
   if (transaction.type === 'TRANSFER') {
     return role === 'DESTINATION' ? transaction.amount : -transaction.amount;
   }
-  return transaction.type === 'EXPENSE' ? -transaction.amount : transaction.amount;
+  return transaction.type === 'EXPENSE' || transaction.type === 'SAVING'
+    ? -transaction.amount
+    : transaction.amount;
 }
 
 interface AccountLinkedAmount extends AmountTyped {

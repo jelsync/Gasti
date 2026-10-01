@@ -39,8 +39,8 @@ function display(t: TransactionWithCategory) {
       name: t.savings_account?.name ?? 'Ahorro',
       icon: 'piggy-bank',
       color: t.savings_account?.color ?? '#0ea5e9',
-      sign: '→',
-      amountClass: 'text-primary',
+      sign: '−',
+      amountClass: 'text-expense',
     };
   }
   const isIncome = t.type === 'INCOME';
@@ -77,7 +77,7 @@ export function TransactionList({ transactions, onEdit, onDelete }: TransactionL
                 {formatDate(t.transaction_date)}
                 {t.savings_account && t.type === 'INCOME'
                   ? ` · Depositado en ${t.savings_account.name}`
-                  : t.savings_account && t.type === 'EXPENSE'
+                  : t.savings_account && (t.type === 'EXPENSE' || t.type === 'SAVING')
                     ? ` · Debitado de ${t.savings_account.name}`
                     : t.type === 'TRANSFER'
                       ? t.receivable_person

@@ -302,11 +302,13 @@ export default function SavingsPage() {
                       const transaction = movement.transaction;
                       const isIncome = transaction.type === 'INCOME';
                       const isExpense = transaction.type === 'EXPENSE';
+                      const isSaving = transaction.type === 'SAVING';
                       const isTransfer = transaction.type === 'TRANSFER';
                       const isIncomingTransfer =
                         isTransfer &&
                         transaction.destination_savings_account_id === selectedAccount.id;
-                      const isOutgoing = isExpense || (isTransfer && !isIncomingTransfer);
+                      const isOutgoing =
+                        isExpense || isSaving || (isTransfer && !isIncomingTransfer);
                       return (
                         <li key={movement.id} className="flex items-center gap-3 py-3">
                           <CategoryIcon
