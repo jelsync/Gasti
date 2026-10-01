@@ -200,68 +200,6 @@ export default function DashboardPage() {
             <StatCard label="Disponible" value={summary.balance} icon={Wallet} tone="neutral" />
           </div>
 
-          {showFinancialAlerts && (financialEvents.length > 0 || budgetAlerts.length > 0) && (
-            <Card>
-              <CardHeader className="flex-row items-center justify-between gap-4">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <BellRing className="h-5 w-5 text-primary" />
-                    Avisos financieros
-                  </CardTitle>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Fechas pendientes y presupuestos que requieren atención.
-                  </p>
-                </div>
-                <Link
-                  to={ROUTES.financialCalendar}
-                  className="shrink-0 text-sm font-medium text-primary hover:underline"
-                >
-                  Ver calendario
-                </Link>
-              </CardHeader>
-              <CardContent className="grid gap-3 md:grid-cols-2">
-                {financialEvents.slice(0, 4).map((event) => (
-                  <Link
-                    key={event.id}
-                    to={ROUTES.financialCalendar}
-                    className="flex items-center gap-3 rounded-[var(--radius)] border border-border p-3 transition-colors hover:bg-muted"
-                  >
-                    <span
-                      className="h-3 w-3 shrink-0 rounded-full"
-                      style={{ backgroundColor: event.color }}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{event.title}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {event.status === 'OVERDUE'
-                          ? `Venció el ${formatDate(event.date)}`
-                          : event.status === 'DUE'
-                            ? 'Programado para hoy'
-                            : `Próximo: ${formatDate(event.date)}`}
-                      </p>
-                    </div>
-                    <CalendarDays className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  </Link>
-                ))}
-                {budgetAlerts.slice(0, 4).map((alert) => (
-                  <Link
-                    key={alert.id}
-                    to={ROUTES.budgets}
-                    className="flex items-center gap-3 rounded-[var(--radius)] border border-border p-3 transition-colors hover:bg-muted"
-                  >
-                    <PiggyBank className="h-4 w-4 shrink-0 text-amber-500" />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">Presupuesto de {alert.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Has utilizado {formatPercent(alert.percentage)} en {alert.currency}
-                      </p>
-                    </div>
-                  </Link>
-                ))}
-              </CardContent>
-            </Card>
-          )}
-
           {(cards.length > 0 || accounts.length > 0 || loans.length > 0 || totalReceivable > 0) && (
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               {loans.length > 0 && (
@@ -325,6 +263,68 @@ export default function DashboardPage() {
                 </Link>
               )}
             </div>
+          )}
+
+          {showFinancialAlerts && (financialEvents.length > 0 || budgetAlerts.length > 0) && (
+            <Card>
+              <CardHeader className="flex-row items-center justify-between gap-4">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <BellRing className="h-5 w-5 text-primary" />
+                    Avisos financieros
+                  </CardTitle>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Fechas pendientes y presupuestos que requieren atención.
+                  </p>
+                </div>
+                <Link
+                  to={ROUTES.financialCalendar}
+                  className="shrink-0 text-sm font-medium text-primary hover:underline"
+                >
+                  Ver calendario
+                </Link>
+              </CardHeader>
+              <CardContent className="grid gap-3 md:grid-cols-2">
+                {financialEvents.slice(0, 4).map((event) => (
+                  <Link
+                    key={event.id}
+                    to={ROUTES.financialCalendar}
+                    className="flex items-center gap-3 rounded-[var(--radius)] border border-border p-3 transition-colors hover:bg-muted"
+                  >
+                    <span
+                      className="h-3 w-3 shrink-0 rounded-full"
+                      style={{ backgroundColor: event.color }}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">{event.title}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {event.status === 'OVERDUE'
+                          ? `Venció el ${formatDate(event.date)}`
+                          : event.status === 'DUE'
+                            ? 'Programado para hoy'
+                            : `Próximo: ${formatDate(event.date)}`}
+                      </p>
+                    </div>
+                    <CalendarDays className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  </Link>
+                ))}
+                {budgetAlerts.slice(0, 4).map((alert) => (
+                  <Link
+                    key={alert.id}
+                    to={ROUTES.budgets}
+                    className="flex items-center gap-3 rounded-[var(--radius)] border border-border p-3 transition-colors hover:bg-muted"
+                  >
+                    <PiggyBank className="h-4 w-4 shrink-0 text-amber-500" />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">Presupuesto de {alert.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Has utilizado {formatPercent(alert.percentage)} en {alert.currency}
+                      </p>
+                    </div>
+                  </Link>
+                ))}
+              </CardContent>
+            </Card>
           )}
 
           {(budgetUsage.HNL.totalBudget > 0 ||

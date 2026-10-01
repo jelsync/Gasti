@@ -189,6 +189,7 @@ describe('accountMovementAmount', () => {
   it('suma ingresos y resta gastos y ahorros', () => {
     expect(accountMovementAmount({ type: 'INCOME', amount: 1000 })).toBe(1000);
     expect(accountMovementAmount({ type: 'SAVING', amount: 250 })).toBe(-250);
+    expect(accountMovementAmount({ type: 'SAVING', amount: 250 }, 'DESTINATION')).toBe(250);
     expect(accountMovementAmount({ type: 'EXPENSE', amount: 300 })).toBe(-300);
     expect(accountMovementAmount({ type: 'TRANSFER', amount: 300 }, 'SOURCE')).toBe(-300);
     expect(accountMovementAmount({ type: 'TRANSFER', amount: 300 }, 'DESTINATION')).toBe(300);
@@ -226,5 +227,16 @@ describe('savingsGoalMovement', () => {
       }),
     ];
     expect(savingsGoalMovement(list, new Set(['ahorro-1', 'ahorro-2']))).toBe(0);
+  });
+
+  it('cuenta un ahorro explícito aunque la cuenta no esté incluida en la meta automática', () => {
+    const list = [
+      tx({
+        type: 'SAVING',
+        amount: 250,
+        savings_account_id: 'cuscatlan',
+      }),
+    ];
+    expect(savingsGoalMovement(list, new Set())).toBe(250);
   });
 });

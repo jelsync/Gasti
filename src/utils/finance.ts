@@ -149,6 +149,7 @@ export function accountMovementAmount(
   if (transaction.type === 'TRANSFER') {
     return role === 'DESTINATION' ? transaction.amount : -transaction.amount;
   }
+  if (transaction.type === 'SAVING' && role === 'DESTINATION') return transaction.amount;
   return transaction.type === 'EXPENSE' || transaction.type === 'SAVING'
     ? -transaction.amount
     : transaction.amount;
@@ -176,10 +177,12 @@ export function savingsGoalMovement(
     if (transaction.type === 'TRANSFER') {
       if (sourceIncluded) total -= transaction.amount;
       if (destinationIncluded) total += transaction.amount;
+    } else if (transaction.type === 'SAVING') {
+      // Un ahorro explícito cuenta para el presupuesto aunque la cuenta no esté
+      // marcada para la meta automática.
+      total += transaction.amount;
     } else if (sourceIncluded) {
       total += transaction.type === 'EXPENSE' ? -transaction.amount : transaction.amount;
-    } else if (transaction.type === 'SAVING' && !transaction.savings_account_id) {
-      total += transaction.amount;
     }
   }
   return round2(total);

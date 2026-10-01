@@ -115,7 +115,9 @@ export function MovementList({ items, onEditTx, onDeleteTx, onDeleteCharge }: Mo
                 {t.savings_account && t.type === 'INCOME'
                   ? ` · Depositado en ${t.savings_account.name}`
                   : t.savings_account && (t.type === 'EXPENSE' || t.type === 'SAVING')
-                    ? ` · Debitado de ${t.savings_account.name}`
+                    ? t.type === 'SAVING' && t.destination_savings_account
+                      ? ` · ${t.savings_account.name} → ${t.destination_savings_account.name}`
+                      : ` · ${t.type === 'SAVING' ? 'Movido desde' : 'Debitado de'} ${t.savings_account.name}`
                     : t.type === 'TRANSFER'
                       ? t.receivable_person
                         ? t.receivable_movement_kind === 'LEND'

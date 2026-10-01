@@ -120,7 +120,7 @@ export const transactionSchema = z
             : 'Selecciona la cuenta de donde se debitará el gasto',
       });
     }
-    if (transaction.type === 'TRANSFER') {
+    if (transaction.type === 'SAVING' || transaction.type === 'TRANSFER') {
       if (!transaction.savings_account_id) {
         context.addIssue({
           code: z.ZodIssueCode.custom,
@@ -131,7 +131,10 @@ export const transactionSchema = z
       if (!transaction.destination_savings_account_id) {
         context.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'Selecciona la cuenta de destino',
+          message:
+            transaction.type === 'SAVING'
+              ? 'Selecciona la cuenta donde se depositará el ahorro'
+              : 'Selecciona la cuenta de destino',
           path: ['destination_savings_account_id'],
         });
       } else if (transaction.destination_savings_account_id === transaction.savings_account_id) {

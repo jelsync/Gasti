@@ -163,6 +163,17 @@ describe('transactionSchema', () => {
     ).toBe(false);
   });
 
+  it('requiere una cuenta destino para un ahorro', () => {
+    expect(
+      transactionSchema.safeParse({
+        ...base,
+        type: 'SAVING',
+        category_id: null,
+        destination_savings_account_id: null,
+      }).success,
+    ).toBe(false);
+  });
+
   it('acepta transferencias entre dos cuentas diferentes', () => {
     const result = transactionSchema.safeParse({
       ...base,

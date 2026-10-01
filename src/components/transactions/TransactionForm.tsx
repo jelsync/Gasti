@@ -128,12 +128,13 @@ export function TransactionForm({
     kind === 'EXPENSE' || kind === 'SAVING' || kind === 'TRANSFER' || kind === 'CARD_PAYMENT';
   const noRequiredAccounts =
     (accountRequired && savingsAccounts.length === 0) ||
-    (kind === 'TRANSFER' && savingsAccounts.length < 2);
+    ((kind === 'TRANSFER' || kind === 'SAVING') && savingsAccounts.length < 2);
   const sourceAccount = savingsAccounts.find((account) => account.id === savingsId);
   const destinationAccount = savingsAccounts.find((account) => account.id === destinationSavingsId);
   const sourceAvailableBalance = sourceAccount
     ? sourceAccount.balance +
-      (initial?.type === 'TRANSFER' && initial.savings_account_id === sourceAccount.id
+      ((initial?.type === 'TRANSFER' || initial?.type === 'SAVING') &&
+      initial.savings_account_id === sourceAccount.id
         ? initial.amount
         : 0)
     : 0;
@@ -191,7 +192,11 @@ export function TransactionForm({
           : 'Selecciona la cuenta de donde se debitará el gasto',
       );
     }
-    if (kind === 'TRANSFER' && sourceAccount && amt > sourceAvailableBalance) {
+    if (
+      (kind === 'TRANSFER' || kind === 'SAVING') &&
+      sourceAccount &&
+      amt > sourceAvailableBalance
+    ) {
       return fail(
         `El monto supera el saldo disponible de ${formatCurrency(sourceAvailableBalance)}`,
       );
@@ -203,7 +208,8 @@ export function TransactionForm({
       category_id: kind === 'SAVING' || kind === 'TRANSFER' ? null : categoryId || null,
       credit_card_id: null,
       savings_account_id: savingsId || null,
-      destination_savings_account_id: kind === 'TRANSFER' ? destinationSavingsId || null : null,
+      destination_savings_account_id:
+        kind === 'TRANSFER' || kind === 'SAVING' ? destinationSavingsId || null : null,
       description,
       transaction_date: date,
     };
@@ -538,11 +544,15 @@ export function TransactionForm({
               </Field>
             )}
 
-            {kind === 'TRANSFER' && (
+            {(kind === 'TRANSFER' || kind === 'SAVING') && (
               <Field
-                label="Cuenta de destino"
+                label={kind === 'SAVING' ? 'Depositar ahorro en' : 'Cuenta de destino'}
                 htmlFor="destination-savings"
-                hint="El dinero entrará a esta cuenta sin contarse como ingreso."
+                hint={
+                  kind === 'SAVING'
+                    ? 'El dinero se moverá a esta cuenta y contará en el presupuesto de ahorro, sin registrarse como ingreso.'
+                    : 'El dinero entrará a esta cuenta sin contarse como ingreso.'
+                }
               >
                 <Select
                   id="destination-savings"

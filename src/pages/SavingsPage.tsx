@@ -307,8 +307,13 @@ export default function SavingsPage() {
                       const isIncomingTransfer =
                         isTransfer &&
                         transaction.destination_savings_account_id === selectedAccount.id;
+                      const isIncomingSaving =
+                        isSaving &&
+                        transaction.destination_savings_account_id === selectedAccount.id;
                       const isOutgoing =
-                        isExpense || isSaving || (isTransfer && !isIncomingTransfer);
+                        isExpense ||
+                        (isSaving && !isIncomingSaving) ||
+                        (isTransfer && !isIncomingTransfer);
                       return (
                         <li key={movement.id} className="flex items-center gap-3 py-3">
                           <CategoryIcon
@@ -348,7 +353,9 @@ export default function SavingsPage() {
                                   ? (transaction.category?.name ?? 'Ingreso')
                                   : isExpense
                                     ? (transaction.category?.name ?? 'Débito')
-                                    : 'Aporte'}
+                                    : isIncomingSaving
+                                      ? 'Ahorro recibido'
+                                      : 'Aporte'}
                             </p>
                             <p className="truncate text-xs text-muted-foreground">
                               {transaction.description ? `${transaction.description} · ` : ''}
