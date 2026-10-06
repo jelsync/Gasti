@@ -30,6 +30,10 @@ export function LoanMovementHistory({ loan, refreshKey = 0 }: LoanMovementHistor
           <p className="mt-1 text-sm text-muted-foreground">
             Cuotas y abonos que reducen el capital del préstamo
           </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Inicio: {formatDate(loan.start_date)}
+            {loan.end_date ? ` · Finalización: ${formatDate(loan.end_date)}` : ''}
+          </p>
         </div>
         <div className="shrink-0 text-right">
           <p className="text-xs text-muted-foreground">Saldo actual</p>

@@ -118,6 +118,7 @@ export function LoanForm({
             label="Saldo actual (banco)"
             htmlFor="current_balance"
             error={errors.current_balance?.message}
+            hint="Ingresa el saldo exacto que actualmente muestra el banco."
           >
             {money('current_balance')}
           </Field>
@@ -167,6 +168,20 @@ export function LoanForm({
             />
           </Field>
         </div>
+
+        <Field
+          label="Fecha de finalización (opcional)"
+          htmlFor="end_date"
+          error={errors.end_date?.message}
+          hint="Puedes indicar la fecha contractual o prevista de liquidación."
+        >
+          <Input
+            id="end_date"
+            type="date"
+            aria-invalid={!!errors.end_date}
+            {...register('end_date')}
+          />
+        </Field>
 
         <Field
           label="Día mensual de pago (opcional)"

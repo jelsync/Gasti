@@ -26,7 +26,7 @@ import { useCategories } from '@/hooks/useCategories';
 import { useSavingsAccounts } from '@/hooks/useSavingsAccounts';
 import { nextPaymentBreakdown, percentPaid, projectLoan } from '@/utils/loan';
 import { formatCurrency, formatPercent } from '@/utils/format';
-import { formatDate } from '@/utils/date';
+import { formatDate, todayISO } from '@/utils/date';
 import { cn } from '@/lib/utils';
 import type { LoanWithCategory } from '@/types/models';
 import type { LoanInput } from '@/lib/validations';
@@ -170,7 +170,7 @@ export default function LoansPage() {
                 loan.current_balance,
                 loan.interest_rate,
                 loan.installment,
-                loan.start_date,
+                todayISO(),
               );
               const settled = loan.current_balance <= 0;
               return (
@@ -263,13 +263,21 @@ export default function LoansPage() {
                         }
                       />
                       <Detail
-                        label="Liquidación est."
+                        label={loan.end_date ? 'Finalización registrada' : 'Liquidación proyectada'}
                         value={
-                          settled || !projection.estimatedPayoffISO
+                          settled
                             ? '—'
-                            : formatDate(projection.estimatedPayoffISO)
+                            : loan.end_date
+                              ? formatDate(loan.end_date)
+                              : projection.estimatedPayoffISO
+                                ? formatDate(projection.estimatedPayoffISO)
+                                : '—'
                         }
                       />
+                      <Detail label="Inicio" value={formatDate(loan.start_date)} />
+                      {loan.end_date && (
+                        <Detail label="Finalización" value={formatDate(loan.end_date)} />
+                      )}
                       {loan.category && (
                         <Detail label="Categoría de pago" value={loan.category.name} />
                       )}

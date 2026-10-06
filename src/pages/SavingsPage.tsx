@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   ArrowDownToLine,
   ArrowLeftRight,
+  ArrowUpFromLine,
   CircleEqual,
   Copy,
   Landmark,
@@ -246,6 +247,26 @@ export default function SavingsPage() {
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      navigate(`${ROUTES.transactions}?new=deposit&account=${selectedAccount.id}`)
+                    }
+                  >
+                    <ArrowDownToLine className="h-4 w-4" /> Depositar
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      navigate(
+                        `${ROUTES.transactions}?new=withdrawal&account=${selectedAccount.id}`,
+                      )
+                    }
+                  >
+                    <ArrowUpFromLine className="h-4 w-4" /> Retirar
+                  </Button>
                   <span className="font-bold tabular-nums text-primary">
                     {isHidden(PRIVACY_KEYS.account(selectedAccount.id))
                       ? HIDDEN_AMOUNT

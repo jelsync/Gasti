@@ -48,6 +48,7 @@ interface TransactionFormProps {
   defaultType?: TransactionType;
   defaultKind?: Kind;
   defaultCardId?: string | null;
+  defaultAccountId?: string | null;
 }
 
 const KIND_OPTIONS: { value: Kind; label: string }[] = [
@@ -72,6 +73,7 @@ export function TransactionForm({
   defaultType = 'EXPENSE',
   defaultKind,
   defaultCardId = null,
+  defaultAccountId = null,
 }: TransactionFormProps) {
   const { isHidden } = usePrivacy();
   const [kind, setKind] = useState<Kind>(defaultType);
@@ -103,12 +105,12 @@ export function TransactionForm({
     setAmountHnl('');
     setCategoryId(initial?.category_id ?? '');
     setCardId(defaultCardId ?? '');
-    setSavingsId(initial?.savings_account_id ?? '');
+    setSavingsId(initial?.savings_account_id ?? defaultAccountId ?? '');
     setDestinationSavingsId(initial?.destination_savings_account_id ?? '');
     setCardCurrency('HNL');
     setDescription(initial?.description ?? '');
     setDate(initial?.transaction_date ?? todayISO());
-  }, [open, initial, defaultType, defaultKind, defaultCardId]);
+  }, [open, initial, defaultType, defaultKind, defaultCardId, defaultAccountId]);
 
   const kindOptions = isEditing
     ? KIND_OPTIONS.filter((k) => ['EXPENSE', 'INCOME', 'SAVING', 'TRANSFER'].includes(k.value))

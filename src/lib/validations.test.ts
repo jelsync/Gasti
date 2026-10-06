@@ -193,6 +193,39 @@ describe('transactionSchema', () => {
     });
     expect(result.success).toBe(false);
   });
+
+  it('valida que la finalización del préstamo no sea anterior al inicio', () => {
+    const result = loanSchema.safeParse({
+      name: 'Vivienda',
+      loan_number: '',
+      original_amount: 150000,
+      interest_rate: 9,
+      term_months: 180,
+      installment: 1500,
+      payment_day: 20,
+      current_balance: 150000,
+      extra_payment: undefined,
+      start_date: '2024-12-30',
+      end_date: '2039-12-20',
+      category_id: null,
+      savings_account_id: null,
+    });
+    expect(result.success).toBe(true);
+    expect(
+      loanSchema.safeParse({
+        name: 'Vivienda',
+        original_amount: 150000,
+        interest_rate: 9,
+        term_months: 180,
+        installment: 1500,
+        current_balance: 150000,
+        start_date: '2024-12-30',
+        end_date: '2024-12-29',
+        category_id: null,
+        savings_account_id: null,
+      }).success,
+    ).toBe(false);
+  });
 });
 
 describe('budgetSchema', () => {

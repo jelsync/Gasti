@@ -253,44 +253,54 @@ const optionalDayOfMonthSchema = z.preprocess(
     .optional(),
 );
 
-export const loanSchema = z.object({
-  name: z.string().trim().min(1, 'El nombre es obligatorio').max(60, 'Máximo 60 caracteres'),
-  loan_number: z.string().trim().max(40, 'Máximo 40 caracteres').optional(),
-  original_amount: z.coerce
-    .number({ invalid_type_error: 'Ingresa un monto válido' })
-    .positive('El monto debe ser mayor que cero')
-    .max(999_999_999, 'El monto es demasiado grande'),
-  interest_rate: z.coerce
-    .number({ invalid_type_error: 'Ingresa una tasa válida' })
-    .min(0, 'La tasa no puede ser negativa')
-    .max(100, 'Tasa inválida'),
-  term_months: z.coerce
-    .number({ invalid_type_error: 'Ingresa un plazo válido' })
-    .int('Debe ser un número entero')
-    .min(1, 'Mínimo 1 mes')
-    .max(1200, 'Plazo demasiado largo'),
-  installment: z.coerce
-    .number({ invalid_type_error: 'Ingresa una cuota válida' })
-    .positive('La cuota debe ser mayor que cero')
-    .max(999_999_999, 'La cuota es demasiado grande'),
-  payment_day: optionalDayOfMonthSchema,
-  current_balance: z.coerce
-    .number({ invalid_type_error: 'Ingresa un saldo válido' })
-    .min(0, 'El saldo no puede ser negativo')
-    .max(999_999_999, 'El saldo es demasiado grande'),
-  extra_payment: z.preprocess(
-    (v) => (v === '' || v === null || v === undefined ? undefined : v),
-    z.coerce
-      .number({ invalid_type_error: 'Monto inválido' })
-      .positive('Debe ser mayor que cero')
-      .max(999_999_999, 'Monto demasiado grande')
-      .optional(),
-  ),
-  start_date: dateStringSchema,
-  end_date: optionalDateSchema,
-  category_id: z.string().uuid('Selecciona una categoría').nullable(),
-  savings_account_id: z.string().uuid('Selecciona una cuenta').nullable().optional(),
-});
+export const loanSchema = z
+  .object({
+    name: z.string().trim().min(1, 'El nombre es obligatorio').max(60, 'Máximo 60 caracteres'),
+    loan_number: z.string().trim().max(40, 'Máximo 40 caracteres').optional(),
+    original_amount: z.coerce
+      .number({ invalid_type_error: 'Ingresa un monto válido' })
+      .positive('El monto debe ser mayor que cero')
+      .max(999_999_999, 'El monto es demasiado grande'),
+    interest_rate: z.coerce
+      .number({ invalid_type_error: 'Ingresa una tasa válida' })
+      .min(0, 'La tasa no puede ser negativa')
+      .max(100, 'Tasa inválida'),
+    term_months: z.coerce
+      .number({ invalid_type_error: 'Ingresa un plazo válido' })
+      .int('Debe ser un número entero')
+      .min(1, 'Mínimo 1 mes')
+      .max(1200, 'Plazo demasiado largo'),
+    installment: z.coerce
+      .number({ invalid_type_error: 'Ingresa una cuota válida' })
+      .positive('La cuota debe ser mayor que cero')
+      .max(999_999_999, 'La cuota es demasiado grande'),
+    payment_day: optionalDayOfMonthSchema,
+    current_balance: z.coerce
+      .number({ invalid_type_error: 'Ingresa un saldo válido' })
+      .min(0, 'El saldo no puede ser negativo')
+      .max(999_999_999, 'El saldo es demasiado grande'),
+    extra_payment: z.preprocess(
+      (v) => (v === '' || v === null || v === undefined ? undefined : v),
+      z.coerce
+        .number({ invalid_type_error: 'Monto inválido' })
+        .positive('Debe ser mayor que cero')
+        .max(999_999_999, 'Monto demasiado grande')
+        .optional(),
+    ),
+    start_date: dateStringSchema,
+    end_date: optionalDateSchema,
+    category_id: z.string().uuid('Selecciona una categoría').nullable(),
+    savings_account_id: z.string().uuid('Selecciona una cuenta').nullable().optional(),
+  })
+  .superRefine((loan, context) => {
+    if (loan.end_date && loan.end_date < loan.start_date) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['end_date'],
+        message: 'La fecha de finalización no puede ser anterior al inicio',
+      });
+    }
+  });
 
 // ---------------------------------------------------------------------------
 // Tarjetas de crédito y ahorro

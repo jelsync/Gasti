@@ -40,7 +40,11 @@ export default function TransactionsPage() {
   const [searchParams] = useSearchParams();
   const startsWithTransfer = searchParams.get('new') === 'transfer';
   const startsWithCardPayment = searchParams.get('new') === 'card-payment';
+  const startsWithDeposit = searchParams.get('new') === 'deposit';
+  const startsWithWithdrawal =
+    searchParams.get('new') === 'withdrawal' || searchParams.get('new') === 'expense';
   const requestedCardId = searchParams.get('card');
+  const requestedAccountId = searchParams.get('account');
   const [month, setMonth] = useState(getCurrentMonthYear);
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('ALL');
   const [search, setSearch] = useState('');
@@ -48,9 +52,11 @@ export default function TransactionsPage() {
   const [minAmount, setMinAmount] = useState('');
   const [maxAmount, setMaxAmount] = useState('');
   const [showFilters, setShowFilters] = useState(false);
-  const [formOpen, setFormOpen] = useState(startsWithTransfer || startsWithCardPayment);
+  const [formOpen, setFormOpen] = useState(
+    startsWithTransfer || startsWithCardPayment || startsWithDeposit || startsWithWithdrawal,
+  );
   const [formDefaultType, setFormDefaultType] = useState<TransactionType>(
-    startsWithTransfer ? 'TRANSFER' : 'EXPENSE',
+    startsWithTransfer ? 'TRANSFER' : startsWithDeposit ? 'INCOME' : 'EXPENSE',
   );
   const [formDefaultKind, setFormDefaultKind] = useState<
     TransactionType | 'CARD_PAYMENT' | undefined
@@ -405,6 +411,7 @@ export default function TransactionsPage() {
         defaultType={formDefaultType}
         defaultKind={formDefaultKind}
         defaultCardId={requestedCardId}
+        defaultAccountId={requestedAccountId}
       />
 
       <ConfirmDialog
