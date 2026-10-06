@@ -39,6 +39,8 @@ export default function TransactionsPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const startsWithTransfer = searchParams.get('new') === 'transfer';
+  const startsWithCardPayment = searchParams.get('new') === 'card-payment';
+  const requestedCardId = searchParams.get('card');
   const [month, setMonth] = useState(getCurrentMonthYear);
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('ALL');
   const [search, setSearch] = useState('');
@@ -46,10 +48,13 @@ export default function TransactionsPage() {
   const [minAmount, setMinAmount] = useState('');
   const [maxAmount, setMaxAmount] = useState('');
   const [showFilters, setShowFilters] = useState(false);
-  const [formOpen, setFormOpen] = useState(startsWithTransfer);
+  const [formOpen, setFormOpen] = useState(startsWithTransfer || startsWithCardPayment);
   const [formDefaultType, setFormDefaultType] = useState<TransactionType>(
     startsWithTransfer ? 'TRANSFER' : 'EXPENSE',
   );
+  const [formDefaultKind, setFormDefaultKind] = useState<
+    TransactionType | 'CARD_PAYMENT' | undefined
+  >(startsWithCardPayment ? 'CARD_PAYMENT' : undefined);
   const [editing, setEditing] = useState<TransactionWithCategory | null>(null);
   const [deleting, setDeleting] = useState<TransactionWithCategory | null>(null);
   const [deletingCharge, setDeletingCharge] = useState<CardChargeWithCard | null>(null);
@@ -149,6 +154,7 @@ export default function TransactionsPage() {
         ? typeFilter
         : 'EXPENSE',
     );
+    setFormDefaultKind(undefined);
     setFormOpen(true);
   };
 
@@ -397,6 +403,8 @@ export default function TransactionsPage() {
         savingsAccounts={accounts}
         initial={editing}
         defaultType={formDefaultType}
+        defaultKind={formDefaultKind}
+        defaultCardId={requestedCardId}
       />
 
       <ConfirmDialog

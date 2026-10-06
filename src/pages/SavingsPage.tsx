@@ -39,6 +39,7 @@ export default function SavingsPage() {
   const [editing, setEditing] = useState<SavingsAccountWithBalance | null>(null);
   const [deleting, setDeleting] = useState<SavingsAccountWithBalance | null>(null);
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
+  const [movementsMonth, setMovementsMonth] = useState(new Date().toISOString().slice(0, 7));
 
   const total = useMemo(() => accounts.reduce((acc, a) => acc + a.balance, 0), [accounts]);
   const selectedAccount = useMemo(
@@ -254,13 +255,29 @@ export default function SavingsPage() {
                 </div>
               </CardHeader>
               <CardContent>
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <label
+                    className="text-sm text-muted-foreground"
+                    htmlFor={`account-month-${selectedAccount.id}`}
+                  >
+                    Mes
+                  </label>
+                  <input
+                    id={`account-month-${selectedAccount.id}`}
+                    type="month"
+                    value={movementsMonth}
+                    onChange={(event) => setMovementsMonth(event.target.value)}
+                    className="rounded-md border border-border bg-background px-3 py-2 text-sm"
+                  />
+                </div>
                 {movementsLoading ? (
                   <div className="flex justify-center py-8">
                     <Spinner />
                   </div>
                 ) : movementsError ? (
                   <p className="py-6 text-center text-sm text-danger">{movementsError}</p>
-                ) : movements.length === 0 && selectedAccount.opening_balance === 0 ? (
+                ) : movements.filter((movement) => movement.date.slice(0, 7) === movementsMonth)
+                    .length === 0 && selectedAccount.opening_balance === 0 ? (
                   <EmptyState
                     icon={ArrowDownToLine}
                     title="Sin movimientos"
@@ -268,113 +285,115 @@ export default function SavingsPage() {
                   />
                 ) : (
                   <ul className="divide-y divide-border">
-                    {movements.map((movement) => {
-                      if (movement.kind === 'RECONCILIATION') {
-                        const adjustment = movement.reconciliation.difference;
-                        const outgoing = adjustment < 0;
+                    {movements
+                      .filter((movement) => movement.date.slice(0, 7) === movementsMonth)
+                      .map((movement) => {
+                        if (movement.kind === 'RECONCILIATION') {
+                          const adjustment = movement.reconciliation.difference;
+                          const outgoing = adjustment < 0;
+                          return (
+                            <li key={movement.id} className="flex items-center gap-3 py-3">
+                              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-primary">
+                                <CircleEqual className="h-5 w-5" />
+                              </span>
+                              <div className="min-w-0 flex-1">
+                                <p className="font-medium">Ajuste de conciliación</p>
+                                <p className="truncate text-xs text-muted-foreground">
+                                  {movement.reconciliation.notes
+                                    ? `${movement.reconciliation.notes} · `
+                                    : ''}
+                                  {formatDate(movement.date)}
+                                </p>
+                              </div>
+                              <span
+                                className={cn(
+                                  'shrink-0 font-semibold tabular-nums',
+                                  outgoing ? 'text-expense' : 'text-income',
+                                )}
+                              >
+                                {isHidden(PRIVACY_KEYS.account(selectedAccount.id))
+                                  ? HIDDEN_AMOUNT
+                                  : `${outgoing ? '−' : '+'} ${formatCurrency(Math.abs(adjustment))}`}
+                              </span>
+                            </li>
+                          );
+                        }
+                        const transaction = movement.transaction;
+                        const isIncome = transaction.type === 'INCOME';
+                        const isExpense = transaction.type === 'EXPENSE';
+                        const isSaving = transaction.type === 'SAVING';
+                        const isTransfer = transaction.type === 'TRANSFER';
+                        const isIncomingTransfer =
+                          isTransfer &&
+                          transaction.destination_savings_account_id === selectedAccount.id;
+                        const isIncomingSaving =
+                          isSaving &&
+                          transaction.destination_savings_account_id === selectedAccount.id;
+                        const isOutgoing =
+                          isExpense ||
+                          (isSaving && !isIncomingSaving) ||
+                          (isTransfer && !isIncomingTransfer);
                         return (
                           <li key={movement.id} className="flex items-center gap-3 py-3">
-                            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-primary">
-                              <CircleEqual className="h-5 w-5" />
-                            </span>
+                            <CategoryIcon
+                              icon={
+                                isTransfer
+                                  ? transaction.credit_card
+                                    ? 'credit-card'
+                                    : 'arrow-left-right'
+                                  : isIncome || isExpense
+                                    ? (transaction.category?.icon ??
+                                      (isIncome ? 'circle-plus' : 'circle'))
+                                    : 'piggy-bank'
+                              }
+                              color={
+                                isTransfer
+                                  ? isIncomingTransfer
+                                    ? '#10b981'
+                                    : '#0ea5e9'
+                                  : isIncome || isExpense
+                                    ? (transaction.category?.color ?? '#10b981')
+                                    : selectedAccount.color
+                              }
+                            />
                             <div className="min-w-0 flex-1">
-                              <p className="font-medium">Ajuste de conciliación</p>
+                              <p className="truncate font-medium">
+                                {isTransfer
+                                  ? transaction.receivable_person
+                                    ? transaction.receivable_movement_kind === 'LEND'
+                                      ? `Préstamo a ${transaction.receivable_person.name}`
+                                      : `Pago recibido de ${transaction.receivable_person.name}`
+                                    : isIncomingTransfer
+                                      ? `Transferencia recibida de ${transaction.savings_account?.name ?? 'otra cuenta'}`
+                                      : transaction.credit_card
+                                        ? `Pago de ${transaction.credit_card.name}`
+                                        : `Transferencia enviada a ${transaction.destination_savings_account?.name ?? 'otra cuenta'}`
+                                  : isIncome
+                                    ? (transaction.category?.name ?? 'Ingreso')
+                                    : isExpense
+                                      ? (transaction.category?.name ?? 'Débito')
+                                      : isIncomingSaving
+                                        ? 'Ahorro recibido'
+                                        : 'Aporte'}
+                              </p>
                               <p className="truncate text-xs text-muted-foreground">
-                                {movement.reconciliation.notes
-                                  ? `${movement.reconciliation.notes} · `
-                                  : ''}
-                                {formatDate(movement.date)}
+                                {transaction.description ? `${transaction.description} · ` : ''}
+                                {formatDate(transaction.transaction_date)}
                               </p>
                             </div>
                             <span
                               className={cn(
                                 'shrink-0 font-semibold tabular-nums',
-                                outgoing ? 'text-expense' : 'text-income',
+                                isOutgoing ? 'text-expense' : 'text-income',
                               )}
                             >
                               {isHidden(PRIVACY_KEYS.account(selectedAccount.id))
                                 ? HIDDEN_AMOUNT
-                                : `${outgoing ? '−' : '+'} ${formatCurrency(Math.abs(adjustment))}`}
+                                : `${isOutgoing ? '−' : '+'} ${formatCurrency(transaction.amount)}`}
                             </span>
                           </li>
                         );
-                      }
-                      const transaction = movement.transaction;
-                      const isIncome = transaction.type === 'INCOME';
-                      const isExpense = transaction.type === 'EXPENSE';
-                      const isSaving = transaction.type === 'SAVING';
-                      const isTransfer = transaction.type === 'TRANSFER';
-                      const isIncomingTransfer =
-                        isTransfer &&
-                        transaction.destination_savings_account_id === selectedAccount.id;
-                      const isIncomingSaving =
-                        isSaving &&
-                        transaction.destination_savings_account_id === selectedAccount.id;
-                      const isOutgoing =
-                        isExpense ||
-                        (isSaving && !isIncomingSaving) ||
-                        (isTransfer && !isIncomingTransfer);
-                      return (
-                        <li key={movement.id} className="flex items-center gap-3 py-3">
-                          <CategoryIcon
-                            icon={
-                              isTransfer
-                                ? transaction.credit_card
-                                  ? 'credit-card'
-                                  : 'arrow-left-right'
-                                : isIncome || isExpense
-                                  ? (transaction.category?.icon ??
-                                    (isIncome ? 'circle-plus' : 'circle'))
-                                  : 'piggy-bank'
-                            }
-                            color={
-                              isTransfer
-                                ? isIncomingTransfer
-                                  ? '#10b981'
-                                  : '#0ea5e9'
-                                : isIncome || isExpense
-                                  ? (transaction.category?.color ?? '#10b981')
-                                  : selectedAccount.color
-                            }
-                          />
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate font-medium">
-                              {isTransfer
-                                ? transaction.receivable_person
-                                  ? transaction.receivable_movement_kind === 'LEND'
-                                    ? `Préstamo a ${transaction.receivable_person.name}`
-                                    : `Pago recibido de ${transaction.receivable_person.name}`
-                                  : isIncomingTransfer
-                                    ? `Transferencia recibida de ${transaction.savings_account?.name ?? 'otra cuenta'}`
-                                    : transaction.credit_card
-                                      ? `Pago de ${transaction.credit_card.name}`
-                                      : `Transferencia enviada a ${transaction.destination_savings_account?.name ?? 'otra cuenta'}`
-                                : isIncome
-                                  ? (transaction.category?.name ?? 'Ingreso')
-                                  : isExpense
-                                    ? (transaction.category?.name ?? 'Débito')
-                                    : isIncomingSaving
-                                      ? 'Ahorro recibido'
-                                      : 'Aporte'}
-                            </p>
-                            <p className="truncate text-xs text-muted-foreground">
-                              {transaction.description ? `${transaction.description} · ` : ''}
-                              {formatDate(transaction.transaction_date)}
-                            </p>
-                          </div>
-                          <span
-                            className={cn(
-                              'shrink-0 font-semibold tabular-nums',
-                              isOutgoing ? 'text-expense' : 'text-income',
-                            )}
-                          >
-                            {isHidden(PRIVACY_KEYS.account(selectedAccount.id))
-                              ? HIDDEN_AMOUNT
-                              : `${isOutgoing ? '−' : '+'} ${formatCurrency(transaction.amount)}`}
-                          </span>
-                        </li>
-                      );
-                    })}
+                      })}
                     {selectedAccount.opening_balance > 0 && (
                       <li className="flex items-center gap-3 py-3">
                         <span

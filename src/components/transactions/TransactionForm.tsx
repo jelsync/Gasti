@@ -28,7 +28,7 @@ import { mapDbError } from '@/lib/errors';
 import { HIDDEN_AMOUNT } from '@/components/ui/PrivacyToggle';
 import { PRIVACY_KEYS, usePrivacy } from '@/contexts/privacy';
 
-type Kind = TransactionType | 'CARD_CHARGE' | 'CARD_PAYMENT';
+export type Kind = TransactionType | 'CARD_CHARGE' | 'CARD_PAYMENT';
 
 export type TransactionSubmit =
   | { kind: 'transaction'; input: TransactionInput }
@@ -46,6 +46,8 @@ interface TransactionFormProps {
   savingsAccounts: Pick<SavingsAccountWithBalance, 'id' | 'name' | 'balance'>[];
   initial?: TransactionWithCategory | null;
   defaultType?: TransactionType;
+  defaultKind?: Kind;
+  defaultCardId?: string | null;
 }
 
 const KIND_OPTIONS: { value: Kind; label: string }[] = [
@@ -68,6 +70,8 @@ export function TransactionForm({
   savingsAccounts,
   initial,
   defaultType = 'EXPENSE',
+  defaultKind,
+  defaultCardId = null,
 }: TransactionFormProps) {
   const { isHidden } = usePrivacy();
   const [kind, setKind] = useState<Kind>(defaultType);
@@ -94,17 +98,17 @@ export function TransactionForm({
     if (!open) return;
     setError(null);
     setRecurringReview(null);
-    setKind(initial?.type ?? defaultType);
+    setKind(initial?.type ?? defaultKind ?? defaultType);
     setAmount(initial?.amount != null ? String(initial.amount) : '');
     setAmountHnl('');
     setCategoryId(initial?.category_id ?? '');
-    setCardId('');
+    setCardId(defaultCardId ?? '');
     setSavingsId(initial?.savings_account_id ?? '');
     setDestinationSavingsId(initial?.destination_savings_account_id ?? '');
     setCardCurrency('HNL');
     setDescription(initial?.description ?? '');
     setDate(initial?.transaction_date ?? todayISO());
-  }, [open, initial, defaultType]);
+  }, [open, initial, defaultType, defaultKind, defaultCardId]);
 
   const kindOptions = isEditing
     ? KIND_OPTIONS.filter((k) => ['EXPENSE', 'INCOME', 'SAVING', 'TRANSFER'].includes(k.value))

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Banknote, CreditCard, ShoppingBag, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -7,6 +7,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useCreditCardMovements } from '@/hooks/useCreditCardMovements';
 import { formatDate } from '@/utils/date';
 import { formatMoney } from '@/utils/format';
+import { todayISO } from '@/utils/date';
 import type { CreditCardWithBalance, Currency } from '@/types/models';
 import type { CardMovement } from '@/services/cards.service';
 
@@ -18,6 +19,11 @@ interface CardMovementHistoryProps {
 export function CardMovementHistory({ card, onChanged }: CardMovementHistoryProps) {
   const { movements, loading, error, remove } = useCreditCardMovements(card.id);
   const [deleting, setDeleting] = useState<CardMovement | null>(null);
+  const [month, setMonth] = useState(todayISO().slice(0, 7));
+  const visibleMovements = useMemo(
+    () => movements.filter((movement) => movement.date.slice(0, 7) === month),
+    [movements, month],
+  );
   const openings: { currency: Currency; amount: number }[] = [
     { currency: 'HNL' as const, amount: card.opening_balance },
     { currency: 'USD' as const, amount: card.opening_balance_usd },
@@ -40,21 +46,33 @@ export function CardMovementHistory({ card, onChanged }: CardMovementHistoryProp
         </div>
       </CardHeader>
       <CardContent>
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <label className="text-sm text-muted-foreground" htmlFor={`card-month-${card.id}`}>
+            Mes
+          </label>
+          <input
+            id={`card-month-${card.id}`}
+            type="month"
+            value={month}
+            onChange={(event) => setMonth(event.target.value)}
+            className="rounded-md border border-border bg-background px-3 py-2 text-sm"
+          />
+        </div>
         {loading ? (
           <div className="flex justify-center py-8">
             <Spinner />
           </div>
         ) : error ? (
           <p className="py-6 text-center text-sm text-danger">{error}</p>
-        ) : movements.length === 0 && openings.length === 0 ? (
+        ) : visibleMovements.length === 0 && openings.length === 0 ? (
           <EmptyState
             icon={CreditCard}
-            title="Sin movimientos"
-            description="Las compras y pagos de esta tarjeta aparecerán aquí."
+            title="Sin movimientos en este mes"
+            description="Selecciona otro mes para consultar compras y pagos anteriores."
           />
         ) : (
           <ul className="divide-y divide-border">
-            {movements.map((movement) => {
+            {visibleMovements.map((movement) => {
               const isCharge = movement.kind === 'CHARGE';
               return (
                 <li

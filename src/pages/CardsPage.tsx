@@ -1,6 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { CalendarDays, CreditCard as CardIcon, Pencil, Plus, Trash2 } from 'lucide-react';
+import {
+  Banknote,
+  CalendarDays,
+  CreditCard as CardIcon,
+  Pencil,
+  Plus,
+  Receipt,
+  Trash2,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/PageHeader';
 import { Card, CardContent } from '@/components/ui/Card';
@@ -202,6 +210,24 @@ export default function CardsPage() {
                         >
                           <Pencil className="h-4 w-4" />
                         </button>
+                        <Link
+                          to={`${ROUTES.transactions}?new=expense`}
+                          onClick={(event) => event.stopPropagation()}
+                          aria-label="Nueva transacción"
+                          title="Nueva transacción"
+                          className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                        >
+                          <Receipt className="h-4 w-4" />
+                        </Link>
+                        <Link
+                          to={`${ROUTES.transactions}?new=card-payment&card=${card.id}`}
+                          onClick={(event) => event.stopPropagation()}
+                          aria-label="Pagar tarjeta"
+                          title="Pagar tarjeta"
+                          className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                        >
+                          <Banknote className="h-4 w-4" />
+                        </Link>
                         <button
                           type="button"
                           onClick={(event) => {
