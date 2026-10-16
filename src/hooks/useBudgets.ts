@@ -36,9 +36,9 @@ export function useBudgets(month: MonthYear) {
   }, [refresh]);
 
   const save = useCallback(
-    async (input: BudgetInput) => {
+    async (input: BudgetInput, budgetId?: string) => {
       if (!user) throw new Error('Sesión no válida');
-      await upsertBudget(user.id, input);
+      await upsertBudget(user.id, input, budgetId);
       await refresh();
     },
     [user, refresh],

@@ -22,9 +22,28 @@ export async function getBudgets(year: number, month: number): Promise<BudgetWit
 }
 
 /** Crea o actualiza un presupuesto (por categoría de gasto o meta de ahorro). */
-export async function upsertBudget(userId: string, input: BudgetInput): Promise<Budget> {
-  // Meta de ahorro: una por mes (category_id null); busca existente y actualiza.
+export async function upsertBudget(
+  userId: string,
+  input: BudgetInput,
+  existingBudgetId?: string,
+): Promise<Budget> {
+  // Al editar, usa el registro seleccionado. Esto evita depender de maybeSingle()
+  // si existen datos antiguos duplicados o una restricción aún no aplicada.
   if (input.kind === 'SAVINGS') {
+    if (existingBudgetId) {
+      const { data, error } = await supabase
+        .from('budgets')
+        .update({ amount: input.amount, currency: 'HNL' })
+        .eq('id', existingBudgetId)
+        .eq('user_id', userId)
+        .eq('kind', 'SAVINGS')
+        .select('*')
+        .single();
+      if (error) throw error;
+      return data;
+    }
+
+    // Meta de ahorro nueva: una por mes (category_id null); busca existente y actualiza.
     const { data: existing, error: findError } = await supabase
       .from('budgets')
       .select('id')

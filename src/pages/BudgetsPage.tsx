@@ -136,7 +136,7 @@ export default function BudgetsPage() {
   );
 
   const handleSubmit = async (input: BudgetInput) => {
-    await save(input);
+    await save(input, editing?.id);
     toast.success(editing ? 'Presupuesto actualizado' : 'Presupuesto creado');
   };
 
