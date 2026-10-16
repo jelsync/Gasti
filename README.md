@@ -1,6 +1,6 @@
 # Gasti
 
-**Gasti** es una aplicación web para llevar el control de tus **gastos e ingresos personales** mes a mes: dashboard financiero, transacciones recurrentes confirmables, categorías, presupuestos, historial, filtros y reportes con gráficos. Cada usuario accede únicamente a sus propios datos.
+**Gasti** es una aplicación web para llevar el control de tus **gastos e ingresos personales** mes a mes: dashboard financiero, transacciones recurrentes confirmables, categorías, presupuestos, historial, filtros y reportes con gráficos. Cada usuario accede únicamente a sus propios datos .
 
 Moneda por defecto: **Lempira hondureño (HNL, `L`)**.
 
