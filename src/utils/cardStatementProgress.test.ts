@@ -83,6 +83,7 @@ describe('avance del último corte de tarjeta', () => {
 
     expect(progress.HNL).toEqual({
       cutoffBalance: 1_000,
+      currentBalance: 600,
       paidTowardCutoff: 700,
       cutoffRemaining: 300,
       newCycleCharges: 300,
@@ -91,6 +92,7 @@ describe('avance del último corte de tarjeta', () => {
     });
     expect(progress.USD).toEqual({
       cutoffBalance: 20,
+      currentBalance: 9,
       paidTowardCutoff: 20,
       cutoffRemaining: 0,
       newCycleCharges: 14,

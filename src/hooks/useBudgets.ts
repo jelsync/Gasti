@@ -5,6 +5,7 @@ import {
   deleteBudget,
   getBudgets,
   upsertBudget,
+  updateSavingsBudget,
   type BudgetWithCategory,
 } from '@/services/budgets.service';
 import { mapDbError } from '@/lib/errors';
@@ -44,6 +45,15 @@ export function useBudgets(month: MonthYear) {
     [user, refresh],
   );
 
+  const updateSavings = useCallback(
+    async (budgetId: string, amount: number) => {
+      if (!user) throw new Error('Sesión no válida');
+      await updateSavingsBudget(user.id, budgetId, amount);
+      await refresh();
+    },
+    [user, refresh],
+  );
+
   const remove = useCallback(
     async (id: string) => {
       await deleteBudget(id);
@@ -59,5 +69,5 @@ export function useBudgets(month: MonthYear) {
     return count;
   }, [user, month, refresh]);
 
-  return { budgets, loading, error, refresh, save, remove, copyFromPrevious };
+  return { budgets, loading, error, refresh, save, updateSavings, remove, copyFromPrevious };
 }

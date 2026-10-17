@@ -365,6 +365,31 @@ export default function FinancialGoalsPage() {
                           La suma reservada en metas supera el saldo actual de la cuenta vinculada.
                         </p>
                       )}
+                      <div className="flex flex-wrap gap-2 border-t border-border pt-3">
+                        <Button
+                          size="sm"
+                          disabled={goal.status === 'PAUSED'}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setSelectedGoalId(goal.id);
+                            setMovementKind('CONTRIBUTION');
+                          }}
+                        >
+                          <ArrowUpCircle className="h-4 w-4" /> Aportar
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={goal.status === 'PAUSED' || goal.saved_amount <= 0}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setSelectedGoalId(goal.id);
+                            setMovementKind('WITHDRAWAL');
+                          }}
+                        >
+                          <ArrowDownCircle className="h-4 w-4" /> Retirar
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 );
@@ -380,23 +405,6 @@ export default function FinancialGoalsPage() {
                   <p className="mt-1 text-sm text-muted-foreground">
                     Aportes y retiros del dinero reservado
                   </p>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    disabled={selectedGoal.status === 'PAUSED'}
-                    onClick={() => setMovementKind('CONTRIBUTION')}
-                  >
-                    <ArrowUpCircle className="h-4 w-4" /> Aportar
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={selectedGoal.status === 'PAUSED' || selectedGoal.saved_amount <= 0}
-                    onClick={() => setMovementKind('WITHDRAWAL')}
-                  >
-                    <ArrowDownCircle className="h-4 w-4" /> Retirar
-                  </Button>
                 </div>
               </CardHeader>
               <CardContent>

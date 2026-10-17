@@ -165,7 +165,7 @@ export default function SavingsPage() {
                   selectedAccountId === account.id && 'border-primary ring-1 ring-primary/30',
                 )}
               >
-                <CardContent className="flex items-center gap-3">
+                <CardContent className="flex flex-wrap items-center gap-3">
                   <span
                     className="flex h-10 w-10 items-center justify-center rounded-full text-white"
                     style={{ backgroundColor: account.color }}
@@ -232,6 +232,28 @@ export default function SavingsPage() {
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
+                  <div className="flex w-full flex-wrap gap-2 border-t border-border pt-3">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        navigate(`${ROUTES.transactions}?new=deposit&account=${account.id}`);
+                      }}
+                    >
+                      <ArrowDownToLine className="h-4 w-4" /> Depositar
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        navigate(`${ROUTES.transactions}?new=withdrawal&account=${account.id}`);
+                      }}
+                    >
+                      <ArrowUpFromLine className="h-4 w-4" /> Retirar
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             ))}
@@ -247,26 +269,6 @@ export default function SavingsPage() {
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() =>
-                      navigate(`${ROUTES.transactions}?new=deposit&account=${selectedAccount.id}`)
-                    }
-                  >
-                    <ArrowDownToLine className="h-4 w-4" /> Depositar
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() =>
-                      navigate(
-                        `${ROUTES.transactions}?new=withdrawal&account=${selectedAccount.id}`,
-                      )
-                    }
-                  >
-                    <ArrowUpFromLine className="h-4 w-4" /> Retirar
-                  </Button>
                   <span className="font-bold tabular-nums text-primary">
                     {isHidden(PRIVACY_KEYS.account(selectedAccount.id))
                       ? HIDDEN_AMOUNT

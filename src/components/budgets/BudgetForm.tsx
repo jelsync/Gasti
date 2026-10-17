@@ -73,7 +73,10 @@ export function BudgetForm({
     );
     reset({
       kind: initial?.kind ?? 'CATEGORY',
-      category_id: initial?.category_id ?? initialCategoryId ?? firstAvailable?.id ?? null,
+      category_id:
+        initial?.kind === 'SAVINGS'
+          ? null
+          : (initial?.category_id ?? initialCategoryId ?? firstAvailable?.id ?? null),
       amount: initial?.amount,
       currency: resetCurrency,
       month: month.month,

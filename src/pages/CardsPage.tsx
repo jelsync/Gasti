@@ -27,6 +27,9 @@ import { cn } from '@/lib/utils';
 import type { CreditCardWithBalance } from '@/types/models';
 import type { CreditCardInput } from '@/lib/validations';
 
+const cardActionLinkClass =
+  'inline-flex h-9 items-center justify-center gap-2 rounded-[var(--radius)] border border-border bg-card px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background';
+
 export default function CardsPage() {
   const [searchParams] = useSearchParams();
   const requestedCardId = searchParams.get('card');
@@ -171,7 +174,7 @@ export default function CardsPage() {
                   )}
                 >
                   <CardContent className="space-y-4">
-                    <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3">
                       <div className="flex min-w-0 items-center gap-3">
                         <span
                           className="flex h-9 w-9 items-center justify-center rounded-lg text-white"
@@ -196,49 +199,6 @@ export default function CardsPage() {
                             </p>
                           )}
                         </div>
-                      </div>
-                      <div className="flex shrink-0 items-center gap-1">
-                        <button
-                          type="button"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            setEditing(card);
-                            setFormOpen(true);
-                          }}
-                          aria-label="Editar"
-                          className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                        <Link
-                          to={`${ROUTES.transactions}?new=expense`}
-                          onClick={(event) => event.stopPropagation()}
-                          aria-label="Nueva transacción"
-                          title="Nueva transacción"
-                          className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-                        >
-                          <Receipt className="h-4 w-4" />
-                        </Link>
-                        <Link
-                          to={`${ROUTES.transactions}?new=card-payment&card=${card.id}`}
-                          onClick={(event) => event.stopPropagation()}
-                          aria-label="Pagar tarjeta"
-                          title="Pagar tarjeta"
-                          className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-                        >
-                          <Banknote className="h-4 w-4" />
-                        </Link>
-                        <button
-                          type="button"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            setDeleting(card);
-                          }}
-                          aria-label="Eliminar"
-                          className="rounded-md p-1.5 text-muted-foreground hover:bg-expense-soft hover:text-expense"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
                       </div>
                     </div>
 
@@ -275,6 +235,47 @@ export default function CardsPage() {
                           )}
                         </div>
                       )}
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 border-t border-border pt-3">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setEditing(card);
+                          setFormOpen(true);
+                        }}
+                      >
+                        <Pencil className="h-4 w-4" /> Editar
+                      </Button>
+                      <Link
+                        to={`${ROUTES.transactions}?new=card-charge&card=${card.id}`}
+                        onClick={(event) => event.stopPropagation()}
+                        className={cardActionLinkClass}
+                      >
+                        <Receipt className="h-4 w-4" /> Registrar compra
+                      </Link>
+                      <Link
+                        to={`${ROUTES.transactions}?new=card-payment&card=${card.id}`}
+                        onClick={(event) => event.stopPropagation()}
+                        className={cardActionLinkClass}
+                      >
+                        <Banknote className="h-4 w-4" /> Pagar tarjeta
+                      </Link>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setDeleting(card);
+                        }}
+                        className="border-expense/40 text-expense hover:bg-expense-soft hover:text-expense"
+                      >
+                        <Trash2 className="h-4 w-4" /> Eliminar
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>

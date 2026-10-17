@@ -4,6 +4,7 @@ import type { CardStatement, CreditCardWithBalance, Currency } from '@/types/mod
 
 export interface StatementCurrencyProgress {
   cutoffBalance: number;
+  currentBalance: number;
   paidTowardCutoff: number;
   cutoffRemaining: number;
   newCycleCharges: number;
@@ -46,6 +47,7 @@ function progressForCurrency(
 
   return {
     cutoffBalance: round2(cutoffBalance),
+    currentBalance: round2(cardBalance(card, currency)),
     paidTowardCutoff: round2(paidTowardCutoff),
     cutoffRemaining,
     newCycleCharges: round2(newCycleCharges),

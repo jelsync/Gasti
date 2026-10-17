@@ -8,6 +8,24 @@ export interface BudgetWithCategory extends Budget {
 
 const SELECT_WITH_CATEGORY = '*, category:categories(id, name, icon, color)';
 
+export async function updateSavingsBudget(
+  userId: string,
+  budgetId: string,
+  amount: number,
+): Promise<Budget> {
+  const { data, error } = await supabase
+    .from('budgets')
+    .update({ amount, currency: 'HNL' })
+    .eq('id', budgetId)
+    .eq('user_id', userId)
+    .eq('kind', 'SAVINGS')
+    .select('*')
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
 /** Presupuestos de un mes/año (con su categoría). */
 export async function getBudgets(year: number, month: number): Promise<BudgetWithCategory[]> {
   const { data, error } = await supabase
@@ -31,16 +49,7 @@ export async function upsertBudget(
   // si existen datos antiguos duplicados o una restricción aún no aplicada.
   if (input.kind === 'SAVINGS') {
     if (existingBudgetId) {
-      const { data, error } = await supabase
-        .from('budgets')
-        .update({ amount: input.amount, currency: 'HNL' })
-        .eq('id', existingBudgetId)
-        .eq('user_id', userId)
-        .eq('kind', 'SAVINGS')
-        .select('*')
-        .single();
-      if (error) throw error;
-      return data;
+      return updateSavingsBudget(userId, existingBudgetId, input.amount);
     }
 
     // Meta de ahorro nueva: una por mes (category_id null); busca existente y actualiza.

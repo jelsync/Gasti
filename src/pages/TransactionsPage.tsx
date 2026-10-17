@@ -11,7 +11,11 @@ import { Card, CardContent } from '@/components/ui/Card';
 import { Spinner } from '@/components/ui/Spinner';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { TransactionForm, type TransactionSubmit } from '@/components/transactions/TransactionForm';
+import {
+  TransactionForm,
+  type Kind,
+  type TransactionSubmit,
+} from '@/components/transactions/TransactionForm';
 import { MovementList, type MovementItem } from '@/components/transactions/MovementList';
 import { useCategories } from '@/hooks/useCategories';
 import { useTransactions } from '@/hooks/useTransactions';
@@ -39,6 +43,7 @@ export default function TransactionsPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const startsWithTransfer = searchParams.get('new') === 'transfer';
+  const startsWithCardCharge = searchParams.get('new') === 'card-charge';
   const startsWithCardPayment = searchParams.get('new') === 'card-payment';
   const startsWithDeposit = searchParams.get('new') === 'deposit';
   const startsWithWithdrawal =
@@ -53,14 +58,18 @@ export default function TransactionsPage() {
   const [maxAmount, setMaxAmount] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [formOpen, setFormOpen] = useState(
-    startsWithTransfer || startsWithCardPayment || startsWithDeposit || startsWithWithdrawal,
+    startsWithTransfer ||
+      startsWithCardCharge ||
+      startsWithCardPayment ||
+      startsWithDeposit ||
+      startsWithWithdrawal,
   );
   const [formDefaultType, setFormDefaultType] = useState<TransactionType>(
     startsWithTransfer ? 'TRANSFER' : startsWithDeposit ? 'INCOME' : 'EXPENSE',
   );
-  const [formDefaultKind, setFormDefaultKind] = useState<
-    TransactionType | 'CARD_PAYMENT' | undefined
-  >(startsWithCardPayment ? 'CARD_PAYMENT' : undefined);
+  const [formDefaultKind, setFormDefaultKind] = useState<Kind | undefined>(
+    startsWithCardCharge ? 'CARD_CHARGE' : startsWithCardPayment ? 'CARD_PAYMENT' : undefined,
+  );
   const [editing, setEditing] = useState<TransactionWithCategory | null>(null);
   const [deleting, setDeleting] = useState<TransactionWithCategory | null>(null);
   const [deletingCharge, setDeletingCharge] = useState<CardChargeWithCard | null>(null);

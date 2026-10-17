@@ -33,7 +33,7 @@ export default function BudgetsPage() {
   const range = useMemo(() => monthRange(month.year, month.month), [month]);
   const filters = useMemo(() => ({ dateStart: range.start, dateEnd: range.end }), [range]);
 
-  const { budgets, loading, save, remove, copyFromPrevious } = useBudgets(month);
+  const { budgets, loading, save, updateSavings, remove, copyFromPrevious } = useBudgets(month);
   const { transactions } = useTransactions(filters);
   const { categories } = useCategories();
   const { accounts } = useSavingsAccounts();
@@ -136,7 +136,11 @@ export default function BudgetsPage() {
   );
 
   const handleSubmit = async (input: BudgetInput) => {
-    await save(input, editing?.id);
+    if (editing?.kind === 'SAVINGS' && input.kind === 'SAVINGS') {
+      await updateSavings(editing.id, input.amount);
+    } else {
+      await save(input, editing?.id);
+    }
     toast.success(editing ? 'Presupuesto actualizado' : 'Presupuesto creado');
   };
 

@@ -316,10 +316,10 @@ function StatementPaymentProgress({
   return (
     <section className="space-y-3 rounded-lg border border-border bg-muted/30 p-4">
       <div>
-        <p className="font-medium">Pago del último corte</p>
+        <p className="font-medium">Estado del último corte</p>
         <p className="text-xs text-muted-foreground">
-          Corte del {formatDate(progress.statement.statement_date)}. Los pagos posteriores se
-          aplican primero a este saldo.
+          El saldo al corte es una fotografía del {formatDate(progress.statement.statement_date)}.
+          El saldo actual incluye los movimientos posteriores.
         </p>
       </div>
       <div className="grid gap-3 lg:grid-cols-2">
@@ -344,6 +344,14 @@ function StatementCurrencyCard({
   return (
     <div className="space-y-3 rounded-md border border-border bg-card p-3 text-sm">
       <p className="font-semibold">{currency}</p>
+      <div className="flex items-baseline justify-between gap-3 tabular-nums">
+        <span className="text-muted-foreground">Saldo al corte</span>
+        <span className="font-medium">{formatMoney(progress.cutoffBalance, currency)}</span>
+      </div>
+      <div className="flex items-baseline justify-between gap-3 tabular-nums">
+        <span className="text-muted-foreground">Saldo actual de tarjeta</span>
+        <span className="font-semibold">{formatMoney(progress.currentBalance, currency)}</span>
+      </div>
       {progress.cutoffBalance > 0 ? (
         <>
           <div className="flex items-baseline justify-between gap-3 tabular-nums">
