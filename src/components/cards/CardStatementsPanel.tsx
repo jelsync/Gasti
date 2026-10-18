@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { CheckCircle2, ClipboardCheck } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Banknote, CheckCircle2, ClipboardCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -24,6 +25,7 @@ import {
 } from '@/utils/cardStatementProgress';
 import { formatDate, todayISO } from '@/utils/date';
 import { formatMoney } from '@/utils/format';
+import { ROUTES } from '@/constants/routes';
 
 interface Props {
   card: CreditCardWithBalance;
@@ -324,7 +326,12 @@ function StatementPaymentProgress({
       </div>
       <div className="grid gap-3 lg:grid-cols-2">
         {currencies.map((currency) => (
-          <StatementCurrencyCard key={currency} currency={currency} progress={progress[currency]} />
+          <StatementCurrencyCard
+            key={currency}
+            cardId={progress.statement.card_id}
+            currency={currency}
+            progress={progress[currency]}
+          />
         ))}
       </div>
     </section>
@@ -332,9 +339,11 @@ function StatementPaymentProgress({
 }
 
 function StatementCurrencyCard({
+  cardId,
   currency,
   progress,
 }: {
+  cardId: string;
   currency: 'HNL' | 'USD';
   progress: StatementCurrencyProgress;
 }) {
@@ -368,6 +377,15 @@ function StatementCurrencyCard({
               {formatMoney(progress.cutoffRemaining, currency)}
             </span>
           </div>
+          {progress.cutoffRemaining > 0 && (
+            <Link
+              to={`${ROUTES.transactions}?new=card-payment&card=${cardId}&amount=${progress.cutoffRemaining.toFixed(2)}&currency=${currency}&payment=statement`}
+              className="inline-flex h-9 w-full items-center justify-center gap-2 rounded-[var(--radius)] border border-border bg-card px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            >
+              <Banknote className="h-4 w-4" /> Pagar{' '}
+              {formatMoney(progress.cutoffRemaining, currency)} del corte
+            </Link>
+          )}
         </>
       ) : (
         <p className="text-muted-foreground">No hubo saldo pendiente en este corte.</p>

@@ -113,6 +113,7 @@ SavingsPage
 - Página y listado de movimientos: `src/pages/SavingsPage.tsx`.
 - Formulario: `src/components/savings/SavingsAccountForm.tsx`.
 - Hooks: `src/hooks/useSavingsAccounts.ts`, `useSavingsAccountMovements.ts`.
+- El efectivo físico se crea desde Cuentas como una cuenta “Efectivo”: retiros/depósitos bancarios son transferencias, y sus ingresos/gastos se registran contra esa cuenta.
 - Servicio: `src/services/savings.service.ts`.
 - Aunque algunos nombres internos conservan `Savings`, la interfaz se denomina “Cuentas”.
 - Saldo = saldo inicial + `INCOME`/`SAVING` − `EXPENSE` con el mismo `savings_account_id`.
@@ -135,6 +136,7 @@ SavingsPage
 - Página/formulario: `src/pages/CardsPage.tsx`, `src/components/cards/CreditCardForm.tsx`.
 - Cortes: `src/components/cards/CardStatementsPanel.tsx`, `src/hooks/useMonthlyCardStatements.ts`, `src/services/cardStatements.service.ts` y `src/utils/cardStatementProgress.ts`.
 - Historial por tarjeta: `src/components/cards/CardMovementHistory.tsx`.
+- Si existe un saldo pendiente del último corte, el panel ofrece pagar ese total y precarga el pago de tarjeta con su importe y moneda.
 - Hooks: `src/hooks/useCreditCards.ts`, `useCardCharges.ts`, `useCreditCardMovements.ts`.
 - Servicio: `src/services/cards.service.ts`.
 - Tablas relacionadas: `credit_cards`, `card_charges`, `card_payments`.

@@ -18,9 +18,16 @@ interface SavingsAccountFormProps {
   onClose: () => void;
   onSubmit: (input: SavingsAccountInput) => Promise<void>;
   initial?: SavingsAccountWithBalance | null;
+  cashPreset?: boolean;
 }
 
-export function SavingsAccountForm({ open, onClose, onSubmit, initial }: SavingsAccountFormProps) {
+export function SavingsAccountForm({
+  open,
+  onClose,
+  onSubmit,
+  initial,
+  cashPreset = false,
+}: SavingsAccountFormProps) {
   const {
     register,
     handleSubmit,
@@ -44,13 +51,13 @@ export function SavingsAccountForm({ open, onClose, onSubmit, initial }: Savings
   useEffect(() => {
     if (!open) return;
     reset({
-      name: initial?.name ?? '',
+      name: initial?.name ?? (cashPreset ? 'Efectivo' : ''),
       account_number: initial?.account_number ?? '',
       opening_balance: initial?.opening_balance ?? 0,
       include_in_savings_goal: initial?.include_in_savings_goal ?? false,
       color: initial?.color ?? COLOR_OPTIONS[7],
     });
-  }, [open, initial, reset]);
+  }, [open, initial, cashPreset, reset]);
 
   const submit = async (values: SavingsAccountInput) => {
     try {
@@ -62,16 +69,27 @@ export function SavingsAccountForm({ open, onClose, onSubmit, initial }: Savings
   };
 
   return (
-    <Modal open={open} onClose={onClose} title={initial ? 'Editar cuenta' : 'Nueva cuenta'}>
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={initial ? 'Editar cuenta' : cashPreset ? 'Agregar efectivo' : 'Nueva cuenta'}
+    >
       <form onSubmit={handleSubmit(submit)} className="space-y-4" noValidate>
         <Field label="Nombre de la cuenta" htmlFor="name" error={errors.name?.message}>
           <Input
             id="name"
-            placeholder="Ej. Cuenta principal"
+            placeholder={cashPreset ? 'Ej. Efectivo en mano' : 'Ej. Cuenta principal'}
             aria-invalid={!!errors.name}
             {...register('name')}
           />
         </Field>
+
+        {cashPreset && (
+          <p className="rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+            El efectivo se controla como una cuenta: usa una transferencia al retirar o depositar en
+            el banco, ingresos para dinero recibido en mano y gastos para lo que pagues en efectivo.
+          </p>
+        )}
 
         <Field
           label="Número de cuenta (opcional)"

@@ -37,6 +37,7 @@ export default function SavingsPage() {
   const { isHidden } = usePrivacy();
   const { accounts, loading, create, update, remove } = useSavingsAccounts();
   const [formOpen, setFormOpen] = useState(false);
+  const [cashPreset, setCashPreset] = useState(false);
   const [editing, setEditing] = useState<SavingsAccountWithBalance | null>(null);
   const [deleting, setDeleting] = useState<SavingsAccountWithBalance | null>(null);
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
@@ -94,7 +95,7 @@ export default function SavingsPage() {
     <>
       <PageHeader
         title="Cuentas"
-        description="Consulta tus saldos y los movimientos depositados en cada cuenta"
+        description="Consulta tus saldos bancarios y el efectivo que tienes en mano"
         actions={
           <div className="flex gap-2">
             <Button
@@ -107,10 +108,21 @@ export default function SavingsPage() {
             <Button
               onClick={() => {
                 setEditing(null);
+                setCashPreset(false);
                 setFormOpen(true);
               }}
             >
               <Plus className="h-4 w-4" /> Nueva
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setEditing(null);
+                setCashPreset(true);
+                setFormOpen(true);
+              }}
+            >
+              <Wallet className="h-4 w-4" /> Efectivo
             </Button>
           </div>
         }
@@ -144,6 +156,13 @@ export default function SavingsPage() {
               <PrivacyToggle privacyKey={PRIVACY_KEYS.accountsTotal} />
             </div>
           </Card>
+
+          <p className="text-sm text-muted-foreground">
+            Para controlar dinero físico, crea una cuenta de{' '}
+            <span className="font-medium">Efectivo</span>. Retirar o depositar en el banco se
+            registra como transferencia; el dinero recibido o gastado en mano se registra desde esa
+            cuenta.
+          </p>
 
           <div className="grid gap-4 sm:grid-cols-2">
             {accounts.map((account) => (
@@ -457,9 +476,13 @@ export default function SavingsPage() {
 
       <SavingsAccountForm
         open={formOpen}
-        onClose={() => setFormOpen(false)}
+        onClose={() => {
+          setFormOpen(false);
+          setCashPreset(false);
+        }}
         onSubmit={handleSubmit}
         initial={editing}
+        cashPreset={cashPreset}
       />
 
       <ConfirmDialog

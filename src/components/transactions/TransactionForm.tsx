@@ -49,6 +49,9 @@ interface TransactionFormProps {
   defaultKind?: Kind;
   defaultCardId?: string | null;
   defaultAccountId?: string | null;
+  defaultAmount?: string | null;
+  defaultCardCurrency?: Currency;
+  paymentPurpose?: 'STATEMENT' | null;
 }
 
 const KIND_OPTIONS: { value: Kind; label: string }[] = [
@@ -74,6 +77,9 @@ export function TransactionForm({
   defaultKind,
   defaultCardId = null,
   defaultAccountId = null,
+  defaultAmount = null,
+  defaultCardCurrency = 'HNL',
+  paymentPurpose = null,
 }: TransactionFormProps) {
   const { isHidden } = usePrivacy();
   const [kind, setKind] = useState<Kind>(defaultType);
@@ -101,16 +107,25 @@ export function TransactionForm({
     setError(null);
     setRecurringReview(null);
     setKind(initial?.type ?? defaultKind ?? defaultType);
-    setAmount(initial?.amount != null ? String(initial.amount) : '');
+    setAmount(initial?.amount != null ? String(initial.amount) : (defaultAmount ?? ''));
     setAmountHnl('');
     setCategoryId(initial?.category_id ?? '');
     setCardId(defaultCardId ?? '');
     setSavingsId(initial?.savings_account_id ?? defaultAccountId ?? '');
     setDestinationSavingsId(initial?.destination_savings_account_id ?? '');
-    setCardCurrency('HNL');
+    setCardCurrency(defaultCardCurrency);
     setDescription(initial?.description ?? '');
     setDate(initial?.transaction_date ?? todayISO());
-  }, [open, initial, defaultType, defaultKind, defaultCardId, defaultAccountId]);
+  }, [
+    open,
+    initial,
+    defaultType,
+    defaultKind,
+    defaultCardId,
+    defaultAccountId,
+    defaultAmount,
+    defaultCardCurrency,
+  ]);
 
   const kindOptions = isEditing
     ? KIND_OPTIONS.filter((k) => ['EXPENSE', 'INCOME', 'SAVING', 'TRANSFER'].includes(k.value))
@@ -429,7 +444,21 @@ export function TransactionForm({
               </Field>
             )}
 
-            <Field label={kind === 'CARD_PAYMENT' ? 'Abono' : 'Monto'} htmlFor="amount">
+            <Field
+              label={
+                kind === 'CARD_PAYMENT'
+                  ? paymentPurpose === 'STATEMENT'
+                    ? 'Pago total del corte'
+                    : 'Abono'
+                  : 'Monto'
+              }
+              htmlFor="amount"
+              hint={
+                kind === 'CARD_PAYMENT' && paymentPurpose === 'STATEMENT'
+                  ? 'Este es el pendiente del último corte. Puedes ajustarlo si el banco cobra un importe distinto.'
+                  : undefined
+              }
+            >
               <div className="relative">
                 <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
                   {symbol}

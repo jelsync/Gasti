@@ -50,6 +50,10 @@ export default function TransactionsPage() {
     searchParams.get('new') === 'withdrawal' || searchParams.get('new') === 'expense';
   const requestedCardId = searchParams.get('card');
   const requestedAccountId = searchParams.get('account');
+  const requestedPaymentAmount = startsWithCardPayment ? searchParams.get('amount') : null;
+  const requestedCardCurrency: Currency = searchParams.get('currency') === 'USD' ? 'USD' : 'HNL';
+  const paymentPurpose =
+    startsWithCardPayment && searchParams.get('payment') === 'statement' ? 'STATEMENT' : null;
   const [month, setMonth] = useState(getCurrentMonthYear);
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('ALL');
   const [search, setSearch] = useState('');
@@ -421,6 +425,9 @@ export default function TransactionsPage() {
         defaultKind={formDefaultKind}
         defaultCardId={requestedCardId}
         defaultAccountId={requestedAccountId}
+        defaultAmount={requestedPaymentAmount}
+        defaultCardCurrency={requestedCardCurrency}
+        paymentPurpose={paymentPurpose}
       />
 
       <ConfirmDialog

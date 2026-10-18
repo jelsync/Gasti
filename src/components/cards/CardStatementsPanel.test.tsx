@@ -1,5 +1,6 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
 import { CardStatementsPanel } from '@/components/cards/CardStatementsPanel';
 import type { CreditCardWithBalance } from '@/types/models';
 
@@ -65,9 +66,13 @@ beforeEach(() => {
 
 afterEach(cleanup);
 
+function renderPanel(ui: React.ReactElement) {
+  return render(<MemoryRouter>{ui}</MemoryRouter>);
+}
+
 describe('Revisión manual del corte', () => {
   it('solo confirma después de revisar y marcar todas las compras del día', async () => {
-    render(<CardStatementsPanel card={card} onConfigure={vi.fn()} />);
+    renderPanel(<CardStatementsPanel card={card} onConfigure={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: 'Revisar corte' }));
     const confirm = await screen.findByRole('button', { name: 'Confirmar corte' });
     expect(confirm).toBeDisabled();
@@ -85,7 +90,9 @@ describe('Revisión manual del corte', () => {
       statement_date: '2026-10-09',
       period_start: '2026-09-10',
     });
-    render(<CardStatementsPanel card={card} requestedDate="2026-10-09" onConfigure={vi.fn()} />);
+    renderPanel(
+      <CardStatementsPanel card={card} requestedDate="2026-10-09" onConfigure={vi.fn()} />,
+    );
     expect(await screen.findByRole('button', { name: 'Confirmar corte' })).toBeDisabled();
     expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
     expect(service.previewCardStatement).toHaveBeenCalledWith(card.id, '2026-10-09');
@@ -122,10 +129,14 @@ describe('Revisión manual del corte', () => {
       },
     ]);
 
-    render(<CardStatementsPanel card={{ ...card, balanceUsd: 9.49 }} onConfigure={vi.fn()} />);
+    renderPanel(<CardStatementsPanel card={{ ...card, balanceUsd: 9.49 }} onConfigure={vi.fn()} />);
 
-    expect(await screen.findByText('Pago del último corte')).toBeInTheDocument();
+    expect(await screen.findByText('Estado del último corte')).toBeInTheDocument();
     expect(screen.getByText('Pendiente del corte')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Pagar $ 6.49 del corte' })).toHaveAttribute(
+      'href',
+      '/transacciones?new=card-payment&card=card-1&amount=6.49&currency=USD&payment=statement',
+    );
     expect(screen.getByText('Nuevo ciclo')).toBeInTheDocument();
     expect(screen.getByText('Movimientos posteriores al corte.')).toBeInTheDocument();
   });
