@@ -318,6 +318,8 @@ export interface Database {
           credit_limit_usd: number | null;
           payment_due_day: number | null;
           statement_day: number | null;
+          is_archived: boolean;
+          archived_at: string | null;
           color: string;
           created_at: string;
           updated_at: string;
@@ -334,6 +336,8 @@ export interface Database {
           credit_limit_usd?: number | null;
           payment_due_day?: number | null;
           statement_day?: number | null;
+          is_archived?: boolean;
+          archived_at?: string | null;
           color?: string;
         };
         Update: {
@@ -345,6 +349,8 @@ export interface Database {
           credit_limit_usd?: number | null;
           payment_due_day?: number | null;
           statement_day?: number | null;
+          is_archived?: boolean;
+          archived_at?: string | null;
           color?: string;
         };
         Relationships: [];

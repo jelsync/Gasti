@@ -137,6 +137,7 @@ SavingsPage
 - Cortes: `src/components/cards/CardStatementsPanel.tsx`, `src/hooks/useMonthlyCardStatements.ts`, `src/services/cardStatements.service.ts` y `src/utils/cardStatementProgress.ts`.
 - Historial por tarjeta: `src/components/cards/CardMovementHistory.tsx`.
 - Si existe un saldo pendiente del último corte, el panel ofrece pagar ese total y precarga el pago de tarjeta con su importe y moneda.
+- Archivar una tarjeta conserva compras, pagos y cortes; evita nuevas compras, permite saldarla y se muestra en su propio apartado con opción de reactivarla.
 - Hooks: `src/hooks/useCreditCards.ts`, `useCardCharges.ts`, `useCreditCardMovements.ts`.
 - Servicio: `src/services/cards.service.ts`.
 - Tablas relacionadas: `credit_cards`, `card_charges`, `card_payments`.
@@ -227,6 +228,7 @@ SavingsPage
 - Respaldo por usuario e importación bancaria atómica: `0022_portability.sql`.
 - Confirmación anticipada, candidatos y vínculo reversible de recurrencias: `0023_recurring_confirmation.sql`.
 - Fechas y fotografías manuales de cortes de tarjeta: `0024_card_statements.sql`.
+- Cuenta de débito de préstamos: `0025_loan_debit_account.sql`; archivado reversible de tarjetas: `0026_archive_credit_cards.sql`.
 - RLS limita cada fila por `auth.uid()`; no confíes solo en filtros del cliente.
 
 ## Despliegue

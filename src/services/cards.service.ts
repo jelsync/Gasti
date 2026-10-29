@@ -100,6 +100,19 @@ export async function deleteCreditCard(id: string): Promise<void> {
   if (error) throw error;
 }
 
+/** Archivar no borra compras, pagos ni cortes; solo detiene el uso cotidiano de la tarjeta. */
+export async function setCreditCardArchived(id: string, archived: boolean): Promise<CreditCard> {
+  const { data, error } = await supabase
+    .from('credit_cards')
+    .update({ is_archived: archived, archived_at: archived ? new Date().toISOString() : null })
+    .eq('id', id)
+    .select('*')
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
 export interface CardPaymentArgs {
   currency: Currency;
   /** Monto que reduce la deuda, en la moneda indicada. */

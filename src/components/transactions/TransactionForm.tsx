@@ -138,7 +138,9 @@ export function TransactionForm({
   const needsCard = kind === 'CARD_CHARGE' || kind === 'CARD_PAYMENT';
   const showCategory = kind === 'EXPENSE' || kind === 'INCOME' || kind === 'CARD_CHARGE';
   const symbol = needsCard && cardCurrency === 'USD' ? '$' : 'L';
-  const noCards = needsCard && creditCards.length === 0;
+  const availableCards =
+    kind === 'CARD_CHARGE' ? creditCards.filter((card) => !card.is_archived) : creditCards;
+  const noCards = needsCard && availableCards.length === 0;
   const usesAccount =
     kind === 'EXPENSE' ||
     kind === 'INCOME' ||
@@ -413,7 +415,7 @@ export function TransactionForm({
               <Field label="Tarjeta" htmlFor="card">
                 <Select id="card" value={cardId} onChange={(e) => setCardId(e.target.value)}>
                   <option value="">Selecciona…</option>
-                  {creditCards.map((c) => (
+                  {availableCards.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name}
                     </option>
@@ -562,15 +564,15 @@ export function TransactionForm({
                   {savingsAccounts.map((a) => (
                     <option key={a.id} value={a.id}>
                       {a.name}
-                      {kind === 'TRANSFER'
+                      {kind === 'TRANSFER' || kind === 'CARD_PAYMENT'
                         ? ` — ${isHidden(PRIVACY_KEYS.account(a.id)) ? HIDDEN_AMOUNT : formatCurrency(a.balance)}`
                         : ''}
                     </option>
                   ))}
                 </Select>
-                {kind === 'TRANSFER' && sourceAccount && (
+                {(kind === 'TRANSFER' || kind === 'CARD_PAYMENT') && sourceAccount && (
                   <span className="mt-2 inline-flex rounded-full bg-accent px-2.5 py-1 text-xs font-medium text-primary">
-                    Disponible:{' '}
+                    Disponible en {sourceAccount.name}:{' '}
                     {isHidden(PRIVACY_KEYS.account(sourceAccount.id))
                       ? HIDDEN_AMOUNT
                       : formatCurrency(sourceAvailableBalance)}

@@ -6,6 +6,7 @@ import {
   getCreditCards,
   registerCardCharge,
   registerCardPayment,
+  setCreditCardArchived,
   updateCreditCard,
   type CardPaymentArgs,
 } from '@/services/cards.service';
@@ -60,6 +61,14 @@ export function useCreditCards() {
     [refresh],
   );
 
+  const setArchived = useCallback(
+    async (id: string, archived: boolean) => {
+      await setCreditCardArchived(id, archived);
+      await refresh();
+    },
+    [refresh],
+  );
+
   const payCard = useCallback(
     async (cardId: string, cardName: string, args: CardPaymentArgs) => {
       if (!user) throw new Error('Sesión no válida');
@@ -78,5 +87,16 @@ export function useCreditCards() {
     [user, refresh],
   );
 
-  return { cards, loading, error, refresh, create, update, remove, payCard, addCharge };
+  return {
+    cards,
+    loading,
+    error,
+    refresh,
+    create,
+    update,
+    remove,
+    setArchived,
+    payCard,
+    addCharge,
+  };
 }

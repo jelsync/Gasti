@@ -30,6 +30,8 @@ const card: CreditCardWithBalance = {
   credit_limit_usd: null,
   statement_day: 9,
   payment_due_day: 20,
+  is_archived: false,
+  archived_at: null,
   balanceHnl: 0,
   balanceUsd: 11.49,
   created_at: '2026-01-01',

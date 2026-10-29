@@ -347,7 +347,8 @@ export default function BudgetsPage() {
                       size="sm"
                     />
                     <span className="flex-1 truncate font-medium">
-                      {budget.category?.name ?? 'Sin categoría'}
+                      {budget.category?.name ?? 'Sin categoría'} ·{' '}
+                      {budget.currency === 'HNL' ? 'Lempiras' : 'Dólares'}
                     </span>
                     <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
                       {budget.currency}
@@ -411,7 +412,9 @@ export default function BudgetsPage() {
               <CardContent>
                 <div className="mb-3 flex items-center gap-3">
                   <CategoryIcon icon={item.icon} color={item.color} size="sm" />
-                  <span className="flex-1 truncate font-medium">{item.name}</span>
+                  <span className="flex-1 truncate font-medium">
+                    {item.name} · {item.currency === 'HNL' ? 'Lempiras' : 'Dólares'}
+                  </span>
                   <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
                     {item.currency}
                   </span>
