@@ -137,7 +137,7 @@ SavingsPage
 - Cortes: `src/components/cards/CardStatementsPanel.tsx`, `src/hooks/useMonthlyCardStatements.ts`, `src/services/cardStatements.service.ts` y `src/utils/cardStatementProgress.ts`.
 - Historial por tarjeta: `src/components/cards/CardMovementHistory.tsx`.
 - Si existe un saldo pendiente del último corte, el panel ofrece pagar ese total y precarga el pago de tarjeta con su importe y moneda.
-- Archivar una tarjeta conserva compras, pagos y cortes; evita nuevas compras, permite saldarla y se muestra en su propio apartado con opción de reactivarla.
+- Archivar una tarjeta conserva compras, pagos y cortes; la retira de la administración cotidiana y se muestra en su propio apartado solo con opción de reactivarla.
 - Hooks: `src/hooks/useCreditCards.ts`, `useCardCharges.ts`, `useCreditCardMovements.ts`.
 - Servicio: `src/services/cards.service.ts`.
 - Tablas relacionadas: `credit_cards`, `card_charges`, `card_payments`.

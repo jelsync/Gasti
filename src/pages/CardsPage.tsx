@@ -44,7 +44,7 @@ export default function CardsPage() {
   }, [requestedCardId]);
 
   const selectedCard = useMemo(
-    () => cards.find((card) => card.id === selectedCardId) ?? null,
+    () => cards.find((card) => card.id === selectedCardId && !card.is_archived) ?? null,
     [cards, selectedCardId],
   );
 
@@ -152,6 +152,48 @@ export default function CardsPage() {
 
           <div className="grid gap-4 sm:grid-cols-2">
             {displayCards.map((card, index) => {
+              if (card.is_archived) {
+                return (
+                  <Fragment key={card.id}>
+                    {index === activeCards.length && (
+                      <div className="sm:col-span-2 mt-2">
+                        <h2 className="text-base font-semibold">Tarjetas archivadas</h2>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          Están fuera de uso y conservan su historial. Reactívalas para volver a
+                          administrarlas.
+                        </p>
+                      </div>
+                    )}
+                    <Card className="border-dashed bg-muted/20">
+                      <CardContent className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="flex min-w-0 items-center gap-3">
+                          <span
+                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white"
+                            style={{ backgroundColor: card.color }}
+                          >
+                            <CardIcon className="h-5 w-5" />
+                          </span>
+                          <div className="min-w-0">
+                            <p className="truncate font-semibold">{card.name}</p>
+                            <span className="mt-1 inline-flex rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                              Archivada
+                            </span>
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => void handleArchive(card, false)}
+                        >
+                          <ArchiveRestore className="h-4 w-4" /> Reactivar tarjeta
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  </Fragment>
+                );
+              }
+
               const usageHnl =
                 card.credit_limit && card.credit_limit > 0
                   ? (card.balanceHnl / card.credit_limit) * 100
@@ -164,14 +206,6 @@ export default function CardsPage() {
                 card.balanceUsd > 0 || card.opening_balance_usd > 0 || usageUsd !== null;
               return (
                 <Fragment key={card.id}>
-                  {card.is_archived && index === activeCards.length && (
-                    <div className="sm:col-span-2 mt-2">
-                      <h2 className="text-base font-semibold">Tarjetas archivadas</h2>
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        Conservan su historial y puedes reactivarlas cuando lo necesites.
-                      </p>
-                    </div>
-                  )}
                   <Card
                     role="button"
                     tabIndex={0}
@@ -185,7 +219,6 @@ export default function CardsPage() {
                     }}
                     className={cn(
                       'cursor-pointer transition-colors hover:border-primary/60',
-                      card.is_archived && 'border-dashed bg-muted/20',
                       selectedCardId === card.id && 'border-primary ring-1 ring-primary/30',
                     )}
                   >
@@ -200,11 +233,6 @@ export default function CardsPage() {
                           </span>
                           <div className="min-w-0">
                             <p className="truncate font-semibold">{card.name}</p>
-                            {card.is_archived && (
-                              <span className="mt-1 inline-flex rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                                Archivada
-                              </span>
-                            )}
                             {card.bank && (
                               <p className="truncate text-xs text-muted-foreground">{card.bank}</p>
                             )}
@@ -271,15 +299,13 @@ export default function CardsPage() {
                         >
                           <Pencil className="h-4 w-4" /> Editar
                         </Button>
-                        {!card.is_archived && (
-                          <Link
-                            to={`${ROUTES.transactions}?new=card-charge&card=${card.id}`}
-                            onClick={(event) => event.stopPropagation()}
-                            className={cardActionLinkClass}
-                          >
-                            <Receipt className="h-4 w-4" /> Registrar compra
-                          </Link>
-                        )}
+                        <Link
+                          to={`${ROUTES.transactions}?new=card-charge&card=${card.id}`}
+                          onClick={(event) => event.stopPropagation()}
+                          className={cardActionLinkClass}
+                        >
+                          <Receipt className="h-4 w-4" /> Registrar compra
+                        </Link>
                         <Link
                           to={`${ROUTES.transactions}?new=card-payment&card=${card.id}`}
                           onClick={(event) => event.stopPropagation()}
@@ -296,15 +322,7 @@ export default function CardsPage() {
                             void handleArchive(card, !card.is_archived);
                           }}
                         >
-                          {card.is_archived ? (
-                            <>
-                              <ArchiveRestore className="h-4 w-4" /> Reactivar tarjeta
-                            </>
-                          ) : (
-                            <>
-                              <Archive className="h-4 w-4" /> Archivar tarjeta
-                            </>
-                          )}
+                          <Archive className="h-4 w-4" /> Archivar tarjeta
                         </Button>
                       </div>
                     </CardContent>
